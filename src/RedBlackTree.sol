@@ -8,9 +8,10 @@ import "./OrderQueue.sol";
  * @dev This contract implements a red-black tree, which is a self-balancing binary search tree.
  *      It is designed to be used for managing order books or any other sorted data structures efficiently.
  */
-contract RedBlackTree {
-    using OrderQueue for OrderQueue.Queue;
 
+library RedBlackTree {
+    using OrderQueue for OrderQueue.Queue;
+    using OrderQueue for OrderQueue.OrderBookNode;
     /* Errors */
     error RedBlackTree__StartingValueCannotBeZero();
     error RedBlackTree__ValuesDoesNotExist();
@@ -22,32 +23,31 @@ contract RedBlackTree {
     /**
      *  @notice Represents an empty value in the tree; it is used to denote nodes that do not exist or are empty.
      */
-    uint private constant EMPTY = 0;
+    uint256 private constant EMPTY = 0;
 
     /**
      *  @notice Struct representing a node in the Red-Black Tree.
      */
     struct Node {
-        uint parent;  // Parent node
-        uint left;    // Left child node
-        uint right;   // Right child node
-        bool red;     // Color of the node, true if red, false if black
-        uint countTotalOrders; // Total Orders of the Node
-        uint countValueOrders; // Sum of the value of the orders
+        uint256 parent; // Parent node
+        uint256 left; // Left child node
+        uint256 right; // Right child node
+        bool red; // Color of the node, true if red, false if black
+        uint256 countTotalOrders; // Total Orders of the Node
+        uint256 countValueOrders; // Sum of the value of the orders
         OrderQueue.Queue orders;
-        //uint[] ordersKeys; //Array with the keys of the orders (the key is the price)
-        //bytes32[] ordersKeys;
-        //mapping(bytes32 => OrderBookNode) orders; //Mapping with the structure of the orders in a node
     }
+    //uint[] ordersKeys; //Array with the keys of the orders (the key is the price)
+    //bytes32[] ordersKeys;
+    //mapping(bytes32 => OrderBookNode) orders; //Mapping with the structure of the orders in a node
 
     /**
      *  @notice Struct representing the entire Red-Black Tree
      */
     struct Tree {
-        uint root;  // Root node of the tree
-        mapping(uint => Node) nodes;  // Mapping of keys to their corresponding nodes
+        uint256 root; // Root node of the tree
+        mapping(uint256 => Node) nodes; // Mapping of keys to their corresponding nodes
     }
-
 
     /**
      * @dev Retrieves the value of the leftmost node in the Red-Black tree.
@@ -71,7 +71,7 @@ contract RedBlackTree {
      * @return _value The value of the leftmost node in the tree. If the tree is
      *         empty, it returns `0`.
      */
-    function first(Tree storage self) internal view returns (uint _value) {
+    function first(Tree storage self) internal view returns (uint256 _value) {
         _value = self.root;
         if (_value == EMPTY) return 0;
         Node storage currentNode = self.nodes[_value];
@@ -102,7 +102,7 @@ contract RedBlackTree {
      * @return _value The value of the rightmost node in the tree. If the tree is
      *         empty, it returns `0`.
      */
-    function last(Tree storage self) internal view returns (uint _value) {
+    function last(Tree storage self) internal view returns (uint256 _value) {
         _value = self.root;
         if (_value == EMPTY) return 0;
         Node storage currentNode = self.nodes[_value];
@@ -133,7 +133,7 @@ contract RedBlackTree {
      * @return _cursor The value of the successor node. If there is no successor,
      *         it returns `EMPTY`.
      */
-    function next(Tree storage self, uint value) internal view returns (uint _cursor) {
+    function next(Tree storage self, uint256 value) internal view returns (uint256 _cursor) {
         if (value == EMPTY) revert RedBlackTree__StartingValueCannotBeZero();
         Node storage currentNode = self.nodes[value];
         if (currentNode.right != EMPTY) {
@@ -168,7 +168,7 @@ contract RedBlackTree {
      * @return _cursor The value of the predecessor node. If there is no predecessor,
      *         it returns `EMPTY`.
      */
-    function prev(Tree storage self, uint value) internal view returns (uint _cursor) {
+    function prev(Tree storage self, uint256 value) internal view returns (uint256 _cursor) {
         if (value == EMPTY) revert RedBlackTree__StartingValueCannotBeZero();
         Node storage currentNode = self.nodes[value];
         if (currentNode.left != EMPTY) {
@@ -207,11 +207,11 @@ contract RedBlackTree {
      * @return _exists A boolean indicating whether the node with the specified
      *         value exists in the tree.
      */
-    function exists(Tree storage self, uint value) internal view returns (bool _exists) {
+    function exists(Tree storage self, uint256 value) internal view returns (bool _exists) {
         if (value == EMPTY) return false;
         if (value == self.root) return true;
 
-        Node storage node = self.nodes[value];  // Access node only once
+        Node storage node = self.nodes[value]; // Access node only once
         if (node.parent != EMPTY) return true;
 
         return false;
@@ -238,7 +238,7 @@ contract RedBlackTree {
      *
      * @return _exists `true` if the key exists within the node; otherwise `false`.
      */
-    function keyExists(Tree storage self, bytes32 key, uint value) internal view returns (bool _exists) {
+    function keyExists(Tree storage self, bytes32 key, uint256 value) internal view returns (bool _exists) {
         if (!exists(self, value)) return false;
         Node storage node = self.nodes[value];
         return node.orders.orderExists(key);
@@ -269,20 +269,18 @@ contract RedBlackTree {
      * @param self A reference to the `Tree` struct in storage containing all nodes and the root.
      * @param value The value of the node whose attributes are to be retrieved.
      *
-     * @return _parent The value of the parent node.
-     * @return _left The value of the left child node.
-     * @return _right The value of the right child node.
-     * @return _red A boolean indicating whether the node is red.
-     * @return _countTotalOrders total orders of the Node.
-     * @return _countValueOrders sum of the value of the orders
-     * @return _orders sum of the value of the orders
      */
-    function getNode(Tree storage self, uint value) internal view returns (uint _parent, uint _left, uint _right, bool _red, uint _countTotalOrders, uint _countValueOrders, OrderQueue.Queue storage _orders) {
+    function getNode(Tree storage self, uint256 value)
+        internal
+        view
+        returns (
+            Node storage
+        )
+    {
         if (!exists(self, value)) revert RedBlackTree__ValuesDoesNotExist();
-        Node storage gn = self.nodes[value];
-        return (gn.parent, gn.left, gn.right, gn.red, gn.countTotalOrders, gn.countValueOrders, gn.orders);
+        //Node storage gn = self.nodes[value];
+        return self.nodes[value];
     }
-
 
     /**
      * @dev Inserts a new node with the given value and key into the Red-Black tree.
@@ -302,12 +300,12 @@ contract RedBlackTree {
      * @param key The key associated with the value to be inserted.
      * @param value The value of the node to be inserted into the tree.
      */
-    function insert(Tree storage self, bytes32 key, uint value, address _traderAddress) internal {
+    function insert(Tree storage self, bytes32 key, uint256 value, address _traderAddress, uint _quantity, uint256 nonce, uint256 _expired) internal {
         if (value == EMPTY) revert RedBlackTree__ValueToInsertCannotBeZero();
         if (keyExists(self, key, value)) revert RedBlackTree__ValueAndKeyPairExists();
 
-        uint cursor; //Sigue al nodo que precede al nuevo nodo
-        uint probe = self.root; //Nodo Actual
+        uint256 cursor; //Sigue al nodo que precede al nuevo nodo
+        uint256 probe = self.root; //Nodo Actual
 
         while (probe != EMPTY) {
             cursor = probe;
@@ -317,12 +315,12 @@ contract RedBlackTree {
             } else if (value > probe) {
                 probe = currentNode.right;
             } else {
-                currentNode.orders.push(_traderAddress,key);
+                currentNode.orders.push(_traderAddress, key, value, _quantity, nonce, _expired);
                 /*currentNode.orders[key] = OrderBookNode({
                     traderAddress: _traderAddress,
                     orderId: key
                 });*/
-                //currentNode.ordersKeys.push(key); //TODO VERIFICAR
+                //currentNode.ordersKeys.push(key);
                 //currentNode.keyMap[key] = currentNode.keys.push(key) - uint(1);
                 return;
             }
@@ -334,12 +332,12 @@ contract RedBlackTree {
         nValue.left = EMPTY;
         nValue.right = EMPTY;
         nValue.red = true;
-        nValue.orders.push(_traderAddress,key);
+        nValue.orders.push(_traderAddress, key, value, _quantity, nonce, _expired);
         /*nValue.orders[key] = OrderBookNode({
             traderAddress: _traderAddress,
             orderId: key
         });
-        nValue.ordersKeys.push(key);*/ //TODO VERIFICAR
+        nValue.ordersKeys.push(key);*/
         //nValue.keyMap[key] = nValue.keys.push(key) - uint(1);
 
         if (cursor == EMPTY) {
@@ -370,7 +368,7 @@ contract RedBlackTree {
      * @param key The key to be removed from the node.
      * @param value The value identifying the node where the key is to be removed.
      */
-    function remove(Tree storage self, bytes32 key, uint value) internal {
+    function remove(Tree storage self, bytes32 key, uint256 value) internal {
         // Ensure the value and key exist
         if (value == EMPTY) revert RedBlackTree__ValueCannotBeZero();
         if (!keyExists(self, key, value)) revert RedBlackTree__KeyDoesNotExist();
@@ -387,8 +385,8 @@ contract RedBlackTree {
         nValue.keys.pop(); // Equivalent to nValue.keys.length--*/
         nValue.orders.removeOrder(key);
 
-        uint probe; //El hijo del nodo sucesor o el hijo del nodo eliminado que se conecta al padre del nodo sucesor
-        uint cursor; //Nodo reemplazante
+        uint256 probe; //El hijo del nodo sucesor o el hijo del nodo eliminado que se conecta al padre del nodo sucesor
+        uint256 cursor; //Nodo reemplazante
 
         //Manejo de la Eliminación del Nodo: Si el nodo queda sin claves
         // Node has no keys left, handle its removal
@@ -409,7 +407,83 @@ contract RedBlackTree {
             // Set probe to the child of cursor
             probe = self.nodes[cursor].left != EMPTY ? self.nodes[cursor].left : self.nodes[cursor].right;
 
-            uint cursorParent = self.nodes[cursor].parent;
+            uint256 cursorParent = self.nodes[cursor].parent;
+            self.nodes[probe].parent = cursorParent;
+
+            // Update parent's link
+            if (cursorParent != EMPTY) {
+                if (cursor == self.nodes[cursorParent].left) {
+                    self.nodes[cursorParent].left = probe;
+                } else {
+                    self.nodes[cursorParent].right = probe;
+                }
+            } else {
+                self.root = probe;
+            }
+
+            // Determine if fixup is needed
+            bool doFixup = !self.nodes[cursor].red;
+
+            // Handle case where cursor is not the value node
+            if (cursor != value) {
+                replaceParent(self, cursor, value);
+                self.nodes[cursor].left = nValue.left;
+                self.nodes[self.nodes[cursor].left].parent = cursor;
+                self.nodes[cursor].right = nValue.right;
+                self.nodes[self.nodes[cursor].right].parent = cursor;
+                self.nodes[cursor].red = nValue.red;
+                (cursor, value) = (value, cursor);
+            }
+
+            // Fix Red-Black tree properties
+            if (doFixup) {
+                removeFixup(self, probe);
+            }
+
+            // Delete the old node
+            delete self.nodes[cursor];
+        }
+    }
+
+    function popOrder(Tree storage self, uint256 value) internal {
+        // Ensure the value and key exist
+        if (value == EMPTY) revert RedBlackTree__ValueCannotBeZero();
+        //Eliminación de la Clave
+        // Reference to the node to be removed
+        Node storage nValue = self.nodes[value];
+
+        /*uint rowToDelete = nValue.keyMap[key];
+
+        // Remove the key from the node's keys array
+        uint lastIndex = nValue.keys.length - 1;
+        nValue.keys[rowToDelete] = nValue.keys[lastIndex];
+        nValue.keyMap[nValue.keys[rowToDelete]] = rowToDelete;
+        nValue.keys.pop(); // Equivalent to nValue.keys.length--*/
+        nValue.orders.pop();
+
+        uint256 probe; //El hijo del nodo sucesor o el hijo del nodo eliminado que se conecta al padre del nodo sucesor
+        uint256 cursor; //Nodo reemplazante
+
+        //Manejo de la Eliminación del Nodo: Si el nodo queda sin claves
+        // Node has no keys left, handle its removal
+        if (nValue.orders.isEmpty()) {
+            // Determine replacement node
+            //Si el nodo tiene un solo hijo
+            if (nValue.left == EMPTY || nValue.right == EMPTY) {
+                cursor = value;
+            } else {
+                //Si el nodo tiene dos hijos, se encuentra el nodo más pequeño
+                cursor = nValue.right;
+                Node storage currentNode = self.nodes[cursor];
+                while (currentNode.left != EMPTY) {
+                    cursor = currentNode.left;
+                }
+            }
+
+            // Set probe to the child of cursor
+            probe = self.nodes[cursor].left != EMPTY ? self.nodes[cursor].left : self.nodes[cursor].right;
+
+            uint256 cursorParent = self.nodes[cursor].parent;
             self.nodes[probe].parent = cursorParent;
 
             // Update parent's link
@@ -469,7 +543,7 @@ contract RedBlackTree {
      * @return The value of the minimum node in the subtree. If the subtree is empty,
      *         it returns `EMPTY`.
      */
-    function treeMinimum(Tree storage self, uint value) private view returns (uint) {
+    function treeMinimum(Tree storage self, uint256 value) private view returns (uint256) {
         while (self.nodes[value].left != EMPTY) {
             value = self.nodes[value].left;
         }
@@ -498,7 +572,7 @@ contract RedBlackTree {
      * @return The value of the maximum node in the subtree. If the subtree is empty,
      *         it returns `EMPTY`.
      */
-    function treeMaximum(Tree storage self, uint value) private view returns (uint) {
+    function treeMaximum(Tree storage self, uint256 value) private view returns (uint256) {
         while (self.nodes[value].right != EMPTY) {
             value = self.nodes[value].right;
         }
@@ -524,12 +598,12 @@ contract RedBlackTree {
      *        and root of the Red-Black tree.
      * @param value The value of the node that needs to be rotated to the left.
      */
-    function rotateLeft(Tree storage self, uint value) private {
+    function rotateLeft(Tree storage self, uint256 value) private {
         Node storage valueNode = self.nodes[value];
-        uint cursor = valueNode.right;
+        uint256 cursor = valueNode.right;
         Node storage cursorNode = self.nodes[cursor];
-        uint parent = valueNode.parent;
-        uint cursorLeft = cursorNode.left;
+        uint256 parent = valueNode.parent;
+        uint256 cursorLeft = cursorNode.left;
 
         valueNode.right = cursorLeft;
         if (cursorLeft != EMPTY) {
@@ -552,8 +626,6 @@ contract RedBlackTree {
         valueNode.parent = cursor;
     }
 
-
-
     /**
      * @dev Performs a right rotation on the node identified by `value` within a Red-Black tree.
      *
@@ -575,19 +647,19 @@ contract RedBlackTree {
      * @param self A reference to the `Tree` struct in storage, containing the nodes and root of the Red-Black tree.
      * @param value The value of the node to rotate right.
      */
-    function rotateRight(Tree storage self, uint value) private {
+    function rotateRight(Tree storage self, uint256 value) private {
         Node storage nodeValue = self.nodes[value];
-        uint cursor = nodeValue.left;
+        uint256 cursor = nodeValue.left;
         Node storage nodeCursor = self.nodes[cursor];
 
-        uint cursorRight = nodeCursor.right;
+        uint256 cursorRight = nodeCursor.right;
         nodeValue.left = cursorRight;
 
         if (cursorRight != EMPTY) {
             self.nodes[cursorRight].parent = value;
         }
 
-        uint parent = nodeValue.parent;
+        uint256 parent = nodeValue.parent;
         nodeCursor.parent = parent;
 
         if (parent == EMPTY) {
@@ -601,7 +673,6 @@ contract RedBlackTree {
         nodeCursor.right = value;
         nodeValue.parent = cursor;
     }
-
 
     /**
      * @dev Corrects the properties of the Red-Black Tree after an insertion.
@@ -624,10 +695,10 @@ contract RedBlackTree {
      * @param self A reference to the `Tree` struct in storage, representing the Red-Black tree.
      * @param value The value of the node that was recently inserted and may need fixing.
      */
-    function insertFixup(Tree storage self, uint value) private {
-        uint parent;
-        uint grandParent;
-        uint uncle;
+    function insertFixup(Tree storage self, uint256 value) private {
+        uint256 parent;
+        uint256 grandParent;
+        uint256 uncle;
 
         while (value != self.root && self.nodes[self.nodes[value].parent].red) {
             parent = self.nodes[value].parent;
@@ -695,10 +766,9 @@ contract RedBlackTree {
      * @param a The node that will replace node `b`.
      * @param b The node that will be replaced by node `a`.
      */
-    function replaceParent(Tree storage self, uint a, uint b) private {
-        //TODO No se si debamos agregar validacion de nodos a y b que existan en el arbol
+    function replaceParent(Tree storage self, uint256 a, uint256 b) private {
         // Cache parent of node b
-        uint bParent = self.nodes[b].parent;
+        uint256 bParent = self.nodes[b].parent;
         Node storage nodeA = self.nodes[a]; // Cache node a
         Node storage nodeB = self.nodes[b]; // Cache node b
 
@@ -732,10 +802,10 @@ contract RedBlackTree {
      * @param self The `Tree` storage reference containing the tree nodes and root.
      * @param value The value of the node that needs correction after removal.
      */
-    function removeFixup(Tree storage self, uint value) private {
-        uint cursor;
+    function removeFixup(Tree storage self, uint256 value) private {
+        uint256 cursor;
         while (value != self.root && !self.nodes[value].red) {
-            uint valueParent = self.nodes[value].parent;
+            uint256 valueParent = self.nodes[value].parent;
             bool isLeftChild = value == self.nodes[valueParent].left;
             cursor = isLeftChild ? self.nodes[valueParent].right : self.nodes[valueParent].left;
 
@@ -788,4 +858,11 @@ contract RedBlackTree {
         }
         self.nodes[value].red = false;
     }
+
+    function getOrderDetail(Tree storage self, bytes32 orderId, uint256 value) public view returns (OrderQueue.OrderBookNode memory){
+        Node storage node = getNode(self,value);
+        return node.orders.orders[orderId];
+    }
+
+
 }
