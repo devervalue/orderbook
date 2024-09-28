@@ -40,7 +40,15 @@ library OrderQueue {
     }
 
     //Insertar
-    function push(Queue storage q, address _traderAddress, bytes32 _orderId, uint256 _price, uint _quantity, uint256 nonce, uint256 _expired) internal {
+    function push(
+        Queue storage q,
+        address _traderAddress,
+        bytes32 _orderId,
+        uint256 _price,
+        uint256 _quantity,
+        uint256 nonce,
+        uint256 _expired
+    ) internal {
         //TODO QUE PASA SI INTENTO AGREGAR UN VALOR O ID QUE YA EXISTE ? PUEDE SUCEDER?
         if (q.first == 0) q.first = _orderId;
         if (q.last != 0) {

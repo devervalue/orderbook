@@ -17,7 +17,7 @@ library OrderBookLib {
         bytes32 orderId; //Define Order Id (Hash keccak256(traderAddress,orderType,price,createdAt)
         uint256 price;
         bool isBuy;
-        uint index;
+        uint256 index;
     }
 
     struct TraderOrders {
@@ -51,7 +51,9 @@ library OrderBookLib {
     /**
      *  @notice Evento que se emite cuando se ejecuta una orden parcial.
      */
-    event OrderPartialExecuted(bytes32 indexed id, address indexed baseToken, address indexed quoteToken, address trader);
+    event OrderPartialExecuted(
+        bytes32 indexed id, address indexed baseToken, address indexed quoteToken, address trader
+    );
 
     /*
      - Agregar compra / venta a un libro (Según el token base y quote, se decide si es compra o es
@@ -74,70 +76,84 @@ library OrderBookLib {
 
     }*/
 
-
     //Agregar orden de compra
-    function addBuyOrder(OrderBook storage book, uint256 _price, uint _quantity, address _trader, uint256 nonce, uint256 _expired)
-        internal
-    {
+    function addBuyOrder(
+        OrderBook storage book,
+        uint256 _price,
+        uint256 _quantity,
+        address _trader,
+        uint256 nonce,
+        uint256 _expired
+    ) internal {
         //¿Arbol de ventas tiene nodos?
-        uint currentNode = book.sellOrders.first();
+        uint256 currentNode = book.sellOrders.first();
         bytes32 _orderId = keccak256(abi.encodePacked(_trader, "buy", _price, nonce));
-        do{
-            if(currentNode == 0){
+        do {
+            if (currentNode == 0) {
                 //NO
-                saveBuyOrder(book,_price,_quantity,_trader,nonce,_expired,_orderId);
+                saveBuyOrder(book, _price, _quantity, _trader, nonce, _expired, _orderId);
                 return;
-            }else{
+            } else {
                 //SI
                 //Precio de compra >= precio del nodo obtenido
-                if(_price >= currentNode){
+                if (_price >= currentNode) {
                     //SI
                     //Aplico el match de ordenes de compra
-                    _quantity = matchOrderBuy(currentNode,book,_price, _quantity, _trader, _orderId);
+                    _quantity = matchOrderBuy(currentNode, book, _price, _quantity, _trader, _orderId);
                     currentNode = book.sellOrders.first();
-                }else{
+                } else {
                     //NO
-                    saveBuyOrder(book,_price,_quantity,_trader,nonce,_expired,_orderId);
+                    saveBuyOrder(book, _price, _quantity, _trader, nonce, _expired, _orderId);
                     return;
                 }
             }
-
         } while (_quantity > 0);
     }
 
-
     //Agregar orden de venta
-    function addSellOrder(OrderBook storage book, uint256 _price, uint _quantity, address _trader, uint256 nonce, uint256 _expired)
-    internal
-    {
+    function addSellOrder(
+        OrderBook storage book,
+        uint256 _price,
+        uint256 _quantity,
+        address _trader,
+        uint256 nonce,
+        uint256 _expired
+    ) internal {
         //¿Arbol de compras tiene nodos?
-        uint currentNode = book.buyOrders.last();
+        uint256 currentNode = book.buyOrders.last();
         bytes32 _orderId = keccak256(abi.encodePacked(_trader, "sell", _price, nonce));
-        do{
-            if(currentNode == 0){
+        do {
+            if (currentNode == 0) {
                 //NO
-                saveSellOrder(book,_price,_quantity,_trader,nonce,_expired,_orderId);
+                saveSellOrder(book, _price, _quantity, _trader, nonce, _expired, _orderId);
                 return;
-            }else{
+            } else {
                 //SI
                 //Precio de venta <= precio del nodo obtenido
-                if(_price <= currentNode){
+                if (_price <= currentNode) {
                     //SI
                     //Aplico el match de ordenes de compra
-                    _quantity = matchOrderSell(book,_price, _quantity, currentNode, _trader, _orderId);
+                    _quantity = matchOrderSell(book, _price, _quantity, currentNode, _trader, _orderId);
                     currentNode = book.sellOrders.last();
-                }else{
+                } else {
                     //NO
-                    saveSellOrder(book,_price,_quantity,_trader,nonce,_expired,_orderId);
+                    saveSellOrder(book, _price, _quantity, _trader, nonce, _expired, _orderId);
                     return;
                 }
             }
-
         } while (_quantity > 0);
     }
 
     //Guardar orden de compra
-    function saveBuyOrder(OrderBook storage book, uint256 _price, uint _quantity, address _trader, uint256 nonce, uint256 _expired, bytes32 _orderId) internal{
+    function saveBuyOrder(
+        OrderBook storage book,
+        uint256 _price,
+        uint256 _quantity,
+        address _trader,
+        uint256 nonce,
+        uint256 _expired,
+        bytes32 _orderId
+    ) internal {
         //Transfiero los tokens al contrato
         IERC20 baseTokenContract = IERC20(book.baseToken);
         baseTokenContract.safeTransferFrom(_trader, address(this), _quantity); //Transfiero la cantidad que tiene la compra
@@ -154,13 +170,21 @@ library OrderBookLib {
         book.traderOrders[_trader].orders[_orderId] = order;
 
         //Agregar al arbol
-        book.buyOrders.insert(_orderId,_price,_trader, _quantity, nonce, _expired);
+        book.buyOrders.insert(_orderId, _price, _trader, _quantity, nonce, _expired);
         //Emite el evento de orden creada
         emit OrderCreated(_orderId, book.baseToken, book.quoteToken, _trader);
     }
 
     //Guardar orden de venta
-    function saveSellOrder(OrderBook storage book, uint256 _price, uint _quantity, address _trader, uint256 nonce, uint256 _expired, bytes32 _orderId) internal{
+    function saveSellOrder(
+        OrderBook storage book,
+        uint256 _price,
+        uint256 _quantity,
+        address _trader,
+        uint256 nonce,
+        uint256 _expired,
+        bytes32 _orderId
+    ) internal {
         //Transfiero los tokens al contrato
         IERC20 quoteTokenContract = IERC20(book.quoteToken);
         quoteTokenContract.safeTransferFrom(_trader, address(this), _quantity); //Transfiero la cantidad que tiene la venta
@@ -177,13 +201,20 @@ library OrderBookLib {
         book.traderOrders[_trader].orders[_orderId] = order;
 
         //Agregar al arbol
-        book.sellOrders.insert(_orderId,_price,_trader, _quantity, nonce, _expired);
+        book.sellOrders.insert(_orderId, _price, _trader, _quantity, nonce, _expired);
         //Emite el evento de orden creada
         emit OrderCreated(_orderId, book.baseToken, book.quoteToken, _trader);
     }
 
     //Match orden de compra
-    function matchOrderBuy(uint256 firstOrder, OrderBook storage book, uint _price, uint quantityBuy, address traderBuy, bytes32 orderIdBuy) internal returns(uint _remainingQuantity){
+    function matchOrderBuy(
+        uint256 firstOrder,
+        OrderBook storage book,
+        uint256 _price,
+        uint256 quantityBuy,
+        address traderBuy,
+        bytes32 orderIdBuy
+    ) internal returns (uint256 _remainingQuantity) {
         //Obtento la cola de ordenes del nodo
         //RedBlackTree.Node storage node = getNode(book,firstOrder); //Get node //Todo revisar si retornamos el Nodo completo
         RedBlackTree.Node storage node = book.sellOrders.getNode(firstOrder); //Get node
@@ -196,38 +227,50 @@ library OrderBookLib {
         do {
             OrderQueue.OrderBookNode storage orderBookNode = node.orders.orders[currentOrder];
             //OE >= Cantidad de OV
-            uint quantitySell= orderBookNode.availableQuantity;
-            if(quantityBuy >= quantitySell){
+            uint256 quantitySell = orderBookNode.availableQuantity;
+            if (quantityBuy >= quantitySell) {
                 //SI
                 //Transfiero la cantidad de tokens de OV al comprador
                 baseTokenContract.safeTransferFrom(address(this), traderBuy, quantitySell); //Transfiero la cantidad que tiene la venta
                 //Transfiero la cantidad de tokens de OE al vendedor
-                quoteTokenContract.safeTransferFrom(traderBuy, orderBookNode.traderAddress, quantitySell * orderBookNode.price);//Multiplico la cantidad de tokens de venta por el precio de venta
+                quoteTokenContract.safeTransferFrom(
+                    traderBuy, orderBookNode.traderAddress, quantitySell * orderBookNode.price
+                ); //Multiplico la cantidad de tokens de venta por el precio de venta
                 //Actualizo la orden de compra disminuyendo la cantidad que ya tengo
                 quantityBuy -= quantitySell;
                 //Elimino la orden de venta
                 book.sellOrders.popOrder(orderBookNode.price);
                 //La cola tiene mas ordenes ?
                 currentOrder = orderBookNode.next;
-            }else{
+            } else {
                 //NO
-                executePartial(baseTokenContract,quoteTokenContract,traderBuy,quantityBuy,quantitySell, orderBookNode);
+                executePartial(
+                    baseTokenContract, quoteTokenContract, traderBuy, quantityBuy, quantitySell, orderBookNode
+                );
                 //Emite el evento de orden entrante ejecutada
                 emit OrderExecuted(orderIdBuy, book.baseToken, book.quoteToken, traderBuy);
 
                 //Emite el evento de orden de venta ejecutada parcialmente
-                emit OrderPartialExecuted(orderBookNode.orderId, book.baseToken, book.quoteToken, orderBookNode.traderAddress);
-
+                emit OrderPartialExecuted(
+                    orderBookNode.orderId, book.baseToken, book.quoteToken, orderBookNode.traderAddress
+                );
             }
-        } while(currentOrder != 0);
+        } while (currentOrder != 0);
         return quantityBuy;
     }
 
-    function executePartial(IERC20 baseTokenContract, IERC20 quoteTokenContract, address traderBuy, uint256 quantityBuy, uint256 quantitySell, OrderQueue.OrderBookNode memory orderBookNode) internal {
+    function executePartial(
+        IERC20 baseTokenContract,
+        IERC20 quoteTokenContract,
+        address traderBuy,
+        uint256 quantityBuy,
+        uint256 quantitySell,
+        OrderQueue.OrderBookNode memory orderBookNode
+    ) internal {
         //Transfiero la cantidad de tokens de OV al comprador
         baseTokenContract.safeTransferFrom(address(this), traderBuy, quantityBuy);
         //Transfiero la cantidad de tokens de OE al vendedor
-        uint256 pValue =  quantityBuy * orderBookNode.price;
+        uint256 pValue = quantityBuy * orderBookNode.price;
         quoteTokenContract.safeTransferFrom(traderBuy, orderBookNode.traderAddress, pValue); //Multiplico la cantidad de tokens de compra por el precio de venta
         //Actualizar la OV restando la cantidad de la OE
         orderBookNode.availableQuantity = quantitySell - quantityBuy;
@@ -240,7 +283,14 @@ library OrderBookLib {
     }
 
     //Match orden de compra
-    function matchOrderSell(OrderBook storage book, uint _price, uint quantitySell, uint256 firstOrder, address traderSell, bytes32 orderIdSell) internal returns(uint _remainingQuantity){
+    function matchOrderSell(
+        OrderBook storage book,
+        uint256 _price,
+        uint256 quantitySell,
+        uint256 firstOrder,
+        address traderSell,
+        bytes32 orderIdSell
+    ) internal returns (uint256 _remainingQuantity) {
         //Obtento la cola de ordenes del nodo
         //RedBlackTree.Node storage node = getNode(book,firstOrder); //Get node //Todo revisar si retornamos el Nodo completo
         RedBlackTree.Node storage node = book.buyOrders.getNode(firstOrder); //Get node
@@ -253,25 +303,29 @@ library OrderBookLib {
         do {
             OrderQueue.OrderBookNode storage orderBookNode = node.orders.orders[currentOrder];
             //OE >= Cantidad de OV
-            uint quantityBuy= orderBookNode.availableQuantity;
-            if(quantitySell >= quantityBuy){
+            uint256 quantityBuy = orderBookNode.availableQuantity;
+            if (quantitySell >= quantityBuy) {
                 //SI
                 //Transfiero la cantidad de tokens de OC al comprador
                 baseTokenContract.safeTransferFrom(address(this), traderSell, quantityBuy); //Transfiero la cantidad que tiene la compra
                 //Transfiero la cantidad de tokens de OE al comprador
-                quoteTokenContract.safeTransferFrom(traderSell, orderBookNode.traderAddress, quantityBuy * orderBookNode.price);//Multiplico la cantidad de tokens de compra por el precio de compra
+                quoteTokenContract.safeTransferFrom(
+                    traderSell, orderBookNode.traderAddress, quantityBuy * orderBookNode.price
+                ); //Multiplico la cantidad de tokens de compra por el precio de compra
                 //Actualizo la orden de venta disminuyendo la cantidad que ya tengo
-                quantitySell-= quantityBuy;
+                quantitySell -= quantityBuy;
                 //Elimino la orden de compra
                 book.buyOrders.popOrder(orderBookNode.price);
                 //La cola tiene mas ordenes ?
                 currentOrder = orderBookNode.next;
-            }else{
+            } else {
                 //NO
                 //Transfiero la cantidad de tokens de OC al vendedor
                 baseTokenContract.safeTransferFrom(address(this), traderSell, quantitySell);
                 //Transfiero la cantidad de tokens de OE al comprador
-                quoteTokenContract.safeTransferFrom(traderSell, orderBookNode.traderAddress, quantitySell * orderBookNode.price); //Multiplico la cantidad de tokens de venta por el precio de compra
+                quoteTokenContract.safeTransferFrom(
+                    traderSell, orderBookNode.traderAddress, quantitySell * orderBookNode.price
+                ); //Multiplico la cantidad de tokens de venta por el precio de compra
                 //Actualizar la OC restando la cantidad de la OE
                 orderBookNode.availableQuantity = quantityBuy - quantitySell;
                 quantitySell = 0;
@@ -279,23 +333,25 @@ library OrderBookLib {
                 emit OrderExecuted(orderIdSell, book.baseToken, book.quoteToken, traderSell);
 
                 //Emite el evento de orden de venta ejecutada parcialmente
-                emit OrderPartialExecuted(orderBookNode.orderId, book.baseToken, book.quoteToken, orderBookNode.traderAddress);
+                emit OrderPartialExecuted(
+                    orderBookNode.orderId, book.baseToken, book.quoteToken, orderBookNode.traderAddress
+                );
             }
-        } while(currentOrder != 0);
+        } while (currentOrder != 0);
         return quantitySell;
     }
 
-
-    function cancelOrder(OrderBook storage book,bytes32 _orderId) internal {
+    function cancelOrder(OrderBook storage book, bytes32 _orderId) internal {
         Order memory _order = book.traderOrders[msg.sender].orders[_orderId];
-        if(_order.isBuy){
-            book.buyOrders.remove(_orderId,_order.price);
-        } else{
-            book.sellOrders.remove(_orderId,_order.price);
+        if (_order.isBuy) {
+            book.buyOrders.remove(_orderId, _order.price);
+        } else {
+            book.sellOrders.remove(_orderId, _order.price);
         }
         delete book.traderOrders[msg.sender].orders[_orderId];
         // Reemplazar el elemento a eliminar con el último elemento del array
-        book.traderOrders[msg.sender].orderIds[_order.index] = book.traderOrders[msg.sender].orderIds[book.traderOrders[msg.sender].orderIds.length - 1];
+        book.traderOrders[msg.sender].orderIds[_order.index] =
+            book.traderOrders[msg.sender].orderIds[book.traderOrders[msg.sender].orderIds.length - 1];
         // Remover el último elemento
         book.traderOrders[msg.sender].orderIds.pop();
     }
@@ -304,18 +360,15 @@ library OrderBookLib {
         return book.traderOrders[_trader].orderIds;
     }
 
-    function getOrderById(OrderBook storage book, address _trader, bytes32 _orderId) public returns (OrderQueue.OrderBookNode memory){
+    function getOrderById(OrderBook storage book, address _trader, bytes32 _orderId)
+        public
+        returns (OrderQueue.OrderBookNode memory)
+    {
         Order memory _order = book.traderOrders[_trader].orders[_orderId];
-        if(_order.isBuy){
-            return book.buyOrders.getOrderDetail(_orderId,_order.price);
-        } else{
-            return book.sellOrders.getOrderDetail(_orderId,_order.price);
+        if (_order.isBuy) {
+            return book.buyOrders.getOrderDetail(_orderId, _order.price);
+        } else {
+            return book.sellOrders.getOrderDetail(_orderId, _order.price);
         }
     }
-
-
-
-
-
 }
-

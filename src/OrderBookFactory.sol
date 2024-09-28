@@ -4,7 +4,6 @@ pragma solidity ^0.8.26;
 import "./OrderBookLib.sol";
 import "./RedBlackTree.sol";
 
-
 /**
  * @title Contrato Principal para la Gestión de Libros de Órdenes
  * @author Diego Leal
@@ -15,7 +14,6 @@ contract OrderBookFactory {
     using OrderBookLib for OrderBookLib.OrderBook;
     using RedBlackTree for RedBlackTree.Tree;
 
-
     error OrderBookFactory__InvalidTokenAddress();
     error OrderBookFactory__InvalidOwnerAddress();
     error OrderBookFactory__InvalidFeeAddress();
@@ -23,12 +21,10 @@ contract OrderBookFactory {
     error OrderBookFactory__InvalidOwnerAddressZero();
     error OrderBookFactory__OrderBookIdOutOfRange();
 
-
     /**
      *  @notice Dirección del propietario autorizado del contrato.
      */
     address public owner;
-
 
     bytes32[] public orderBooksKeys;
 
@@ -70,8 +66,8 @@ contract OrderBookFactory {
      *  @param feeAddress La dirección a la que se envían las tarifas recolectadas.
      */
     function addOrderBook(address _baseToken, address _quoteToken, uint256 fee, address feeAddress)
-    external
-    onlyOwner
+        external
+        onlyOwner
     {
         if (_baseToken == address(0) || _quoteToken == address(0)) revert OrderBookFactory__InvalidTokenAddress();
         if (owner == address(0)) revert OrderBookFactory__InvalidOwnerAddress();
@@ -109,8 +105,6 @@ contract OrderBookFactory {
         orderBook.fee = fee;
         orderBook.feeAddress = feeAddress;
 
-
-
         emit OrderBookCreated(identifier, baseToken, quoteToken, owner);
     }
 
@@ -119,15 +113,22 @@ contract OrderBookFactory {
         return ordersBook[_orderBookId].baseToken != address(0x0);
     }
 
-
     function getKeysOrderBooks() external view returns (bytes32[] memory) {
         return orderBooksKeys;
     }
 
-    function getOrderBookById(bytes32 _orderId) public view returns (address baseToken, address quoteToken, bool status, uint256 lastTradePrice){
-        return (ordersBook[_orderId].baseToken, ordersBook[_orderId].quoteToken, ordersBook[_orderId].status, ordersBook[_orderId].lastTradePrice);
+    function getOrderBookById(bytes32 _orderId)
+        public
+        view
+        returns (address baseToken, address quoteToken, bool status, uint256 lastTradePrice)
+    {
+        return (
+            ordersBook[_orderId].baseToken,
+            ordersBook[_orderId].quoteToken,
+            ordersBook[_orderId].status,
+            ordersBook[_orderId].lastTradePrice
+        );
     }
-
 
     /**
      *  @notice Cambia la dirección del propietario autorizado.
@@ -184,13 +185,13 @@ contract OrderBookFactory {
         return owner;
     }
 
-    function addNewOrder(bytes32 idOrderBook, uint256 quantity, uint256 price, bool isBuy, address trader) public{
+    function addNewOrder(bytes32 idOrderBook, uint256 quantity, uint256 price, bool isBuy, address trader) public {
         if (!orderBookExists(idOrderBook)) revert OrderBookFactory__OrderBookIdOutOfRange();
         OrderBookLib.OrderBook storage order = ordersBook[idOrderBook];
-        if(isBuy){
-            order.addBuyOrder(price,quantity,trader,block.timestamp, block.timestamp);
+        if (isBuy) {
+            order.addBuyOrder(price, quantity, trader, block.timestamp, block.timestamp);
         } else {
-            order.addSellOrder(price,quantity,trader,block.timestamp, block.timestamp);
+            order.addSellOrder(price, quantity, trader, block.timestamp, block.timestamp);
         }
     }
 
@@ -199,8 +200,4 @@ contract OrderBookFactory {
         OrderBookLib.OrderBook storage order = ordersBook[idOrderBook];
         order.cancelOrder(idOrderBook);
     }
-
-
-
-
 }
