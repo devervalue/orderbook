@@ -318,8 +318,8 @@ library RedBlackTree {
                 probe = currentNode.right;
             } else {
                 currentNode.orders.push(_traderAddress, key, value, _quantity, nonce, _expired);
-                currentNode.countTotalOrders = currentNode.countTotalOrders + 1; //TODO AQUI AGREGUE ESTO countTotalOrders
-                currentNode.countValueOrders = currentNode.countValueOrders + _quantity; //TODO AQUI AGREGUE ESTO countValueOrders
+                currentNode.countTotalOrders = currentNode.countTotalOrders + 1;
+                currentNode.countValueOrders = currentNode.countValueOrders + _quantity;
                 /*currentNode.orders[key] = OrderBookNode({
                     traderAddress: _traderAddress,
                     orderId: key
@@ -337,8 +337,8 @@ library RedBlackTree {
         nValue.right = EMPTY;
         nValue.red = true;
         nValue.orders.push(_traderAddress, key, value, _quantity, nonce, _expired);
-        nValue.countTotalOrders = nValue.countTotalOrders + 1; //TODO AQUI AGREGUE ESTO countTotalOrders
-        nValue.countValueOrders = nValue.countValueOrders + _quantity; //TODO AQUI AGREGUE ESTO countValueOrders
+        nValue.countTotalOrders = nValue.countTotalOrders + 1;
+        nValue.countValueOrders = nValue.countValueOrders + _quantity;
 
         /*nValue.orders[key] = OrderBookNode({
             traderAddress: _traderAddress,
@@ -390,8 +390,8 @@ library RedBlackTree {
         nValue.keys[rowToDelete] = nValue.keys[lastIndex];
         nValue.keyMap[nValue.keys[rowToDelete]] = rowToDelete;
         nValue.keys.pop(); // Equivalent to nValue.keys.length--*/
-        nValue.countTotalOrders = nValue.countTotalOrders - 1; //TODO AQUI AGREGUE ESTO countTotalOrders
-        nValue.countValueOrders = nValue.countValueOrders - nValue.orders.orders[key].quantity; //TODO AQUI AGREGUE ESTO countValueOrders
+        nValue.countTotalOrders = nValue.countTotalOrders - 1;
+        nValue.countValueOrders = nValue.countValueOrders - nValue.orders.orders[key].quantity;
         nValue.orders.removeOrder(key);
 
         uint256 probe; //El hijo del nodo sucesor o el hijo del nodo eliminado que se conecta al padre del nodo sucesor
@@ -468,8 +468,8 @@ library RedBlackTree {
         nValue.keys[rowToDelete] = nValue.keys[lastIndex];
         nValue.keyMap[nValue.keys[rowToDelete]] = rowToDelete;
         nValue.keys.pop(); // Equivalent to nValue.keys.length--*/
-        nValue.countTotalOrders = nValue.countTotalOrders - 1; //TODO AQUI AGREGUE ESTO countTotalOrders
-        nValue.countValueOrders = nValue.countValueOrders - nValue.orders.orders[nValue.orders.first].quantity; //TODO AQUI AGREGUE ESTO countValueOrders
+        nValue.countTotalOrders = nValue.countTotalOrders - 1;
+        nValue.countValueOrders = nValue.countValueOrders - nValue.orders.orders[nValue.orders.first].quantity;
         nValue.orders.pop();
 
         uint256 probe; //El hijo del nodo sucesor o el hijo del nodo eliminado que se conecta al padre del nodo sucesor
@@ -876,8 +876,7 @@ library RedBlackTree {
         returns (OrderQueue.OrderBookNode memory)
     {
         Node storage node = getNode(self, value);
-        if(node.orders.orders[orderId].price == 0) revert RedBlackTree__NodeDoesNotExist();
+        if (node.orders.orders[orderId].price == 0) revert RedBlackTree__NodeDoesNotExist();
         return node.orders.orders[orderId];
-
     }
 }

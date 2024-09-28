@@ -136,8 +136,8 @@ contract RedBlackTreeTest is Test {
         uint256 result = tree.next(10);
         assertEq(result, 15, "Should return the next node (15) for the node (10)");
     }
-    //Asegura que se devuelve el siguiente nodo correcto cuando no hay un hijo derecho.
 
+    //Asegura que se devuelve el siguiente nodo correcto cuando no hay un hijo derecho.
     function testNextOnNodeWithoutRightChild() public {
         tree.insert(orderId1, 10, trader1, 1, 1, 999999);
         tree.insert(orderId2, 15, trader2, 1, 1, 999999);
@@ -733,6 +733,26 @@ contract RedBlackTreeTest is Test {
         assertEq(node.right, 0, "New root should have 0 as right child");
     }
 
+    function testRemoveFixup2() public {
+        // Insertar tres nodos
+        tree.insert(orderId1, 10, trader1, 100, 1, 999999);
+        tree.insert(orderId2, 5, trader2, 200, 2, 999999);
+        tree.insert(orderId3, 20, trader3, 300, 3, 999999);
+        tree.insert(orderId3, 25, trader4, 400, 3, 999999);
+
+
+        // Eliminar el nodo raíz (10)
+        tree.remove(orderId1, 10);
+
+        // Verificar que el árbol sigue siendo un árbol Red-Black válido
+        uint256 root = tree.root;
+        assertEq(root, 20, "Root should be 20 after removing 10");
+        RedBlackTree.Node storage node = tree.getNode(root);
+        assertEq(node.red, false, "Root node should be black after removal");
+        assertEq(node.left, 5, "New root should have 5 as left child");
+        assertEq(node.right, 25, "New root should have 25 as right child");
+    }
+
     //-------------------- POP ORDER ------------------------------
 
     //Inserta una única orden y verifica que al eliminarla, el nodo se elimina del árbol.
@@ -893,6 +913,5 @@ contract RedBlackTreeTest is Test {
         // Intentar obtener detalles de una orden de un nodo no existente
         vm.expectRevert(RedBlackTree.RedBlackTree__ValuesDoesNotExist.selector);
         tree.getOrderDetail(orderId1, 0); // Valor cero que no existe
-
     }
 }

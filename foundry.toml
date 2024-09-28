@@ -4,7 +4,8 @@ out = "out"
 libs = ["lib"]
 solc_version = "0.8.26"
 optimizer = true
-gas_report = ["*"]
+gas_reports = ["*"]
+gas_reports_ignore = ["MyToken"]
 
 [fmt]
 line_lengty = 80

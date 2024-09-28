@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 pragma experimental ABIEncoderV2;
+
 import "./OrderQueue.sol";
 import "./RedBlackTree.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "forge-std/console.sol";
 
 library OrderBookLib {
     using RedBlackTree for RedBlackTree.Tree;
@@ -87,8 +89,11 @@ library OrderBookLib {
     ) internal {
         //¿Arbol de ventas tiene nodos?
         uint256 currentNode = book.sellOrders.first();
+        console.log("currentNode", currentNode);
         bytes32 _orderId = keccak256(abi.encodePacked(_trader, "buy", _price, nonce));
-        do {
+        console.logBytes32(_orderId);
+
+    do {
             if (currentNode == 0) {
                 //NO
                 saveBuyOrder(book, _price, _quantity, _trader, nonce, _expired, _orderId);
@@ -155,8 +160,10 @@ library OrderBookLib {
         bytes32 _orderId
     ) internal {
         //Transfiero los tokens al contrato
+        console.log("baseToken", book.baseToken);
         IERC20 baseTokenContract = IERC20(book.baseToken);
         baseTokenContract.safeTransferFrom(_trader, address(this), _quantity); //Transfiero la cantidad que tiene la compra
+        console.log("prueba");
 
         Order memory order = Order({
             orderId: _orderId,
