@@ -70,6 +70,49 @@ library OrderQueue {
         q.last = _orderId;
     }
 
+/*    //Insertar
+    function push(
+        Queue storage q,
+        address _traderAddress,
+        bytes32 _orderId,
+        uint256 _price,
+        uint256 _quantity,
+        uint256 nonce,
+        uint256 _expired
+    ) internal {
+        require(_orderId != 0, "OrderQueue: Invalid order ID");
+        require(_traderAddress != address(0), "OrderQueue: Invalid trader address");
+        require(_price > 0, "OrderQueue: Price must be greater than zero");
+        require(_quantity > 0, "OrderQueue: Quantity must be greater than zero");
+        require(_expired > block.timestamp, "OrderQueue: Expiration time must be in the future");
+
+        // Check if the order already exists
+        require(!orderExists(q, _orderId), "OrderQueue: Order with this ID already exists");
+
+        if (q.last != 0) {
+            q.orders[q.last].next = _orderId;
+        } else if (q.first == 0) q.first = _orderId;
+
+        q.orders[_orderId] = OrderBookNode({
+            orderId: _orderId,
+            traderAddress: _traderAddress,
+            isBuy: true,
+            price: _price,
+            quantity: _quantity,
+            availableQuantity: _quantity,
+            status: 1, //created 1 / partially filled 2 / filled 3 / cancelada 4
+            expiresAt: _expired,
+            createdAt: nonce,
+            prev: q.last,
+            next: 0
+        });
+        q.last = _orderId;
+
+        emit OrderPushed(_orderId, _traderAddress, _price, _quantity, _expired);
+    }
+
+    event OrderPushed(bytes32 indexed orderId, address indexed trader, uint256 price, uint256 quantity, uint256 expiresAt);*/
+
     //Eliminar
     function pop(Queue storage q) internal returns (OrderBookNode memory _order) {
         if (q.first == 0) revert OrderQueue__CantPopAnEmptyQueue();
