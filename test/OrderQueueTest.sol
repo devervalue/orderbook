@@ -294,4 +294,8 @@ contract OrderQueueTest is Test {
         assertEq(queue.first, 0, "First should be 0 after removing all orders");
         assertEq(queue.first, 0, "Last should be 0 after removing all orders");
     }
+
+    // TODO Should test the behavior when attempting to remove an order that doesn't exist
+    // TODO Should test the behavior when pushing an order with a very large price or quantity
+    // TODO Should test the behavior when attempting to push an order with an expired timestamp
 }
