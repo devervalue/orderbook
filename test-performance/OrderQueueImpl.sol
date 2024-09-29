@@ -6,7 +6,7 @@ import "forge-std/console.sol";
 
 
 
-contract OrderQueueContract {
+contract OrderQueueImpl {
     using OrderQueue for OrderQueue.Queue;
     using OrderQueue for OrderQueue.OrderBookNode;
 

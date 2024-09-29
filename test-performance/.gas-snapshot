@@ -1,0 +1,7 @@
+EmptyQueueTest:testIsEmpty() (gas: 11760)
+EmptyQueueTest:testOrderExists() (gas: 12962)
+EmptyQueueTest:testPop() (gas: 194284)
+EmptyQueueTest:testPush() (gas: 238741)
+EmptyQueueTest:testRemoveOrder() (gas: 191126)
+LargeQueueTest:testPush() (gas: 243831)
+SmallQueueTest:testPush() (gas: 243831)

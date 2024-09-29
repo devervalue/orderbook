@@ -64,3 +64,24 @@ $ forge --help
 $ anvil --help
 $ cast --help
 ```
+
+## Performance commands
+### Test
+```shell
+$ FOUNDRY_PROFILE=perftest forge test
+```
+
+### Test with gas report
+```shell
+$ FOUNDRY_PROFILE=perftest forge test --gas-report
+```
+
+### Coverage report
+```shell
+$ FOUNDRY_PROFILE=perftest forge coverage
+```
+
+### Gas snapshot
+```shell
+$ FOUNDRY_PROFILE=perftest forge snapshot --snap test-performance/.gas-snapshot
+```
