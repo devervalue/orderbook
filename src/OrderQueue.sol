@@ -30,9 +30,9 @@ library OrderQueue {
         uint256 createdAt;
         bytes32 next;
         bytes32 prev;
-        // TODO: Consider using enum for status instead of uint8 for better readability
-        // TODO: If possible, combine isBuy and status into a single uint8 to save storage
     }
+    // TODO: Consider using enum for status instead of uint8 for better readability
+    // TODO: If possible, combine isBuy and status into a single uint8 to save storage
 
     struct Queue {
         // TODO: Consider using uint256 instead of bytes32 for 'first' and 'last' if they represent indices
@@ -40,9 +40,9 @@ library OrderQueue {
         mapping(bytes32 => OrderBookNode) orders;
         bytes32 first;
         bytes32 last;
-        // TODO: If possible, combine 'first' and 'last' into a single uint256 to save storage
-        // The lower 128 bits could represent 'first' and the upper 128 bits 'last'
     }
+    // TODO: If possible, combine 'first' and 'last' into a single uint256 to save storage
+    // The lower 128 bits could represent 'first' and the upper 128 bits 'last'
 
     //Existe la orden
     function orderExists(Queue storage q, bytes32 _orderId) internal view returns (bool exists) {
@@ -69,7 +69,6 @@ library OrderQueue {
         uint256 nonce,
         uint256 _expired
     ) internal {
-
         // TODO: Add a check if the order already exists to prevent overwriting
         // TODO: Consider using unchecked blocks for arithmetic operations where overflow is impossible
         // TODO: Use assembly for simple storage reads and writes to save gas
@@ -98,10 +97,9 @@ library OrderQueue {
         });
         q.last = _orderId;
         // TODO: Consider emitting an event for off-chain tracking (if not already done elsewhere)
-
     }
 
-/*    //Insertar
+    /*    //Insertar
     function push(
         Queue storage q,
         address _traderAddress,

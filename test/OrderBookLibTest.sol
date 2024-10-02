@@ -6,96 +6,181 @@ import "../src/OrderQueue.sol";
 import "../src/RedBlackTree.sol";
 import "../src/OrderBookLib.sol";
 import "forge-std/console.sol";
-import "../src/MyToken.sol";
+import "../src/MyTokenA.sol";
+import "../src/MyTokenB.sol";
 
+import "./OrderBookImpl.sol";
 
 contract OrderBookLibTest is Test {
-    using OrderBookLib for OrderBookLib.OrderBook;
-    using RedBlackTree for RedBlackTree.Tree;
-    MyToken token;
-    OrderBookLib.OrderBook private book;
-    address public libraryAddress;
-    address trader1 = address(0x1);
-    address trader2 = address(0x2);
-    address trader3 = address(0x3);
+    // using OrderBookLib for OrderBookLib.OrderBook;
+    // using RedBlackTree for RedBlackTree.Tree;
 
+    //OrderBookLib.OrderBook private book;
+
+    OrderBookImpl private orderBookImpl;
+
+    //TOKENS
+    MyTokenA tokenA;
+    MyTokenB tokenB;
+
+    //ADDRESS
+    address addressContract;
+    address trader1 = makeAddr("trader1");
+    address trader2 = makeAddr("trader2");
+    address trader3 = makeAddr("trader3");
+
+    //GLOBAL DATA
     uint256 price;
     uint256 quantity;
     uint256 nonce;
     uint256 expired;
 
     function setUp() public {
-        libraryAddress = deployCode("OrderBookLib.sol");
-        console.log("add",libraryAddress);
-        // Configuración básica antes de cada prueba
-        token = new MyToken(1000 * 10 ** 18); //Crear un nuevo token con suministro inicial
+        //addressContract = deployCode("OrderBookLib.sol");
+
+        //Creando token como suministro inicial
+        tokenA = new MyTokenA(1000 * 10 ** 18); //Crear un nuevo token con suministro inicial
+        tokenB = new MyTokenB(1000 * 10 ** 18); //Crear un nuevo token con suministro inicial
+
+        orderBookImpl = new OrderBookImpl(address(tokenA), address(tokenB));
+        console.log("addressContract", address(orderBookImpl));
+        console.log("address this", address(this));
+        //Enviando fondos a los traders
         //token.approve(msg.sender, 1000 * 10 ** 18);
-        token.transfer(trader1,200 * 10 ** 18); //Doy fondos a trader 1
+        //tokenA.transfer(trader1,200 * 10 ** 18); //Doy fondos a trader 1
+        //tokenA.transfer(trader2,200 * 10 ** 18); //Doy fondos a trader 2
+        tokenA.transfer(trader1, 1500);
+        //tokenA.transfer(address(this),1); //Doy fondos a trader 2
+
+        //tokenB.transfer(trader1,200 * 10 ** 18); //Doy fondos a trader 1
+        tokenB.transfer(trader2, 15);
+        //tokenB.transfer(address(this),1); //Doy fondos a trader 2
+        //tokenB.transfer(trader2,200 * 10 ** 18); //Doy fondos a trader 2
+
         //token.approve(trader1, 1000 * 10 ** 18);
 
+        //Creando orderBook
         price = 100;
         quantity = 10;
         nonce = 1;
         expired = block.timestamp + 1 days;
-        book.baseToken = address(token);
-        book.quoteToken = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
-        book.lastTradePrice = 0;
-        book.status = true;
-        book.owner = address(0x6);
-        book.fee = 0x0;
-        book.feeAddress = address(0x7);
 
-        // Aprobar el contrato para que pueda gastar tokens de trader1
-        vm.prank(trader1); // Cambiar el contexto a trader1
-        token.approve(trader1, 1000 * 10 ** 18); // Aprobar 1000 tokens
+        //Aprobar el contrato para que pueda gastar tokens
+        vm.startPrank(trader1); // Cambiar el contexto a trader1
+        tokenA.approve(address(orderBookImpl), 1000 * 10 ** 18); // Aprobar 1000 tokens
+        vm.stopPrank();
 
+        vm.startPrank(trader2); // Cambiar el contexto a trader1
+        tokenB.approve(address(orderBookImpl), 1000 * 10 ** 18); // Aprobar 1000 tokens
+        vm.stopPrank();
+
+        vm.startPrank(address(orderBookImpl)); // Cambiar el contexto a trader1
+        tokenB.approve(address(orderBookImpl), 1000 * 10 ** 18); // Aprobar 1000 tokens
+        tokenA.approve(address(orderBookImpl), 1000 * 10 ** 18); // Aprobar 1000 tokens
+        vm.stopPrank();
     }
-
-
 
     //-------------------- ADD BUY ORDER ------------------------------
     //Valida que si no hay órdenes de venta, la orden de compra se almacena en el libro.
     function testAddBuyOrderWithoutSellOrders() public {
         // Caso 1: Orden de compra sin órdenes de venta
-        //token.transferFrom(trader1, 100 * 10 ** 18);
-        uint256 balanceContractInitial = token.balanceOf(address(this));
+        uint256 balanceContractInitial = tokenA.balanceOf(address(orderBookImpl));
 
-        vm.prank(trader1);
-        book.addBuyOrder(price, quantity, trader1, nonce, expired);
+        vm.startPrank(trader1);
+        orderBookImpl.addBuyOrder(price, quantity, trader1, nonce, expired);
+        vm.stopPrank();
 
-        uint256 balanceContract = token.balanceOf(address(this));
+        uint256 balanceContract = tokenA.balanceOf(address(orderBookImpl));
         assertEq(balanceContract - balanceContractInitial, 10); // Verificar que el balance restante es correcto
-            //assertEq(book.sellOrders.first(), 100, "La orden de compra debe estar almacenada");
+        assertEq(orderBookImpl.getFirstBuyOrders(), 100, "La orden de compra debe estar almacenada");
     }
 
-    /*//Verifica que una orden de compra se ejecute completamente si encuentra una orden de venta con el mismo precio.
+    //Verifica que una orden de compra se ejecute completamente si encuentra una orden de venta con el mismo precio.
     function testAddBuyOrderWithMatchingSellOrder() public {
         // Caso 2: Orden de compra con precio igual a una orden de venta
-        book.addSellOrder(price, quantity, trader2, nonce, expired);
-        book.addBuyOrder(price, quantity, trader1, nonce, expired);
+
+        vm.startPrank(trader2);
+        orderBookImpl.addSellOrder(price, quantity, trader2, nonce, expired);
+        vm.stopPrank();
+
+        vm.prank(trader1);
+        orderBookImpl.addBuyOrder(price, quantity, trader1, nonce, expired);
 
         // Verificar que la orden de compra se haya emparejado y eliminado
-        assertEq(book.sellOrders.first(), 0, "La orden de venta debe haberse emparejado completamente");
-        assertEq(book.buyOrders.first(), 0, "La orden de compra debe haberse ejecutado completamente");
+        assertEq(orderBookImpl.getFirstSellOrders(), 0, "La orden de venta debe haberse emparejado completamente");
+        assertEq(orderBookImpl.getFirstBuyOrders(), 0, "La orden de compra debe haberse ejecutado completamente");
+        assertEq(tokenB.balanceOf(trader1), 10); // Verificar que el balance restante es correcto
+        assertEq(tokenA.balanceOf(trader2), 1000); // Verificar que el balance restante es correcto
+
+    }
+
+    function testAddBuyOrderWithMatchingDifferentSellOrder() public {
+        // Caso 2: Orden de compra con precio igual varias ordenes de compra
+
+        vm.startPrank(trader2);
+        orderBookImpl.addSellOrder(price, 5, trader2, nonce, expired);
+        vm.stopPrank();
+
+        vm.startPrank(trader2);
+        orderBookImpl.addSellOrder(price, 5, trader2, nonce + 1, expired);
+        vm.stopPrank();
+
+        vm.startPrank(trader2);
+        orderBookImpl.addSellOrder(price, 5, trader2, nonce + 2, expired);
+        vm.stopPrank();
+
+        //vm.prank(trader1);
+        vm.startPrank(trader1);
+        orderBookImpl.addBuyOrder(price, 15, trader1, nonce, expired);
+        vm.stopPrank();
+
+        assertEq(orderBookImpl.getFirstSellOrders(), 0, "La orden de venta debe haberse emparejado completamente");
+        assertEq(orderBookImpl.getFirstBuyOrders(), 0, "La orden de compra debe haberse ejecutado completamente");
+        assertEq(tokenB.balanceOf(trader1), 15); // Verificar que el balance restante es correcto
+        assertEq(tokenA.balanceOf(trader2), 1500); // Verificar que el balance restante es correcto
     }
 
     //Prueba que una orden de compra con un precio mayor empareje y ejecute una orden de venta.
     function testAddBuyOrderWithHigherPriceThanSellOrder() public {
         // Caso 3: Orden de compra con precio mayor a una orden de venta
-        book.addSellOrder(90, quantity, trader2, nonce, expired);
-        price = 100;
-        book.addBuyOrder(price, quantity, trader1, nonce, expired);
+        console.log("Balance T2_A INICIAL",tokenA.balanceOf(trader2));
+        console.log("Balance T2_B INICIAL",tokenB.balanceOf(trader2));
 
-        // Verificar que la orden de compra se haya ejecutado parcialmente o completamente
-        assertEq(book.sellOrders.first(), 0, "La orden de venta debe haberse emparejado");
-        assertEq(book.buyOrders.first(), 0, "La orden de compra debe haberse ejecutado completamente");
+        console.log("Balance Contract TA INICIAL",tokenA.balanceOf(address(this)));
+        console.log("Balance Contract TB INICIAL",tokenB.balanceOf(address(this)));
+
+        vm.prank(trader2);
+        orderBookImpl.addSellOrder(90, quantity, trader2, nonce, expired); //Vende tokenB por TokenA 100 tokens a 90
+
+        console.log("Balance T2_A ADD SELL",tokenA.balanceOf(trader2));
+        console.log("Balance T2_B ADD SELL",tokenB.balanceOf(trader2));
+
+        console.log("Balance Contract TA",tokenA.balanceOf(address(this)));
+        console.log("Balance Contract TB",tokenB.balanceOf(address(this)));
+
+        price = 100;
+        vm.prank(trader1);
+        orderBookImpl.addBuyOrder(price, quantity, trader1, nonce, expired); //Compra tokenB por tokenA 100 tokens a 100
+
+        console.log("Balance T2_A FIN", tokenA.balanceOf(trader2));
+        console.log("Balance T2_B FIN", tokenB.balanceOf(trader2));
+
+        console.log("Balance T1_A FIN", tokenA.balanceOf(trader1));
+        console.log("Balance T1_B FIN", tokenB.balanceOf(trader1));
+
+        assertEq(orderBookImpl.getFirstSellOrders(), 0, "La orden de venta debe haberse emparejado completamente");
+        assertEq(orderBookImpl.getFirstBuyOrders(), 0, "La orden de compra debe haberse ejecutado completamente");
+        assertEq(tokenB.balanceOf(trader1), 10); // Verificar que el balance restante es correcto
+        assertEq(tokenA.balanceOf(trader2), 900); // Verificar que el balance restante es correcto
     }
 
     //Confirma que una orden de compra con un precio más bajo se almacena sin ejecutarse si no encuentra un match.
-    function testAddBuyOrderWithLowerPriceThanSellOrder() public {
+    /*function testAddBuyOrderWithLowerPriceThanSellOrder() public {
         // Caso 4: Orden de compra con precio menor que la orden de venta
-        book.addSellOrder(110, quantity, trader2, nonce, expired);
-        book.addBuyOrder(price, quantity, trader1, nonce, expired);
+        vm.prank(trader2);
+        orderBookImpl.addSellOrder(110, quantity, trader2, nonce, expired);
+        vm.prank(trader1);
+        orderBookImpl.addBuyOrder(price, quantity, trader1, nonce, expired);
 
         // Verificar que la orden de compra no se empareja y se almacena
         assertEq(book.sellOrders.first(), 110, "La orden de venta no debe haberse emparejado");

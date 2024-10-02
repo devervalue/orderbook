@@ -90,10 +90,12 @@ library OrderBookLib {
         //¿Arbol de ventas tiene nodos?
         uint256 currentNode = book.sellOrders.first();
         console.log("currentNode", currentNode);
+        console.log("addresss this", address(this));
+
         bytes32 _orderId = keccak256(abi.encodePacked(_trader, "buy", _price, nonce));
         console.logBytes32(_orderId);
 
-    do {
+        do {
             if (currentNode == 0) {
                 //NO
                 saveBuyOrder(book, _price, _quantity, _trader, nonce, _expired, _orderId);
@@ -193,8 +195,10 @@ library OrderBookLib {
         bytes32 _orderId
     ) internal {
         //Transfiero los tokens al contrato
+        console.log("quoteToken", book.quoteToken);
         IERC20 quoteTokenContract = IERC20(book.quoteToken);
         quoteTokenContract.safeTransferFrom(_trader, address(this), _quantity); //Transfiero la cantidad que tiene la venta
+        console.log("prueba");
 
         Order memory order = Order({
             orderId: _orderId,
@@ -237,12 +241,12 @@ library OrderBookLib {
             uint256 quantitySell = orderBookNode.availableQuantity;
             if (quantityBuy >= quantitySell) {
                 //SI
-                //Transfiero la cantidad de tokens de OV al comprador
-                baseTokenContract.safeTransferFrom(address(this), traderBuy, quantitySell); //Transfiero la cantidad que tiene la venta
                 //Transfiero la cantidad de tokens de OE al vendedor
-                quoteTokenContract.safeTransferFrom(
+                baseTokenContract.safeTransferFrom(
                     traderBuy, orderBookNode.traderAddress, quantitySell * orderBookNode.price
                 ); //Multiplico la cantidad de tokens de venta por el precio de venta
+                //Transfiero la cantidad de tokens de OV al comprador
+                quoteTokenContract.transferFrom(address(this), traderBuy, quantitySell); //Transfiero la cantidad que tiene la venta
                 //Actualizo la orden de compra disminuyendo la cantidad que ya tengo
                 quantityBuy -= quantitySell;
                 //Elimino la orden de venta
@@ -274,11 +278,11 @@ library OrderBookLib {
         uint256 quantitySell,
         OrderQueue.OrderBookNode memory orderBookNode
     ) internal {
-        //Transfiero la cantidad de tokens de OV al comprador
-        baseTokenContract.safeTransferFrom(address(this), traderBuy, quantityBuy);
         //Transfiero la cantidad de tokens de OE al vendedor
         uint256 pValue = quantityBuy * orderBookNode.price;
-        quoteTokenContract.safeTransferFrom(traderBuy, orderBookNode.traderAddress, pValue); //Multiplico la cantidad de tokens de compra por el precio de venta
+        baseTokenContract.safeTransferFrom(traderBuy, orderBookNode.traderAddress, pValue); //Multiplico la cantidad de tokens de compra por el precio de venta
+        //Transfiero la cantidad de tokens de OV al comprador
+        quoteTokenContract.safeTransferFrom(address(this), traderBuy, quantityBuy);
         //Actualizar la OV restando la cantidad de la OE
         orderBookNode.availableQuantity = quantitySell - quantityBuy;
         quantityBuy = 0;
@@ -313,12 +317,12 @@ library OrderBookLib {
             uint256 quantityBuy = orderBookNode.availableQuantity;
             if (quantitySell >= quantityBuy) {
                 //SI
-                //Transfiero la cantidad de tokens de OC al comprador
-                baseTokenContract.safeTransferFrom(address(this), traderSell, quantityBuy); //Transfiero la cantidad que tiene la compra
                 //Transfiero la cantidad de tokens de OE al comprador
                 quoteTokenContract.safeTransferFrom(
                     traderSell, orderBookNode.traderAddress, quantityBuy * orderBookNode.price
                 ); //Multiplico la cantidad de tokens de compra por el precio de compra
+                //Transfiero la cantidad de tokens de OC al comprador
+                baseTokenContract.safeTransferFrom(address(this), traderSell, quantityBuy); //Transfiero la cantidad que tiene la compra
                 //Actualizo la orden de venta disminuyendo la cantidad que ya tengo
                 quantitySell -= quantityBuy;
                 //Elimino la orden de compra
@@ -327,12 +331,12 @@ library OrderBookLib {
                 currentOrder = orderBookNode.next;
             } else {
                 //NO
-                //Transfiero la cantidad de tokens de OC al vendedor
-                baseTokenContract.safeTransferFrom(address(this), traderSell, quantitySell);
                 //Transfiero la cantidad de tokens de OE al comprador
                 quoteTokenContract.safeTransferFrom(
                     traderSell, orderBookNode.traderAddress, quantitySell * orderBookNode.price
                 ); //Multiplico la cantidad de tokens de venta por el precio de compra
+                //Transfiero la cantidad de tokens de OC al vendedor
+                baseTokenContract.safeTransferFrom(address(this), traderSell, quantitySell);
                 //Actualizar la OC restando la cantidad de la OE
                 orderBookNode.availableQuantity = quantityBuy - quantitySell;
                 quantitySell = 0;

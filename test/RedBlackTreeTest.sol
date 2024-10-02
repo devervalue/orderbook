@@ -740,7 +740,6 @@ contract RedBlackTreeTest is Test {
         tree.insert(orderId3, 20, trader3, 300, 3, 999999);
         tree.insert(orderId3, 25, trader4, 400, 3, 999999);
 
-
         // Eliminar el nodo raíz (10)
         tree.remove(orderId1, 10);
 
