@@ -142,7 +142,7 @@ library OrderBookLib {
                 if (_price <= currentNode) {
                     //SI
                     //Aplico el match de ordenes de compra
-                    (_quantity,orderCount) = matchOrderSell(book, _price, _quantity, currentNode, _trader, _orderId, orderCount);
+                    (_quantity,orderCount) = matchOrderSell(book, _price, _quantity, _trader, _orderId, orderCount);
                     currentNode = book.sellOrders.last();
                 } else {
                     //NO
@@ -302,14 +302,13 @@ library OrderBookLib {
         OrderBook storage book,
         uint256 _price,
         uint256 quantitySell,
-        uint256 firstOrder,
         address traderSell,
         bytes32 orderIdSell,
         uint256 orderCount
-    ) internal returns (uint256 _remainingQuantity) {
+    ) internal returns (uint256 _remainingQuantity, uint256 _orderCount) {
         //Obtento la cola de ordenes del nodo
         //RedBlackTree.Node storage node = getNode(book,firstOrder); //Get node //Todo revisar si retornamos el Nodo completo
-        RedBlackTree.Node storage node = book.buyOrders.getNode(firstOrder); //Get node
+        RedBlackTree.Node storage node = book.buyOrders.getNode(book.buyOrders.last()); //Get node
         //Obtengo la primera orden
         //OrderQueue.OrderBookNode storage orderBookNode = node.orders.orders[node.orders.first];
         bytes32 currentOrder = node.orders.first;
