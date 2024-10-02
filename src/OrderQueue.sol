@@ -69,7 +69,6 @@ library OrderQueue {
         uint256 nonce,
         uint256 _expired
     ) internal {
-
         // TODO: Add a check if the order already exists to prevent overwriting
         // TODO: Consider using unchecked blocks for arithmetic operations where overflow is impossible
         // TODO: Use assembly for simple storage reads and writes to save gas
@@ -192,5 +191,44 @@ library OrderQueue {
             q.orders[orderBookNode.prev].next = orderBookNode.next;
         }
         // TODO: Consider emitting an event for off-chain tracking
+    }
+
+    function batchPopUntil(Queue storage q, bytes32 _newFirstOrderId) internal returns (bytes32 _firstRemoved) {
+        require(orderExists(q, _newFirstOrderId), "OrderQueue: New first order does not exist");
+        _firstRemoved = q.first;
+        // If the new first is already the first, do nothing
+        if (_firstRemoved == _newFirstOrderId) {
+            return 0;
+        }
+
+//        bytes32 prev;
+//        bytes32 currentId = _newFirstOrderId;
+//        // Find the new first order and count removed elements
+//        while (currentId != 0 ) {
+//            prev = q.orders[currentId].prev;
+//            delete q.orders[currentId];
+//            currentId = prev;
+//            unchecked { ++removed; }
+//        }
+
+        // If we've reached the end without finding newFirst, revert
+//        require(current != 0, "OrderQueue: New first order not found in queue");
+
+        // Update the first pointer
+        q.first = _newFirstOrderId;
+
+        // Set the next of the last obsolete element to 0
+        q.orders[q.orders[_newFirstOrderId].prev].next = 0;
+
+        // Set the prev of the new first element to 0
+        q.orders[_newFirstOrderId].prev = 0;
+
+        // If queue becomes empty (shouldn't happen if newFirst exists, but just in case)
+        if (_newFirstOrderId == 0) {
+            q.last = 0;
+        }
+
+        return _firstRemoved;
+
     }
 }
