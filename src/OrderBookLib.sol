@@ -94,9 +94,9 @@ library OrderBookLib {
 
         bytes32 _orderId = keccak256(abi.encodePacked(_trader, "buy", _price, nonce));
         console.logBytes32(_orderId);
-
+        uint256 orderCount = 0;
         do {
-            if (currentNode == 0) {
+            if (currentNode == 0 || orderCount >= 150) {
                 //NO
                 saveBuyOrder(book, _price, _quantity, _trader, nonce, _expired, _orderId);
                 return;
@@ -106,7 +106,7 @@ library OrderBookLib {
                 if (_price >= currentNode) {
                     //SI
                     //Aplico el match de ordenes de compra
-                    _quantity = matchOrderBuy(currentNode, book, _price, _quantity, _trader, _orderId);
+                    (_quantity,orderCount) = matchOrderBuy(currentNode, book, _price, _quantity, _trader, _orderId, orderCount);
                     currentNode = book.sellOrders.first();
                 } else {
                     //NO
@@ -129,8 +129,10 @@ library OrderBookLib {
         //¿Arbol de compras tiene nodos?
         uint256 currentNode = book.buyOrders.last();
         bytes32 _orderId = keccak256(abi.encodePacked(_trader, "sell", _price, nonce));
-        do {
-            if (currentNode == 0) {
+        uint256 orderCount = 0;
+
+    do {
+            if (currentNode == 0 || orderCount >= 150) {
                 //NO
                 saveSellOrder(book, _price, _quantity, _trader, nonce, _expired, _orderId);
                 return;
@@ -140,7 +142,7 @@ library OrderBookLib {
                 if (_price <= currentNode) {
                     //SI
                     //Aplico el match de ordenes de compra
-                    _quantity = matchOrderSell(book, _price, _quantity, currentNode, _trader, _orderId);
+                    (_quantity,orderCount) = matchOrderSell(book, _price, _quantity, currentNode, _trader, _orderId, orderCount);
                     currentNode = book.sellOrders.last();
                 } else {
                     //NO
@@ -224,8 +226,9 @@ library OrderBookLib {
         uint256 _price,
         uint256 quantityBuy,
         address traderBuy,
-        bytes32 orderIdBuy
-    ) internal returns (uint256 _remainingQuantity) {
+        bytes32 orderIdBuy,
+        uint256 orderCount
+    ) internal returns (uint256 _remainingQuantity, uint256 _orderCount) {
         //Obtento la cola de ordenes del nodo
         //RedBlackTree.Node storage node = getNode(book,firstOrder); //Get node //Todo revisar si retornamos el Nodo completo
         RedBlackTree.Node storage node = book.sellOrders.getNode(firstOrder); //Get node
@@ -266,8 +269,9 @@ library OrderBookLib {
                     orderBookNode.orderId, book.baseToken, book.quoteToken, orderBookNode.traderAddress
                 );
             }
-        } while (currentOrder != 0);
-        return quantityBuy;
+            ++orderCount;
+        } while (currentOrder != 0 && orderCount < 150);
+        return (quantityBuy, orderCount);
     }
 
     function executePartial(
@@ -300,7 +304,8 @@ library OrderBookLib {
         uint256 quantitySell,
         uint256 firstOrder,
         address traderSell,
-        bytes32 orderIdSell
+        bytes32 orderIdSell,
+        uint256 orderCount
     ) internal returns (uint256 _remainingQuantity) {
         //Obtento la cola de ordenes del nodo
         //RedBlackTree.Node storage node = getNode(book,firstOrder); //Get node //Todo revisar si retornamos el Nodo completo
@@ -348,8 +353,9 @@ library OrderBookLib {
                     orderBookNode.orderId, book.baseToken, book.quoteToken, orderBookNode.traderAddress
                 );
             }
-        } while (currentOrder != 0);
-        return quantitySell;
+            ++orderCount;
+        } while (currentOrder != 0 && orderCount < 150);
+        return (quantitySell, orderCount);
     }
 
     function cancelOrder(OrderBook storage book, bytes32 _orderId) internal {

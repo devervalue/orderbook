@@ -410,6 +410,7 @@ library RedBlackTree {
                 Node storage currentNode = self.nodes[cursor];
                 while (currentNode.left != EMPTY) {
                     cursor = currentNode.left;
+                    currentNode = self.nodes[cursor];
                 }
             }
 
@@ -488,6 +489,7 @@ library RedBlackTree {
                 Node storage currentNode = self.nodes[cursor];
                 while (currentNode.left != EMPTY) {
                     cursor = currentNode.left;
+                    currentNode = self.nodes[cursor];
                 }
             }
 
