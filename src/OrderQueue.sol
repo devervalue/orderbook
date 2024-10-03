@@ -192,6 +192,7 @@ library OrderQueue {
         // TODO: Consider emitting an event for off-chain tracking
     }
 
+    /*     TODO Review batch pop operation
     function batchPopUntil(Queue storage q, bytes32 _newFirstOrderId) internal returns (bytes32 _firstRemoved) {
         require(orderExists(q, _newFirstOrderId), "OrderQueue: New first order does not exist");
         _firstRemoved = q.first;
@@ -200,18 +201,18 @@ library OrderQueue {
             return 0;
         }
 
-//        bytes32 prev;
-//        bytes32 currentId = _newFirstOrderId;
-//        // Find the new first order and count removed elements
-//        while (currentId != 0 ) {
-//            prev = q.orders[currentId].prev;
-//            delete q.orders[currentId];
-//            currentId = prev;
-//            unchecked { ++removed; }
-//        }
+    //        bytes32 prev;
+    //        bytes32 currentId = _newFirstOrderId;
+    //        // Find the new first order and count removed elements
+    //        while (currentId != 0 ) {
+    //            prev = q.orders[currentId].prev;
+    //            delete q.orders[currentId];
+    //            currentId = prev;
+    //            unchecked { ++removed; }
+    //        }
 
         // If we've reached the end without finding newFirst, revert
-//        require(current != 0, "OrderQueue: New first order not found in queue");
+    //        require(current != 0, "OrderQueue: New first order not found in queue");
 
         // Update the first pointer
         q.first = _newFirstOrderId;
@@ -229,5 +230,5 @@ library OrderQueue {
 
         return _firstRemoved;
 
-    }
+    }*/
 }

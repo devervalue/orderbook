@@ -20,7 +20,7 @@ contract OrderQueueImpl {
      * @dev Constructor for OrderQueueImpl
      * @notice Initializes an empty order queue
      */
-    constructor() public {}
+    constructor() {}
 
     /**
      * @notice Retrieves the ID of the first order in the queue
