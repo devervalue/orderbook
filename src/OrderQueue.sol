@@ -200,18 +200,18 @@ library OrderQueue {
             return 0;
         }
 
-//        bytes32 prev;
-//        bytes32 currentId = _newFirstOrderId;
-//        // Find the new first order and count removed elements
-//        while (currentId != 0 ) {
-//            prev = q.orders[currentId].prev;
-//            delete q.orders[currentId];
-//            currentId = prev;
-//            unchecked { ++removed; }
-//        }
+        //        bytes32 prev;
+        //        bytes32 currentId = _newFirstOrderId;
+        //        // Find the new first order and count removed elements
+        //        while (currentId != 0 ) {
+        //            prev = q.orders[currentId].prev;
+        //            delete q.orders[currentId];
+        //            currentId = prev;
+        //            unchecked { ++removed; }
+        //        }
 
         // If we've reached the end without finding newFirst, revert
-//        require(current != 0, "OrderQueue: New first order not found in queue");
+        //        require(current != 0, "OrderQueue: New first order not found in queue");
 
         // Update the first pointer
         q.first = _newFirstOrderId;
@@ -228,6 +228,5 @@ library OrderQueue {
         }
 
         return _firstRemoved;
-
     }
 }
