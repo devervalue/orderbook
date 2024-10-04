@@ -458,6 +458,7 @@ library RedBlackTree {
     function popOrder(Tree storage self, uint256 value) internal {
         // Ensure the value and key exist
         if (value == EMPTY) revert RedBlackTree__ValueCannotBeZero();
+        // TODO Validar que el nodo exista
         //Eliminación de la Clave
         // Reference to the node to be removed
         Node storage nValue = self.nodes[value];
