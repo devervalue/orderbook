@@ -20,6 +20,7 @@ contract OrderBookFactory {
     error OrderBookFactory__TokenMustBeDifferent();
     error OrderBookFactory__InvalidOwnerAddressZero();
     error OrderBookFactory__OrderBookIdOutOfRange();
+    error OrderBookFactory__InvalidQuantityValueZero();
 
     /**
      *  @notice Dirección del propietario autorizado del contrato.
@@ -56,6 +57,10 @@ contract OrderBookFactory {
     modifier onlyOwner() {
         if (msg.sender != owner) revert OrderBookFactory__InvalidOwnerAddress();
         _;
+    }
+
+    constructor() {
+        owner = address(this); // Set the contract deployer as the owner
     }
 
     /**
@@ -120,13 +125,14 @@ contract OrderBookFactory {
     function getOrderBookById(bytes32 _orderId)
         public
         view
-        returns (address baseToken, address quoteToken, bool status, uint256 lastTradePrice)
+        returns (address baseToken, address quoteToken, bool status, uint256 lastTradePrice, uint256 fee)
     {
         return (
             ordersBook[_orderId].baseToken,
             ordersBook[_orderId].quoteToken,
             ordersBook[_orderId].status,
-            ordersBook[_orderId].lastTradePrice
+            ordersBook[_orderId].lastTradePrice,
+            ordersBook[_orderId].fee
         );
     }
 
@@ -187,6 +193,7 @@ contract OrderBookFactory {
 
     function addNewOrder(bytes32 idOrderBook, uint256 quantity, uint256 price, bool isBuy, address trader) public {
         if (!orderBookExists(idOrderBook)) revert OrderBookFactory__OrderBookIdOutOfRange();
+        if (quantity == 0) revert OrderBookFactory__InvalidQuantityValueZero();
         OrderBookLib.OrderBook storage order = ordersBook[idOrderBook];
         if (isBuy) {
             order.addBuyOrder(price, quantity, trader, block.timestamp, block.timestamp);
@@ -200,4 +207,6 @@ contract OrderBookFactory {
         OrderBookLib.OrderBook storage order = ordersBook[idOrderBook];
         order.cancelOrder(idOrderBook);
     }
+
+
 }

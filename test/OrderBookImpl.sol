@@ -22,19 +22,47 @@ contract OrderBookImpl {
         book.feeAddress = address(0x7);
     }
 
-    function addBuyOrder(uint256 _price, uint256 _quantity, address _trader, uint256 nonce, uint256 _expired) public {
+    function addBuyBaseToken(uint256 _price, uint256 _quantity, address _trader, uint256 nonce, uint256 _expired)
+        public
+    {
         book.addBuyOrder(_price, _quantity, _trader, nonce, _expired);
     }
 
-    function addSellOrder(uint256 _price, uint256 _quantity, address _trader, uint256 nonce, uint256 _expired) public {
+    function addSellBaseToken(uint256 _price, uint256 _quantity, address _trader, uint256 nonce, uint256 _expired)
+        public
+    {
         book.addSellOrder(_price, _quantity, _trader, nonce, _expired);
     }
 
-    function getFirstBuyOrders() public returns(uint256){
+    function getFirstBuyOrders() public returns (uint256) {
         return book.buyOrders.first();
     }
 
-    function getFirstSellOrders() public returns(uint256){
+    function getFirstSellOrders() public returns (uint256) {
         return book.sellOrders.first();
+    }
+
+    function getLastBuyOrders() public returns (uint256) {
+        return book.buyOrders.last();
+    }
+
+    function getLastSellOrders() public returns (uint256) {
+        return book.sellOrders.last();
+    }
+
+    function getFirstOrderBuyById(uint256 keyNode) public returns(bytes32){
+        return book.buyOrders.nodes[keyNode].orders.first;
+    }
+
+    function getCancelOrder(bytes32 _orderId) public {
+        return book.cancelOrder(_orderId);
+    }
+
+    function getTraderOrders(address _trader) public returns(bytes32[] memory) {
+        return book.getTraderOrders(_trader);
+    }
+
+    function getOrderById(address _trader, bytes32 _orderId) public returns(OrderQueue.OrderBookNode memory) {
+        return book.getOrderById(_trader,_orderId);
     }
 }
