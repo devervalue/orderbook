@@ -367,7 +367,13 @@ library OrderBookLib {
     }
 
     function cancelOrder(OrderBook storage book, bytes32 _orderId) internal {
+        console.log(msg.sender);
+        console.logBytes32(book.traderOrders[msg.sender].orderIds[0]);
+        bytes32 pp = book.traderOrders[msg.sender].orderIds[0];
+        console.logBytes32(book.traderOrders[msg.sender].orders[pp].orderId);
         Order memory _order = book.traderOrders[msg.sender].orders[_orderId];
+        console.logBytes32(_orderId);
+        console.log(_order.price);
         if (_order.isBuy) {
             book.buyOrders.remove(_orderId, _order.price);
         } else {

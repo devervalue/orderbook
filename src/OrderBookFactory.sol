@@ -65,19 +65,19 @@ contract OrderBookFactory {
 
     /**
      *  @notice Agrega un nuevo libro de órdenes al mapping.
-     *  @param _baseToken La dirección del token base en el par de trading.
-     *  @param _quoteToken La dirección del token de cotización en el par de trading.
+     *  @param _tokenA La dirección del token base en el par de trading.
+     *  @param _tokenB La dirección del token de cotización en el par de trading.
      *  @param fee El porcentaje de la tarifa aplicada a las operaciones en el libro de órdenes.
      *  @param feeAddress La dirección a la que se envían las tarifas recolectadas.
      */
-    function addOrderBook(address _baseToken, address _quoteToken, uint256 fee, address feeAddress)
+    function addOrderBook(address _tokenA, address _tokenB, uint256 fee, address feeAddress)
         external
         onlyOwner
     {
-        if (_baseToken == address(0) || _quoteToken == address(0)) revert OrderBookFactory__InvalidTokenAddress();
+        if (_tokenA == address(0) || _tokenB == address(0)) revert OrderBookFactory__InvalidTokenAddress();
         if (owner == address(0)) revert OrderBookFactory__InvalidOwnerAddress();
         if (feeAddress == address(0)) revert OrderBookFactory__InvalidFeeAddress();
-        if (_baseToken == _quoteToken) revert OrderBookFactory__TokenMustBeDifferent();
+        if (_tokenA == _tokenB) revert OrderBookFactory__TokenMustBeDifferent();
 
         address baseToken;
         address quoteToken;
@@ -87,11 +87,11 @@ contract OrderBookFactory {
          * NOT be created!
          */
         if (uint160(baseToken) > uint160(quoteToken)) {
-            baseToken = _baseToken;
-            quoteToken = _quoteToken;
+            baseToken = _tokenA;
+            quoteToken = _tokenB;
         } else {
-            baseToken = _quoteToken;
-            quoteToken = _baseToken;
+            baseToken = _tokenB;
+            quoteToken = _tokenA;
         }
 
         // mapping identifier is computed from the hash of the ordered addresses
@@ -191,21 +191,21 @@ contract OrderBookFactory {
         return owner;
     }
 
-    function addNewOrder(bytes32 idOrderBook, uint256 quantity, uint256 price, bool isBuy, address trader) public {
+    function addNewOrder(bytes32 idOrderBook, uint256 quantity, uint256 price, bool isBuy, address trader, uint256 nonce, uint256 _expired) public {
         if (!orderBookExists(idOrderBook)) revert OrderBookFactory__OrderBookIdOutOfRange();
         if (quantity == 0) revert OrderBookFactory__InvalidQuantityValueZero();
         OrderBookLib.OrderBook storage order = ordersBook[idOrderBook];
         if (isBuy) {
-            order.addBuyOrder(price, quantity, trader, block.timestamp, block.timestamp);
+            order.addBuyOrder(price, quantity, trader, nonce, _expired);
         } else {
-            order.addSellOrder(price, quantity, trader, block.timestamp, block.timestamp);
+            order.addSellOrder(price, quantity, trader, nonce, _expired);
         }
     }
 
-    function cancelOrder(bytes32 idOrderBook) public {
+    function cancelOrder(bytes32 idOrderBook, bytes32 idOrder) public {
         if (!orderBookExists(idOrderBook)) revert OrderBookFactory__OrderBookIdOutOfRange();
         OrderBookLib.OrderBook storage order = ordersBook[idOrderBook];
-        order.cancelOrder(idOrderBook);
+        order.cancelOrder(idOrder);
     }
 
 

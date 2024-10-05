@@ -185,7 +185,7 @@ contract OrderBookFactoryTest is Test {
         (address _baseToken1,address _quoteToken1, bool _status1, uint256 lastTradePrice1, uint256 fee1) = factory.getOrderBookById(keys[0]);
         console.log(fee1);
         console.log(_baseToken1);
-    (address _baseToken2,address _quoteToken2, bool _status2,uint256 lastTradePrice2,  uint256 fee2) = factory.getOrderBookById(keys[1]);
+        (address _baseToken2,address _quoteToken2, bool _status2,uint256 lastTradePrice2,  uint256 fee2) = factory.getOrderBookById(keys[1]);
 
         assertEq(fee1, 5); // Verifica que la tarifa del primer libro sea correcta
         assertEq(fee2, 15); // Verifica que la tarifa del segundo libro sea correcta
@@ -685,7 +685,7 @@ contract OrderBookFactoryTest is Test {
         bool isBuy = true;
 
         vm.prank(trader2);
-        factory.addNewOrder(keys[0], quantity, price, isBuy, trader2);
+        factory.addNewOrder(keys[0], quantity, price, isBuy, trader2, 1,1);
 
         // Verificar que la orden de compra se haya agregado correctamente
         //TODO PQ SE INVIERTE EL TOKEN
@@ -713,7 +713,7 @@ contract OrderBookFactoryTest is Test {
         bool isBuy = false;
 
         vm.prank(trader1);
-        factory.addNewOrder(keys[0], quantity, price, false, trader1);
+        factory.addNewOrder(keys[0], quantity, price, false, trader1,1,1);
 
         // Verificar que la orden de venta se haya agregado correctamente
         (address baseTokenOrder, address quoteTokenOrder, , uint256 lastTradePrice,) = factory.getOrderBookById(keys[0]);
@@ -732,7 +732,7 @@ contract OrderBookFactoryTest is Test {
 
         vm.prank(owner);
         vm.expectRevert(OrderBookFactory.OrderBookFactory__OrderBookIdOutOfRange.selector);
-        factory.addNewOrder(nonExistentOrderBookId, quantity, price, isBuy, trader1);
+        factory.addNewOrder(nonExistentOrderBookId, quantity, price, isBuy, trader1,1,1);
     }
 
     //Verifica que no se pueda agregar una orden de compra con cantidad cero.
@@ -754,7 +754,7 @@ contract OrderBookFactoryTest is Test {
 
         vm.prank(owner);
         vm.expectRevert(OrderBookFactory.OrderBookFactory__InvalidQuantityValueZero.selector);  // Puedes agregar un revert message si implementas uno en el contrato
-        factory.addNewOrder(keys[0], quantity, price, isBuy, trader1);
+        factory.addNewOrder(keys[0], quantity, price, isBuy, trader1,1,1);
     }
 
     //Verifica que no se pueda agregar una orden de venta con cantidad cero.
@@ -776,7 +776,7 @@ contract OrderBookFactoryTest is Test {
 
         vm.prank(owner);
         vm.expectRevert(OrderBookFactory.OrderBookFactory__InvalidQuantityValueZero.selector);  // Puedes agregar un revert message si implementas uno en el contrato
-        factory.addNewOrder(keys[0], quantity, price, isBuy, trader2);
+        factory.addNewOrder(keys[0], quantity, price, isBuy, trader2,1,1);
     }
 
     /*//Verifica que no se pueda agregar una orden de compra con una dirección de trader inválida (por ejemplo, la dirección cero).
@@ -855,7 +855,7 @@ contract OrderBookFactoryTest is Test {
 
     //-------------------- CANCEL ORDER ------------------------------
 
-    /*//Verifica que una orden puede ser cancelada exitosamente en un libro de órdenes válido.
+    //Verifica que una orden puede ser cancelada exitosamente en un libro de órdenes válido.
     function testCancelOrderSuccessfully() public {
         vm.startPrank(owner);
         factory.addOrderBook(address(tokenA), address(tokenB), 10, feeAddress);
@@ -873,13 +873,17 @@ contract OrderBookFactoryTest is Test {
         bool isBuy = true;
 
         vm.prank(trader2);
-        factory.addNewOrder(keys[0], quantity, price, isBuy, trader2);
+        factory.addNewOrder(keys[0], quantity, price, isBuy, trader2,1,1);
+        uint256 nonce = 1;
+        bytes32 _orderId = keccak256(abi.encodePacked(trader2, "buy", price, nonce));
 
+        console.logBytes32(keys[0]);
         // Cancelar la orden exitosamente
-        //vm.prank(trader2);
-        factory.cancelOrder(keys[0]);
+        vm.prank(trader2);
+        factory.cancelOrder(keys[0],_orderId);
 
         // Verificar que la orden fue cancelada
+        //vm.expectRevert(RedBlackTree.RedBlackTree__ValueCannotBeZero.selector);  // Puedes agregar un revert message si implementas uno en el contrato
         //(, , bool status,,) = factory.getOrderBookById(keys[0]);
         //assertFalse(status, unicode"La orden debería estar cancelada");
     }
