@@ -21,6 +21,7 @@ contract OrderBookFactory {
     error OrderBookFactory__InvalidOwnerAddressZero();
     error OrderBookFactory__OrderBookIdOutOfRange();
     error OrderBookFactory__InvalidQuantityValueZero();
+    error OrderBookFactory__OrderBookNotEnabled();
 
     /**
      *  @notice Dirección del propietario autorizado del contrato.
@@ -56,6 +57,14 @@ contract OrderBookFactory {
      */
     modifier onlyOwner() {
         if (msg.sender != owner) revert OrderBookFactory__InvalidOwnerAddress();
+        _;
+    }
+
+    /**
+ *  @dev Modificador para restringir las ordenes si el libro no esta habilitado.
+     */
+    modifier onlyEnabledBook(bytes32 orderBookId) {
+        if (!ordersBook[orderBookId].status) revert OrderBookFactory__OrderBookNotEnabled();
         _;
     }
 
@@ -191,7 +200,7 @@ contract OrderBookFactory {
         return owner;
     }
 
-    function addNewOrder(bytes32 idOrderBook, uint256 quantity, uint256 price, bool isBuy, address trader, uint256 nonce, uint256 _expired) public {
+    function addNewOrder(bytes32 idOrderBook, uint256 quantity, uint256 price, bool isBuy, address trader, uint256 nonce, uint256 _expired) public onlyEnabledBook(idOrderBook) {
         if (!orderBookExists(idOrderBook)) revert OrderBookFactory__OrderBookIdOutOfRange();
         if (quantity == 0) revert OrderBookFactory__InvalidQuantityValueZero();
         OrderBookLib.OrderBook storage order = ordersBook[idOrderBook];

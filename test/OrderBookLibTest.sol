@@ -150,7 +150,7 @@ contract OrderBookLibTest is Test {
         console.log("Balance Contract TB INICIAL", tokenB.balanceOf(address(orderBookImpl)));
 
         vm.prank(trader2);
-        orderBookImpl.addSellBaseToken(90, quantity, trader2, nonce, expired); //Vende tokenB por TokenA 100 tokens a 90
+        orderBookImpl.addSellBaseToken(90, quantity, trader2, nonce, expired); //Vende tokenB por TokenA 10 tokens a 90
 
         console.log("Balance T2_A ADD SELL", tokenA.balanceOf(trader2));
         console.log("Balance T2_B ADD SELL", tokenB.balanceOf(trader2));
@@ -160,7 +160,7 @@ contract OrderBookLibTest is Test {
 
         price = 100;
         vm.prank(trader1);
-        orderBookImpl.addBuyBaseToken(price, quantity, trader1, nonce, expired); //Compra tokenB por tokenA 100 tokens a 100
+        orderBookImpl.addBuyBaseToken(price, quantity, trader1, nonce, expired); //Compra tokenB por tokenA 10 tokens a 100
 
         console.log("Balance T2_A FIN", tokenA.balanceOf(trader2));
         console.log("Balance T2_B FIN", tokenB.balanceOf(trader2));
@@ -168,6 +168,7 @@ contract OrderBookLibTest is Test {
         console.log("Balance T1_A FIN", tokenA.balanceOf(trader1));
         console.log("Balance T1_B FIN", tokenB.balanceOf(trader1));
 
+        assertEq(orderBookImpl.lastTradePrice(), 90, "El ultimo precio deberia ser 90");
         assertEq(orderBookImpl.getFirstSellOrders(), 0, "La orden de venta debe haberse emparejado completamente");
         assertEq(orderBookImpl.getFirstBuyOrders(), 0, "La orden de compra debe haberse ejecutado completamente");
         assertEq(tokenB.balanceOf(trader1), 10); // Verificar que el balance restante es correcto

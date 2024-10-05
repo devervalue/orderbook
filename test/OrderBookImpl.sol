@@ -22,6 +22,10 @@ contract OrderBookImpl {
         book.feeAddress = address(0x7);
     }
 
+    function lastTradePrice() public view returns (uint256 _lastTradePrice) {
+        _lastTradePrice = book.lastTradePrice;
+    }
+
     function addBuyBaseToken(uint256 _price, uint256 _quantity, address _trader, uint256 nonce, uint256 _expired)
         public
     {

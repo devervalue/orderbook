@@ -249,6 +249,7 @@ library OrderBookLib {
             if (quantityBuy >= quantitySell) {
                 //SI
                 //Transfiero la cantidad de tokens de OE al vendedor
+                book.lastTradePrice = orderBookNode.price;
                 baseTokenContract.safeTransferFrom(
                     traderBuy, orderBookNode.traderAddress, quantitySell * orderBookNode.price
                 ); //Multiplico la cantidad de tokens de venta por el precio de venta
@@ -265,6 +266,8 @@ library OrderBookLib {
                 quantityBuy = executePartial(
                     baseTokenContract, quoteTokenContract, traderBuy, quantityBuy, quantitySell, orderBookNode
                 );
+                book.lastTradePrice = orderBookNode.price;
+
                 //Emite el evento de orden entrante ejecutada
                 emit OrderExecuted(orderIdBuy, book.baseToken, book.quoteToken, traderBuy);
 
@@ -296,6 +299,7 @@ library OrderBookLib {
         quoteTokenContract.safeTransferFrom(address(this), traderBuy, quantityBuy);
         //Actualizar la OV restando la cantidad de la OE
         orderBookNode.availableQuantity = quantitySell - quantityBuy;
+        orderBookNode.status = 2; // Partial filled TODO Pasar a constantes
         quantityBuy = 0;
         //Emite el evento de orden entrante ejecutada
         //emit OrderExecuted(orderIdBuy, bookBaseToken, bookQuoteToken, traderBuy);
@@ -330,6 +334,7 @@ library OrderBookLib {
             if (quantitySell >= quantityBuy) {
                 //SI
                 //Transfiero la cantidad de tokens de OE al comprador
+                book.lastTradePrice = orderBookNode.price;
                 quoteTokenContract.safeTransferFrom(
                     traderSell, orderBookNode.traderAddress, quantityBuy * orderBookNode.price
                 ); //Multiplico la cantidad de tokens de compra por el precio de compra
@@ -344,6 +349,7 @@ library OrderBookLib {
             } else {
                 //NO
                 //Transfiero la cantidad de tokens de OE al comprador
+                book.lastTradePrice = orderBookNode.price;
                 quoteTokenContract.safeTransferFrom(
                     traderSell, orderBookNode.traderAddress, quantitySell * orderBookNode.price
                 ); //Multiplico la cantidad de tokens de venta por el precio de compra
@@ -351,6 +357,7 @@ library OrderBookLib {
                 baseTokenContract.safeTransferFrom(address(this), traderSell, quantitySell);
                 //Actualizar la OC restando la cantidad de la OE
                 orderBookNode.availableQuantity = quantityBuy - quantitySell;
+                orderBookNode.status = 2; // Partial Fille TODO Pasar a constante
                 quantitySell = 0;
                 //Emite el evento de orden entrante ejecutada
                 emit OrderExecuted(orderIdSell, book.baseToken, book.quoteToken, traderSell);
