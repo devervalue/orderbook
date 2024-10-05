@@ -19,6 +19,6 @@ number_underscore = "preserve"
 [profile.perftest]
 test = "test-performance"
 verbosity = 2
-gas_limit = "18446744073709551615" # u64::MAX
+gas_limit = 320000000 # u64::MAX
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

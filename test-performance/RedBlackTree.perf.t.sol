@@ -6,454 +6,249 @@ import "forge-std/console.sol";
 import "./RedBlackTreeImpl.sol";
 
 abstract contract RedBlackTreeHelper is Test {
+    // TODO ver optimización usando el arbol original
     RedBlackTreeImpl public tree;
-    address public trader1 = makeAddr("trader1");
+    address internal trader = makeAddr("trader");
+    uint256 internal price = 10;
+    uint256 internal quantity = 100;
+    uint256 internal numOrders = 0;
+    uint256 internal halfwayPrice = 0;
+    bytes32 internal testOrderId = keccak256(abi.encodePacked(trader, "buy", quantity, block.timestamp));
 }
 
+/// @title EmptyTreeTest
+/// @notice Test contract for performance testing of an empty Red-Black Tree
+/// @dev Inherits from RedBlackTreeHelper to utilize common setup and utilities
 contract EmptyTreeTest is RedBlackTreeHelper {
     //---------  SET UP
 
+    /// @notice Set up the test environment
+    /// @dev Initializes a new RedBlackTreeImpl instance for each test
     function setUp() public {
         tree = new RedBlackTreeImpl();
     }
 
     //---------   Tree Tests
 
+    /// @notice Test the gas cost of inserting a node into an empty Red-Black Tree
+    /// @dev This function measures the gas used to insert a single node into an empty tree
     function testInsertion() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
         uint256 startGas = gasleft();
-        tree.insert(orderId, 10, trader1, 100, 1, 999999);
+        tree.insert(testOrderId, price, trader, quantity, 1, block.timestamp + 1 days);
         uint256 gasUsed = startGas - gasleft();
         console.log("Gas used for inserting node on empty tree: %d", gasUsed);
     }
 
+    /// @notice Test the gas cost of attempting to remove a non-existent node from an empty Red-Black Tree
+    /// @dev This function measures the gas used when trying to remove a node that doesn't exist,
+    ///      expecting a revert with the RedBlackTree__KeyDoesNotExist error
     function testRemove() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 10, trader1, 100, 1, 999999);
         uint256 startGas = gasleft();
-        tree.remove(orderId, 10);
+        vm.expectRevert(RedBlackTree.RedBlackTree__KeyDoesNotExist.selector);
+        tree.remove(testOrderId, price);
         uint256 gasUsed = startGas - gasleft();
         console.log("Gas used for removing node on empty tree: %d", gasUsed);
     }
 
+    /// @notice Test the gas cost of attempting to pop an order from an empty Red-Black Tree
+    /// @dev This function measures the gas used when trying to pop an order from an empty tree
+    /// @custom:todo Add expect revert for the pop operation
     function testPopOrder() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 10, trader1, 100, 1, 999999);
         uint256 startGas = gasleft();
+        // TODO Agregar expect revert del pop
         tree.popOrder(10);
         uint256 gasUsed = startGas - gasleft();
         console.log("Gas used for popping order on empty tree: %d", gasUsed);
     }
 }
 
+/// @title SmallTreeTest
+/// @notice Test contract for performance testing of a small Red-Black Tree
+/// @dev Inherits from RedBlackTreeHelper to utilize common setup and utilities
 contract SmallTreeTest is RedBlackTreeHelper {
     //---------  SET UP
 
-    function setUp() public {
+    /// @notice Set up the test environment with a small tree
+    /// @dev Initializes a new RedBlackTreeImpl instance and inserts 10 orders
+    function setUp() public virtual {
         tree = new RedBlackTreeImpl();
-        uint256 numOrders = 10;
+        numOrders = 10;
+        halfwayPrice = numOrders;
 
         bytes32[] memory orderIds = new bytes32[](numOrders);
 
+        /// @dev Insert 10 orders with increasing prices
         for (uint256 i = 1; i <= numOrders; i++) {
             bytes32 orderId = keccak256(abi.encodePacked(address(this), i * 2));
             orderIds[i - 1] = orderId;
-            tree.insert(orderId, i * 2, trader1, 1, i, 999999);
+            tree.insert(orderId, i * 2, trader, 1, i, block.timestamp + 1 days);
         }
     }
 
     //---------   Tree Tests
 
+    /// @notice Test the gas cost of inserting a node in the middle of the Red-Black Tree
+    /// @dev This function measures the gas used to insert a single node at the halfway price point
+    /// @custom:gas-test Insertion performance for middle node
     function testInsertionMiddle() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
         uint256 startGas = gasleft();
-        tree.insert(orderId, 11, trader1, 100, 1, 999999);
+        tree.insert(testOrderId, halfwayPrice, trader, 100, 1, block.timestamp + 1 days);
         uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for inserting node on small tree: %d", gasUsed);
+        console.log("Gas used for inserting node in the middle of tree: %d", gasUsed);
     }
 
+    /// @notice Test the gas cost of inserting a node at the beginning of the Red-Black Tree
+    /// @dev This function measures the gas used to insert a single node with the lowest price
+    /// @custom:gas-test Insertion performance for the first node
     function testInsertionFirst() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
         uint256 startGas = gasleft();
-        tree.insert(orderId, 1, trader1, 100, 1, 999999);
+        tree.insert(testOrderId, 1, trader, 100, 1, block.timestamp + 1 days);
         uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for inserting first node on small tree: %d", gasUsed);
+        console.log("Gas used for inserting first node on tree: %d", gasUsed);
     }
 
+    /// @notice Test the gas cost of inserting a node at the end of the Red-Black Tree
+    /// @dev This function measures the gas used to insert a single node with the highest price
+    /// @custom:gas-test Insertion performance for the last node
     function testInsertionLast() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
         uint256 startGas = gasleft();
-        tree.insert(orderId, 100, trader1, 100, 1, 999999);
+        tree.insert(testOrderId, numOrders * 10, trader, 100, 1, block.timestamp + 1 days);
         uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for inserting last node on small tree: %d", gasUsed);
+        console.log("Gas used for inserting last node on tree: %d", gasUsed);
     }
 
+    /// @notice Test the gas cost of removing a node from the middle of the Red-Black Tree
+    /// @dev This function inserts a node at the halfway price, then measures the gas used to remove it
+    /// @custom:gas-test Removal performance for a middle node
     function testRemove() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 11, trader1, 100, 1, 999999);
+        tree.insert(testOrderId, halfwayPrice, trader, 100, 1, block.timestamp + 1 days);
         uint256 startGas = gasleft();
-        tree.remove(orderId, 11);
+        tree.remove(testOrderId, halfwayPrice);
         uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for removing node on small tree: %d", gasUsed);
+        console.log("Gas used for removing node on tree: %d", gasUsed);
     }
 
+    /// @notice Test the gas cost of removing the first node from the Red-Black Tree
+    /// @dev This function inserts a node with the lowest price, then measures the gas used to remove it
+    /// @custom:gas-test Removal performance for the first node
     function testRemoveFirst() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 1, trader1, 100, 1, 999999);
+        tree.insert(testOrderId, 1, trader, 100, 1, block.timestamp + 1 days);
         uint256 startGas = gasleft();
-        tree.remove(orderId, tree.first());
+        tree.remove(testOrderId, tree.first());
         uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for removing first node on small tree: %d", gasUsed);
+        console.log("Gas used for removing first node on tree: %d", gasUsed);
     }
 
+    /// @notice Test the gas cost of removing the last node from the Red-Black Tree
+    /// @dev This function inserts a node with the highest price, then measures the gas used to remove it
+    /// @custom:gas-test Removal performance for the last node
     function testRemoveLast() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 100, trader1, 100, 1, 999999);
+        tree.insert(testOrderId, numOrders * 10, trader, 100, 1, block.timestamp + 1 days);
         uint256 startGas = gasleft();
-        tree.remove(orderId, tree.last());
+        tree.remove(testOrderId, tree.last());
         uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for removing node on small tree: %d", gasUsed);
+        console.log("Gas used for removing node on tree: %d", gasUsed);
     }
 
-    function testPopOrder() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 11, trader1, 100, 1, 999999);
-        uint256 startGas = gasleft();
-        tree.popOrder(11);
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for popping order on small tree: %d", gasUsed);
-    }
-
+    /// @notice Test the gas cost of popping the first order from the Red-Black Tree
+    /// @dev This function measures the gas used to pop the first order from the tree
+    /// @custom:gas-test Pop performance for the first node
     function testPopOrderFirst() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 1, trader1, 100, 1, 999999);
         uint256 startGas = gasleft();
         tree.popOrder(tree.first());
         uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for popping order on first node small tree: %d", gasUsed);
+        console.log("Gas used for popping order on first node of tree: %d", gasUsed);
     }
 
+    /// @notice Test the gas cost of popping the last order from the Red-Black Tree
+    /// @dev This function measures the gas used to pop the last order from the tree
+    /// @custom:gas-test Pop performance for the last node
     function testPopOrderLast() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 100, trader1, 100, 1, 999999);
         uint256 startGas = gasleft();
         tree.popOrder(tree.last());
         uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for popping order on last node small tree: %d", gasUsed);
+        console.log("Gas used for popping order on last node of tree: %d", gasUsed);
     }
 
+    /// @notice Test the gas cost of popping the root order from the Red-Black Tree
+    /// @dev This function measures the gas used to pop the root order from the tree
+    /// @custom:gas-test Pop performance for the root node
     function testPopOrderRoot() public {
         uint256 startGas = gasleft();
         tree.popOrder(tree.root());
         uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for popping order on root node small tree: %d", gasUsed);
+        console.log("Gas used for popping order on root node of tree: %d", gasUsed);
     }
 
+    /// @notice Test the gas cost of retrieving the first node in the Red-Black Tree
+    /// @dev This function measures the gas used to call the `first()` function on the tree
+    /// @custom:gas-test Performance test for retrieving the first node
     function testFirst() public {
         uint256 startGas = gasleft();
         tree.first();
         uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used to get first node on small tree: %d", gasUsed);
+        console.log("Gas used to get first node on  tree: %d", gasUsed);
     }
 
+    /// @notice Test the gas cost of retrieving the last node in the Red-Black Tree
+    /// @dev This function measures the gas used to call the `last()` function on the tree
+    /// @custom:gas-test Performance test for retrieving the last node
     function testLast() public {
         uint256 startGas = gasleft();
         tree.last();
         uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used to get last node on small tree: %d", gasUsed);
+        console.log("Gas used to get last node on  tree: %d", gasUsed);
     }
 
-    function testPopAllLeft() public {
-        uint256 startGas = gasleft();
-        while (tree.first() != 0) {
-            tree.popOrder(tree.first());
-        }
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used to pop all from the left on small tree: %d", gasUsed);
-    }
-
-    function testPopAllRight() public {
-        uint256 startGas = gasleft();
-        while (tree.last() != 0) {
-            tree.popOrder(tree.last());
-        }
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used to pop all from the right on small tree: %d", gasUsed);
-    }
-}
-
-contract MediumTreeTest is RedBlackTreeHelper {
-    //---------  SET UP
-
-    function setUp() public {
-        tree = new RedBlackTreeImpl();
-        uint256 numOrders = 1000;
-
-        bytes32[] memory orderIds = new bytes32[](numOrders);
-
-        for (uint256 i = 1; i <= numOrders; i++) {
-            bytes32 orderId = keccak256(abi.encodePacked(address(this), i * 2));
-            orderIds[i - 1] = orderId;
-            tree.insert(orderId, i * 2, trader1, 1, i, 999999);
-        }
-    }
-
-    //---------   Tree Tests
-
-    function testInsertion() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        uint256 startGas = gasleft();
-        tree.insert(orderId, 101, trader1, 100, 1, 999999);
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for inserting node on medium tree: %d", gasUsed);
-    }
-
-    function testInsertionFirst() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        uint256 startGas = gasleft();
-        tree.insert(orderId, 1, trader1, 100, 1, 999999);
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for inserting first node on medium tree: %d", gasUsed);
-    }
-
-    function testInsertionLast() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        uint256 startGas = gasleft();
-        tree.insert(orderId, 1000, trader1, 100, 1, 999999);
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for inserting last node on medium tree: %d", gasUsed);
-    }
-
-    function testRemove() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 101, trader1, 100, 1, 999999);
-        uint256 startGas = gasleft();
-        tree.remove(orderId, 101);
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for removing node on medium tree: %d", gasUsed);
-    }
-
-    function testRemoveFirst() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 1, trader1, 100, 1, 999999);
-        uint256 startGas = gasleft();
-        tree.remove(orderId, tree.first());
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for removing first node on medium tree: %d", gasUsed);
-    }
-
-    function testRemoveLast() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 1000, trader1, 100, 1, 999999);
-        uint256 startGas = gasleft();
-        tree.remove(orderId, tree.last());
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for removing node on medium tree: %d", gasUsed);
-    }
-
-    function testPopOrder() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 101, trader1, 100, 1, 999999);
-        uint256 startGas = gasleft();
-        tree.popOrder(101);
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for popping order on medium tree: %d", gasUsed);
-    }
-
-    function testPopOrderFirst() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 1, trader1, 100, 1, 999999);
-        uint256 startGas = gasleft();
-        tree.popOrder(tree.first());
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for popping order on first node medium tree: %d", gasUsed);
-    }
-
-    function testPopOrderLast() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 1000, trader1, 100, 1, 999999);
-        uint256 startGas = gasleft();
-        tree.popOrder(tree.last());
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for popping order on last node medium tree: %d", gasUsed);
-    }
-
-    function testPopOrderRoot() public {
-        uint256 startGas = gasleft();
-        tree.popOrder(tree.root());
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for popping order on root node medium tree: %d", gasUsed);
-    }
-
-    function testFirst() public {
-        uint256 startGas = gasleft();
-        tree.first();
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used to get first node on medium tree: %d", gasUsed);
-    }
-
-    function testLast() public {
-        uint256 startGas = gasleft();
-        tree.last();
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used to get last node on medium tree: %d", gasUsed);
-    }
-
+    /// @notice Test the gas cost of popping half of the nodes from the left side of the Red-Black Tree
+    /// @dev This function measures the gas used to pop nodes with prices less than the halfway price
+    /// @custom:gas-test Performance test for popping multiple nodes from the left side
     function testPopHalfLeft() public {
         uint256 startGas = gasleft();
         uint256 count = 0;
-        while (tree.first() != 0 && tree.first() < 1000) {
+        while (tree.first() != 0 && tree.first() < halfwayPrice) {
             tree.popOrder(tree.first());
             ++count;
         }
         uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used to pop all from the left on medium tree: %d", gasUsed, count);
+        console.log("Gas used to pop half from the left of tree: %d . Popped orders: %d", gasUsed, count);
     }
 
+    /// @notice Test the gas cost of popping half of the nodes from the right side of the Red-Black Tree
+    /// @dev This function measures the gas used to pop nodes with prices greater than the halfway price
+    /// @custom:gas-test Performance test for popping multiple nodes from the right side
     function testPopHalfRight() public {
         uint256 startGas = gasleft();
         uint256 count = 0;
-        while (tree.last() != 0 && tree.last() > 1000) {
+        while (tree.last() != 0 && tree.last() > halfwayPrice) {
             tree.popOrder(tree.last());
             ++count;
         }
         uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used to pop all from the right on medium tree: %d", gasUsed, count);
+        console.log("Gas used to pop half from the right of tree: %d  . Popped orders: %d", gasUsed, count);
     }
 }
 
-contract LargeTreeTest is RedBlackTreeHelper {
+/// @title LargeTreeTest
+/// @notice Test contract for performance testing of a large Red-Black Tree
+/// @dev Inherits from SmallTreeTest and overrides setUp to create a larger tree
+contract LargeTreeTest is SmallTreeTest {
     //---------  SET UP
 
-    function setUp() public {
+    /// @notice Set up the test environment with a large Red-Black Tree
+    /// @dev Overrides the setUp function from SmallTreeTest to create a tree with 100 nodes
+    function setUp() public override {
         tree = new RedBlackTreeImpl();
-        uint256 numOrders = 10000;
+        numOrders = 100;
+        halfwayPrice = numOrders;
 
         bytes32[] memory orderIds = new bytes32[](numOrders);
 
+        /// @dev Insert 100 orders with increasing prices
         for (uint256 i = 1; i <= numOrders; i++) {
             bytes32 orderId = keccak256(abi.encodePacked(address(this), i * 2));
             orderIds[i - 1] = orderId;
-            tree.insert(orderId, i * 2, trader1, 1, i, 999999);
+            tree.insert(orderId, i * 2, trader, 1, i, block.timestamp + 1 days);
         }
     }
-
-    //---------   Tree Tests
-
-    function testInsertion() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        uint256 startGas = gasleft();
-        tree.insert(orderId, 10001, trader1, 100, 1, 999999);
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for inserting node on large tree: %d", gasUsed);
-    }
-
-    function testInsertionFirst() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        uint256 startGas = gasleft();
-        tree.insert(orderId, 1, trader1, 100, 1, 999999);
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for inserting first node on large tree: %d", gasUsed);
-    }
-
-    function testInsertionLast() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        uint256 startGas = gasleft();
-        tree.insert(orderId, 100000, trader1, 100, 1, 999999);
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for inserting last node on large tree: %d", gasUsed);
-    }
-
-    function testRemove() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 10001, trader1, 100, 1, 999999);
-        uint256 startGas = gasleft();
-        tree.remove(orderId, 10001);
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for removing node on large tree: %d", gasUsed);
-    }
-
-    function testRemoveFirst() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 1, trader1, 100, 1, 999999);
-        uint256 startGas = gasleft();
-        tree.remove(orderId, tree.first());
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for removing first node on large tree: %d", gasUsed);
-    }
-
-    function testRemoveLast() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 100000, trader1, 100, 1, 999999);
-        uint256 startGas = gasleft();
-        tree.remove(orderId, tree.last());
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for removing node on large tree: %d", gasUsed);
-    }
-
-    function testPopOrder() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 10001, trader1, 100, 1, 999999);
-        uint256 startGas = gasleft();
-        tree.popOrder(10001);
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for popping order on large tree: %d", gasUsed);
-    }
-
-    function testPopOrderFirst() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 1, trader1, 100, 1, 999999);
-        uint256 startGas = gasleft();
-        tree.popOrder(tree.first());
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for popping order on first node large tree: %d", gasUsed);
-    }
-
-    function testPopOrderLast() public {
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", "100", block.timestamp));
-        tree.insert(orderId, 100000, trader1, 100, 1, 999999);
-        uint256 startGas = gasleft();
-        tree.popOrder(tree.last());
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for popping order on last node large tree: %d", gasUsed);
-    }
-
-    function testPopOrderRoot() public {
-        uint256 startGas = gasleft();
-        tree.popOrder(tree.root());
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used for popping order on root node large tree: %d", gasUsed);
-    }
-
-    function testFirst() public {
-        uint256 startGas = gasleft();
-        tree.first();
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used to get first node on large tree: %d", gasUsed);
-    }
-
-    function testLast() public {
-        uint256 startGas = gasleft();
-        tree.last();
-        uint256 gasUsed = startGas - gasleft();
-        console.log("Gas used to get last node on large tree: %d", gasUsed);
-    }
-
-        function testPopAllLeft() public {
-            uint256 startGas = gasleft();
-            while (tree.first() != 0){
-                tree.popOrder(tree.first());
-            }
-            uint256 gasUsed = startGas - gasleft();
-            console.log("Gas used to pop all from the left on large tree: %d", gasUsed);
-        }
-    //
-    //    function testPopAllRight() public {
-    //        uint256 startGas = gasleft();
-    //        while (tree.last() != 0){
-    //            tree.popOrder(tree.last());
-    //        }
-    //        uint256 gasUsed = startGas - gasleft();
-    //        console.log("Gas used to pop all from the right on large tree: %d", gasUsed);
-    //    }
 }
