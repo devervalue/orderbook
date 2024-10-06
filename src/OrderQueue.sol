@@ -20,14 +20,6 @@ library OrderQueue {
         // TODO: Reorder variables to pack them more efficiently and reduce storage slots
         // uint256 and bytes32 variables should be grouped together
         bytes32 orderId;
-        address traderAddress;
-        bool isBuy;
-        uint256 price;
-        uint256 quantity;
-        uint256 availableQuantity;
-        uint8 status; //created 1 / partially filled 2 / filled 3 / cancelada 4
-        uint256 expiresAt;
-        uint256 createdAt;
         bytes32 next;
         bytes32 prev;
     }
@@ -62,12 +54,7 @@ library OrderQueue {
     //Insertar
     function push(
         Queue storage q,
-        address _traderAddress,
-        bytes32 _orderId,
-        uint256 _price,
-        uint256 _quantity,
-        uint256 nonce,
-        uint256 _expired
+        bytes32 _orderId
     ) internal {
         // TODO: Add a check if the order already exists to prevent overwriting
         // TODO: Consider using unchecked blocks for arithmetic operations where overflow is impossible
@@ -84,14 +71,6 @@ library OrderQueue {
         // TODO: Consider using assembly for this storage operation to save gas
         q.orders[_orderId] = OrderBookNode({
             orderId: _orderId,
-            traderAddress: _traderAddress,
-            isBuy: true,
-            price: _price,
-            quantity: _quantity,
-            availableQuantity: _quantity,
-            status: 1, //created 1 / partially filled 2 / filled 3 / cancelada 4
-            expiresAt: _expired,
-            createdAt: nonce,
             prev: q.last,
             next: 0
         });
@@ -143,7 +122,7 @@ library OrderQueue {
     event OrderPushed(bytes32 indexed orderId, address indexed trader, uint256 price, uint256 quantity, uint256 expiresAt);*/
 
     //Eliminar
-    function pop(Queue storage q) internal returns (OrderBookNode memory _order) {
+    function pop(Queue storage q) internal returns (bytes32 _orderID) {
         // TODO: Use a custom error without a message to save gas
         if (q.first == 0) revert OrderQueue__CantPopAnEmptyQueue();
 
@@ -161,7 +140,7 @@ library OrderQueue {
             //queue.orders[first].prev = 0;
         }
         // TODO: Consider returning the struct directly instead of copying to memory
-        _order = orderBookNode;
+        return orderBookNode.orderId;
     }
 
     //Eliminar index
