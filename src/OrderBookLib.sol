@@ -16,7 +16,6 @@ library OrderBookLib {
 
     error OrderBookLib__TraderDoesNotCorrespond();
 
-
     struct Order {
         address traderAddress; // Trader Address
         bytes32 orderId; //Define Order Id (Hash keccak256(traderAddress,orderType,price,createdAt)

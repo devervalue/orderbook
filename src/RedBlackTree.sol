@@ -214,7 +214,6 @@ library RedBlackTree {
         return false;
     }
 
-
     /**
      * @dev Retrieves various attributes of a node in the Red-Black tree.
      *
@@ -263,10 +262,7 @@ library RedBlackTree {
      * @param key The key associated with the value to be inserted.
      * @param value The value of the node to be inserted into the tree.
      */
-    function insert(
-        Tree storage self,
-        uint256 value
-    ) internal {
+    function insert(Tree storage self, uint256 value) internal {
         if (value == EMPTY) revert RedBlackTree__ValueToInsertCannotBeZero();
         if (exists(value)) return;
 
@@ -337,59 +333,58 @@ library RedBlackTree {
         //Manejo de la Eliminación del Nodo: Si el nodo queda sin claves
         // Node has no keys left, handle its removal
 
-            // Determine replacement node
-            //Si el nodo tiene un solo hijo
-            if (nValue.left == EMPTY || nValue.right == EMPTY) {
-                cursor = value;
+        // Determine replacement node
+        //Si el nodo tiene un solo hijo
+        if (nValue.left == EMPTY || nValue.right == EMPTY) {
+            cursor = value;
+        } else {
+            //Si el nodo tiene dos hijos, se encuentra el nodo más pequeño
+            cursor = nValue.right;
+            Node storage currentNode = self.nodes[cursor];
+            while (currentNode.left != EMPTY) {
+                cursor = currentNode.left;
+                currentNode = self.nodes[cursor];
+            }
+        }
+
+        // Set probe to the child of cursor
+        probe = self.nodes[cursor].left != EMPTY ? self.nodes[cursor].left : self.nodes[cursor].right;
+
+        uint256 cursorParent = self.nodes[cursor].parent;
+        self.nodes[probe].parent = cursorParent;
+
+        // Update parent's link
+        if (cursorParent != EMPTY) {
+            if (cursor == self.nodes[cursorParent].left) {
+                self.nodes[cursorParent].left = probe;
             } else {
-                //Si el nodo tiene dos hijos, se encuentra el nodo más pequeño
-                cursor = nValue.right;
-                Node storage currentNode = self.nodes[cursor];
-                while (currentNode.left != EMPTY) {
-                    cursor = currentNode.left;
-                    currentNode = self.nodes[cursor];
-                }
+                self.nodes[cursorParent].right = probe;
             }
+        } else {
+            self.root = probe;
+        }
 
-            // Set probe to the child of cursor
-            probe = self.nodes[cursor].left != EMPTY ? self.nodes[cursor].left : self.nodes[cursor].right;
+        // Determine if fixup is needed
+        bool doFixup = !self.nodes[cursor].red;
 
-            uint256 cursorParent = self.nodes[cursor].parent;
-            self.nodes[probe].parent = cursorParent;
+        // Handle case where cursor is not the value node
+        if (cursor != value) {
+            replaceParent(self, cursor, value);
+            self.nodes[cursor].left = nValue.left;
+            self.nodes[self.nodes[cursor].left].parent = cursor;
+            self.nodes[cursor].right = nValue.right;
+            self.nodes[self.nodes[cursor].right].parent = cursor;
+            self.nodes[cursor].red = nValue.red;
+            (cursor, value) = (value, cursor);
+        }
 
-            // Update parent's link
-            if (cursorParent != EMPTY) {
-                if (cursor == self.nodes[cursorParent].left) {
-                    self.nodes[cursorParent].left = probe;
-                } else {
-                    self.nodes[cursorParent].right = probe;
-                }
-            } else {
-                self.root = probe;
-            }
+        // Fix Red-Black tree properties
+        if (doFixup) {
+            removeFixup(self, probe);
+        }
 
-            // Determine if fixup is needed
-            bool doFixup = !self.nodes[cursor].red;
-
-            // Handle case where cursor is not the value node
-            if (cursor != value) {
-                replaceParent(self, cursor, value);
-                self.nodes[cursor].left = nValue.left;
-                self.nodes[self.nodes[cursor].left].parent = cursor;
-                self.nodes[cursor].right = nValue.right;
-                self.nodes[self.nodes[cursor].right].parent = cursor;
-                self.nodes[cursor].red = nValue.red;
-                (cursor, value) = (value, cursor);
-            }
-
-            // Fix Red-Black tree properties
-            if (doFixup) {
-                removeFixup(self, probe);
-            }
-
-            // Delete the old node
-            delete self.nodes[cursor];
-
+        // Delete the old node
+        delete self.nodes[cursor];
     }
 
     /**
@@ -729,5 +724,4 @@ library RedBlackTree {
         }
         self.nodes[value].red = false;
     }
-
 }

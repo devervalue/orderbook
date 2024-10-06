@@ -52,10 +52,7 @@ library OrderQueue {
     }
 
     //Insertar
-    function push(
-        Queue storage q,
-        bytes32 _orderId
-    ) internal {
+    function push(Queue storage q, bytes32 _orderId) internal {
         // TODO: Add a check if the order already exists to prevent overwriting
         // TODO: Consider using unchecked blocks for arithmetic operations where overflow is impossible
         // TODO: Use assembly for simple storage reads and writes to save gas
@@ -69,11 +66,7 @@ library OrderQueue {
             q.orders[q.last].next = _orderId;
         }
         // TODO: Consider using assembly for this storage operation to save gas
-        q.orders[_orderId] = OrderBookNode({
-            orderId: _orderId,
-            prev: q.last,
-            next: 0
-        });
+        q.orders[_orderId] = OrderBookNode({orderId: _orderId, prev: q.last, next: 0});
         q.last = _orderId;
         // TODO: Consider emitting an event for off-chain tracking (if not already done elsewhere)
     }

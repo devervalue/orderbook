@@ -439,7 +439,7 @@ contract OrderBookLibTest is Test {
 
     //-------------------- CANCEL ORDER ------------------------------
 
-//Cancelación exitosa de una orden de compra: Se verifica que la orden de compra es eliminada correctamente.
+    //Cancelación exitosa de una orden de compra: Se verifica que la orden de compra es eliminada correctamente.
     function testCancelBuyOrder() public {
         // Insertar una orden de compra
         vm.prank(trader1);
@@ -455,14 +455,13 @@ contract OrderBookLibTest is Test {
         assertEq(orderBookImpl.getFirstBuyOrders(), 0, "La orden de compra debe haber sido eliminada");
     }
 
-//Cancelación exitosa de una orden de venta: Similar al caso anterior pero con órdenes de venta.
+    //Cancelación exitosa de una orden de venta: Similar al caso anterior pero con órdenes de venta.
     function testCancelSellOrder() public {
         // Insertar una orden de venta
         vm.prank(trader2);
         orderBookImpl.addSellBaseToken(price, 10, trader2, nonce, expired);
 
         bytes32 _orderId = keccak256(abi.encodePacked(trader2, "sell", price, nonce));
-
 
         // Cancelar la orden de venta
         vm.prank(trader2);
@@ -473,7 +472,7 @@ contract OrderBookLibTest is Test {
         assertEq(orderBookImpl.getFirstSellOrders(), 0, "La orden de venta debe haber sido eliminada");
     }
 
-//Intento de cancelación de una orden inexistente: Asegura que no ocurre ninguna acción cuando se intenta cancelar una orden inexistente.
+    //Intento de cancelación de una orden inexistente: Asegura que no ocurre ninguna acción cuando se intenta cancelar una orden inexistente.
     function testCancelNonExistentOrder() public {
         // Intentar cancelar una orden que no existe
         bytes32 _orderId = keccak256(abi.encodePacked(trader1, "buy", price, nonce));
@@ -483,7 +482,7 @@ contract OrderBookLibTest is Test {
         orderBookImpl.getCancelOrder(_orderId);
     }
 
-//Cancelación de una orden entre múltiples órdenes: Verifica que el array de órdenes del trader se reordene correctamente.
+    //Cancelación de una orden entre múltiples órdenes: Verifica que el array de órdenes del trader se reordene correctamente.
     function testCancelOrderAmongMultipleOrders() public {
         // Insertar varias órdenes de compra
         vm.startPrank(trader1);
@@ -501,12 +500,15 @@ contract OrderBookLibTest is Test {
         vm.prank(trader1);
         orderBookImpl.getCancelOrder(_orderId1);
 
-
         //console.logBytes32(_orderId2);
         //console.logBytes32(orderBookImpl.getFirstOrderBuyById(price));
 
         // Verificar que la segunda orden se haya movido a la primera posición
-        assertEq(orderBookImpl.getFirstOrderBuyById(price), _orderId2, unicode"La segunda orden debe haberse movido a la primera posición");
+        assertEq(
+            orderBookImpl.getFirstOrderBuyById(price),
+            _orderId2,
+            unicode"La segunda orden debe haberse movido a la primera posición"
+        );
     }
 
     //Cancelación de una orden que no pertenece al msg.sender: Asegura que un usuario no puede cancelar una orden que no le pertenece.
@@ -529,7 +531,7 @@ contract OrderBookLibTest is Test {
     }
 
     //-------------------- GET TRADER ORDER ------------------------------
-//Obtener órdenes de un trader con varias órdenes: Verifica que todas las órdenes del trader se devuelven correctamente.
+    //Obtener órdenes de un trader con varias órdenes: Verifica que todas las órdenes del trader se devuelven correctamente.
     function testGetTraderOrdersWithMultipleOrders() public {
         // Insertar varias órdenes para trader1
         bytes32 orderId1 = keccak256(abi.encodePacked(trader1, "buy", price, nonce));
@@ -549,7 +551,7 @@ contract OrderBookLibTest is Test {
         assertEq(orders[1], orderId2, "La segunda orden debe coincidir");
     }
 
-//Obtener órdenes de un trader sin órdenes: Asegura que se devuelva un array vacío si el trader no tiene órdenes.
+    //Obtener órdenes de un trader sin órdenes: Asegura que se devuelva un array vacío si el trader no tiene órdenes.
     function testGetTraderOrdersWithNoOrders() public {
         // Verificar que trader2 no tiene órdenes
         bytes32[] memory orders = orderBookImpl.getTraderOrders(trader2);
@@ -558,7 +560,7 @@ contract OrderBookLibTest is Test {
         assertEq(orders.length, 0, unicode"Debe devolver un array vacío si el trader no tiene órdenes");
     }
 
-//Obtener órdenes de un trader con solo una orden: Prueba que, si solo hay una orden, esta se devuelva correctamente.
+    //Obtener órdenes de un trader con solo una orden: Prueba que, si solo hay una orden, esta se devuelva correctamente.
     function testGetTraderOrdersWithSingleOrder() public {
         // Insertar una única orden para trader1
         bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", price, nonce));
@@ -574,7 +576,7 @@ contract OrderBookLibTest is Test {
         assertEq(orders[0], orderId, "La orden devuelta debe coincidir");
     }
 
-//Obtener órdenes de un trader inexistente: Confirma que un trader que nunca ha tenido órdenes devuelve un array vacío.
+    //Obtener órdenes de un trader inexistente: Confirma que un trader que nunca ha tenido órdenes devuelve un array vacío.
     function testGetTraderOrdersForNonExistentTrader() public {
         // Obtener las órdenes para un trader inexistente (que nunca ha tenido órdenes)
         bytes32[] memory orders = orderBookImpl.getTraderOrders(address(0x1234));
@@ -583,7 +585,7 @@ contract OrderBookLibTest is Test {
         assertEq(orders.length, 0, unicode"Debe devolver un array vacío si el trader no existe");
     }
 
-//Verificar la inmutabilidad del array devuelto: Asegura que el array devuelto es una copia y no puede ser modificado directamente.
+    //Verificar la inmutabilidad del array devuelto: Asegura que el array devuelto es una copia y no puede ser modificado directamente.
     function testImmutabilityOfReturnedArray() public {
         // Insertar una orden para trader1
         bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", price, nonce));
@@ -603,10 +605,9 @@ contract OrderBookLibTest is Test {
         assertEq(ordersAfterModification[0], orderId, unicode"El array devuelto no debe modificar el estado original");
     }
 
+    //-------------------- GET ORDER BY ID ------------------------------
 
-//-------------------- GET ORDER BY ID ------------------------------
-
-//Recuperar una orden de compra existente: Verifica que la función devuelve los detalles correctos de una orden de compra.
+    //Recuperar una orden de compra existente: Verifica que la función devuelve los detalles correctos de una orden de compra.
     function testGetBuyOrderById() public {
         // Crear una orden de compra para trader1
         bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", price, nonce));
@@ -632,7 +633,6 @@ contract OrderBookLibTest is Test {
         vm.prank(trader2);
         orderBookImpl.addSellBaseToken(price, 10, trader2, nonce, expired);
 
-
         // Obtener la orden por su ID
         OrderQueue.OrderBookNode memory result = orderBookImpl.getOrderById(trader2, orderId);
 
@@ -641,7 +641,7 @@ contract OrderBookLibTest is Test {
         assertEq(result.quantity, 10, "La cantidad de la orden debe ser 10");
     }
 
-//Intentar recuperar una orden inexistente: Confirma que la función maneja correctamente órdenes inexistentes (usualmente con revert).
+    //Intentar recuperar una orden inexistente: Confirma que la función maneja correctamente órdenes inexistentes (usualmente con revert).
     function testGetNonExistentOrderById() public {
         // Crear un ID de orden que no exista
         bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", price, nonce));
@@ -651,7 +651,7 @@ contract OrderBookLibTest is Test {
         orderBookImpl.getOrderById(trader1, orderId);
     }
 
-//Recuperar una orden con un orderId inválido: Asegura que la función no devuelve detalles de órdenes con IDs inválidos.
+    //Recuperar una orden con un orderId inválido: Asegura que la función no devuelve detalles de órdenes con IDs inválidos.
     function testGetOrderWithInvalidId() public {
         // Usar un `orderId` inválido (que no existe)
         bytes32 invalidOrderId = keccak256(abi.encodePacked(trader1, "invalid", price, nonce));
@@ -665,7 +665,7 @@ contract OrderBookLibTest is Test {
         orderBookImpl.getOrderById(trader1, invalidOrderId);
     }
 
-//Recuperar una orden de un trader sin órdenes: Verifica que la función maneje correctamente cuando un trader no tiene órdenes.
+    //Recuperar una orden de un trader sin órdenes: Verifica que la función maneje correctamente cuando un trader no tiene órdenes.
     function testGetOrderForTraderWithoutOrders() public {
         // Intentar obtener una orden para un trader que no tiene órdenes
         bytes32 orderId = keccak256(abi.encodePacked(trader2, "buy", price, quantity));
@@ -678,6 +678,4 @@ contract OrderBookLibTest is Test {
         vm.expectRevert(); // Espera que la operación falle
         orderBookImpl.getOrderById(trader2, orderId);
     }
-
-
 }

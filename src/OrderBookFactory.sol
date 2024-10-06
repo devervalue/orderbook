@@ -61,7 +61,7 @@ contract OrderBookFactory {
     }
 
     /**
- *  @dev Modificador para restringir las ordenes si el libro no esta habilitado.
+     *  @dev Modificador para restringir las ordenes si el libro no esta habilitado.
      */
     modifier onlyEnabledBook(bytes32 orderBookId) {
         if (!ordersBook[orderBookId].status) revert OrderBookFactory__OrderBookNotEnabled();
@@ -79,10 +79,7 @@ contract OrderBookFactory {
      *  @param fee El porcentaje de la tarifa aplicada a las operaciones en el libro de órdenes.
      *  @param feeAddress La dirección a la que se envían las tarifas recolectadas.
      */
-    function addOrderBook(address _tokenA, address _tokenB, uint256 fee, address feeAddress)
-        external
-        onlyOwner
-    {
+    function addOrderBook(address _tokenA, address _tokenB, uint256 fee, address feeAddress) external onlyOwner {
         if (_tokenA == address(0) || _tokenB == address(0)) revert OrderBookFactory__InvalidTokenAddress();
         if (owner == address(0)) revert OrderBookFactory__InvalidOwnerAddress();
         if (feeAddress == address(0)) revert OrderBookFactory__InvalidFeeAddress();
@@ -200,7 +197,15 @@ contract OrderBookFactory {
         return owner;
     }
 
-    function addNewOrder(bytes32 idOrderBook, uint256 quantity, uint256 price, bool isBuy, address trader, uint256 nonce, uint256 _expired) public onlyEnabledBook(idOrderBook) {
+    function addNewOrder(
+        bytes32 idOrderBook,
+        uint256 quantity,
+        uint256 price,
+        bool isBuy,
+        address trader,
+        uint256 nonce,
+        uint256 _expired
+    ) public onlyEnabledBook(idOrderBook) {
         if (!orderBookExists(idOrderBook)) revert OrderBookFactory__OrderBookIdOutOfRange();
         if (quantity == 0) revert OrderBookFactory__InvalidQuantityValueZero();
         OrderBookLib.OrderBook storage order = ordersBook[idOrderBook];
@@ -216,6 +221,4 @@ contract OrderBookFactory {
         OrderBookLib.OrderBook storage order = ordersBook[idOrderBook];
         order.cancelOrder(idOrder);
     }
-
-
 }

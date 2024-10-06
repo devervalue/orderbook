@@ -12,8 +12,6 @@ contract OrderBook {
     error OrderBook__ValueAndKeyPairExists();
     error OrderBook__KeyDoesNotExist();
 
-
-
     struct Price {
         uint256 countTotalOrders; // Total Orders of the Node
         uint256 countValueOrders; // Sum of the value of the orders
@@ -38,9 +36,7 @@ contract OrderBook {
     mapping(uint256 => Price) private prices; // Mapping of keys to their corresponding nodes
     mapping(bytes32 => Order) private orders;
 
-    constructor(){
-
-    }
+    constructor() {}
 
     function keyExists(bytes32 key) internal view returns (bool _exists) {
         return orders[key] == 0;
@@ -74,7 +70,6 @@ contract OrderBook {
         newOrder.status = 1;
         newOrder.expiresAt = _expired;
         newOrder.createdAt = nonce;
-
     }
 
     function remove(bytes32 key) internal {
@@ -90,8 +85,7 @@ contract OrderBook {
         if (price.q.isEmpty()) {
             tree.remove(removedOrder.price);
         }
-
-        }
+    }
 
     function popOrder(uint256 value) internal {
         Price storage price = prices[value];
@@ -107,15 +101,8 @@ contract OrderBook {
         }
     }
 
-    function getOrderDetail(bytes32 orderId) public view
-    returns (Order memory)
-    {
+    function getOrderDetail(bytes32 orderId) public view returns (Order memory) {
         if (keyExists(orderId)) revert OrderBook__KeyDoesNotExist();
         return orders[orderId];
     }
-
-    }
-
-
-
-
+}

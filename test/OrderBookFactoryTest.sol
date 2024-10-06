@@ -27,7 +27,6 @@ contract OrderBookFactoryTest is Test {
 
     event OrderBookFeeAddressChanged(bytes32 indexed id, address feeAddress);
 
-
     function setUp() public {
         factory = new OrderBookFactory();
         console.log(address(factory));
@@ -39,8 +38,8 @@ contract OrderBookFactoryTest is Test {
         //Creando token como suministro inicial
         tokenA = new MyTokenA(1000 * 10 ** 18); //Crear un nuevo token con suministro inicial
         tokenB = new MyTokenB(1000 * 10 ** 18); //Crear un nuevo token con suministro inicial
-//        console.log(address(factory));
-//        console.log(msg.sender);
+        //        console.log(address(factory));
+        //        console.log(msg.sender);
         tokenA.transfer(trader1, 1500);
         tokenB.transfer(trader2, 1500);
 
@@ -63,8 +62,8 @@ contract OrderBookFactoryTest is Test {
 
     //Verifica que se pueda añadir correctamente un nuevo libro de órdenes y que emita el evento OrderBookCreated con los parámetros esperados.
     function testAddOrderBookSuccess() public {
-         vm.prank(owner);
-         bytes32 expectedId = keccak256(abi.encodePacked(address(tokenA), address(tokenB)));
+        vm.prank(owner);
+        bytes32 expectedId = keccak256(abi.encodePacked(address(tokenA), address(tokenB)));
 
         //vm.expectEmit(true, true, true, true);
         //emit OrderBookCreated(expectedId, address(tokenA), address(tokenB), owner);
@@ -91,7 +90,7 @@ contract OrderBookFactoryTest is Test {
     function testRevertIfQuoteTokenIsZero() public {
         vm.prank(owner);
         vm.expectRevert(OrderBookFactory.OrderBookFactory__InvalidTokenAddress.selector);
-        factory.addOrderBook(address(tokenA),address(0), 5, feeAddress);
+        factory.addOrderBook(address(tokenA), address(0), 5, feeAddress);
     }
 
     //Prueba que se revierte si el propietario es la dirección cero, simulando un cambio inválido de propietario.
@@ -148,7 +147,7 @@ contract OrderBookFactoryTest is Test {
         assertEq(keys.length, 2); // Se deberían agregar 2 libros de órdenes
     }
 
-//Asegura que se revierte la transacción si se intenta agregar un libro de órdenes que ya existe.
+    //Asegura que se revierte la transacción si se intenta agregar un libro de órdenes que ya existe.
     function testRevertIfAddingDuplicateOrderBook() public {
         vm.prank(owner);
         factory.addOrderBook(address(tokenA), address(tokenB), 5, feeAddress); // Agregar primer libro de órdenes
@@ -182,10 +181,12 @@ contract OrderBookFactoryTest is Test {
         bytes32[] memory keys = factory.getKeysOrderBooks();
         assertEq(keys.length, 2); // Verificamos que se hayan agregado dos libros de órdenes
 
-        (address _baseToken1,address _quoteToken1, bool _status1, uint256 lastTradePrice1, uint256 fee1) = factory.getOrderBookById(keys[0]);
+        (address _baseToken1, address _quoteToken1, bool _status1, uint256 lastTradePrice1, uint256 fee1) =
+            factory.getOrderBookById(keys[0]);
         console.log(fee1);
         console.log(_baseToken1);
-        (address _baseToken2,address _quoteToken2, bool _status2,uint256 lastTradePrice2,  uint256 fee2) = factory.getOrderBookById(keys[1]);
+        (address _baseToken2, address _quoteToken2, bool _status2, uint256 lastTradePrice2, uint256 fee2) =
+            factory.getOrderBookById(keys[1]);
 
         assertEq(fee1, 5); // Verifica que la tarifa del primer libro sea correcta
         assertEq(fee2, 15); // Verifica que la tarifa del segundo libro sea correcta
@@ -246,7 +247,7 @@ contract OrderBookFactoryTest is Test {
 
         // Verificar que los identificadores de los libros de órdenes son correctos
         bytes32 expectedKey1 = keccak256(abi.encodePacked(address(tokenB), address(tokenA))); //TODO REVISAR PQ LOS DEBO INVERTIR
-        bytes32 expectedKey2 = keccak256(abi.encodePacked(trader1,address(tokenB)));
+        bytes32 expectedKey2 = keccak256(abi.encodePacked(trader1, address(tokenB)));
         assertEq(keys[0], expectedKey1, unicode"El primer identificador debería coincidir");
         assertEq(keys[1], expectedKey2, unicode"El segundo identificador debería coincidir");
     }
@@ -265,7 +266,7 @@ contract OrderBookFactoryTest is Test {
 
         // Verificar que las claves se devuelven en el mismo orden en que se agregaron
         bytes32 expectedKey1 = keccak256(abi.encodePacked(address(tokenB), address(tokenA)));
-        bytes32 expectedKey2 = keccak256(abi.encodePacked(trader1,address(tokenB)));
+        bytes32 expectedKey2 = keccak256(abi.encodePacked(trader1, address(tokenB)));
         bytes32 expectedKey3 = keccak256(abi.encodePacked(trader2, trader1));
 
         assertEq(keys.length, 3, unicode"Debería haber tres claves en el array");
@@ -278,7 +279,7 @@ contract OrderBookFactoryTest is Test {
         console.logBytes32(keys[2]);
 
         console.logBytes32(keccak256(abi.encodePacked(address(tokenB), address(tokenA))));
-        console.logBytes32(keccak256(abi.encodePacked( trader1,address(tokenB))));
+        console.logBytes32(keccak256(abi.encodePacked(trader1, address(tokenB))));
         console.logBytes32(keccak256(abi.encodePacked(trader2, trader1)));
         assertEq(keys[0], expectedKey1, unicode"El primer identificador debería coincidir");
         assertEq(keys[1], expectedKey2, unicode"El segundo identificador debería coincidir");
@@ -293,13 +294,8 @@ contract OrderBookFactoryTest is Test {
         bytes32 nonExistentId = keccak256(abi.encodePacked(address(tokenA), address(tokenB)));
 
         // Llamar a la función getOrderBookById
-        (
-            address baseToken,
-            address quoteToken,
-            bool status,
-            uint256 lastTradePrice,
-            uint256 fee
-        ) = factory.getOrderBookById(nonExistentId);
+        (address baseToken, address quoteToken, bool status, uint256 lastTradePrice, uint256 fee) =
+            factory.getOrderBookById(nonExistentId);
 
         // Verificar que los valores devueltos sean los por defecto
         assertEq(baseToken, address(0), unicode"El baseToken debería ser la dirección cero");
@@ -322,18 +318,13 @@ contract OrderBookFactoryTest is Test {
         assertEq(keys.length, 1, unicode"Debería haber una sola clave en el array");
 
         // Llamar a la función getOrderBookById
-        (
-            address baseToken,
-            address quoteToken,
-            bool status,
-            uint256 lastTradePrice,
-            uint256 fee
-        ) = factory.getOrderBookById(keys[0]);
+        (address baseToken, address quoteToken, bool status, uint256 lastTradePrice, uint256 fee) =
+            factory.getOrderBookById(keys[0]);
 
         console.log(baseToken);
         console.log(quoteToken);
 
-    // Verificar que los valores devueltos coincidan con los del libro de órdenes
+        // Verificar que los valores devueltos coincidan con los del libro de órdenes
         //TODO REVISAR PQ LOS INVIERTE
         assertEq(baseToken, address(tokenB), unicode"El baseToken debería coincidir con el libro de órdenes creado");
         assertEq(quoteToken, address(tokenA), unicode"El quoteToken debería coincidir con el libro de órdenes creado");
@@ -361,13 +352,8 @@ contract OrderBookFactoryTest is Test {
         //bytes32 orderId2 = keccak256(abi.encodePacked(address(tokenB), trader1));
 
         // Obtener y verificar el primer libro de órdenes
-        (
-            address baseToken1,
-            address quoteToken1,
-            bool status1,
-            uint256 lastTradePrice1,
-            uint256 fee1
-        ) = factory.getOrderBookById(keys[0]);
+        (address baseToken1, address quoteToken1, bool status1, uint256 lastTradePrice1, uint256 fee1) =
+            factory.getOrderBookById(keys[0]);
         //TODO REVISA PQ CAMBIA
         assertEq(baseToken1, address(tokenB), unicode"El baseToken del primer libro debería coincidir");
         assertEq(quoteToken1, address(tokenA), unicode"El quoteToken del primer libro debería coincidir");
@@ -376,13 +362,8 @@ contract OrderBookFactoryTest is Test {
         assertEq(fee1, 5, unicode"La tarifa del primer libro debería ser 5");
 
         // Obtener y verificar el segundo libro de órdenes
-        (
-            address baseToken2,
-            address quoteToken2,
-            bool status2,
-            uint256 lastTradePrice2,
-            uint256 fee2
-        ) = factory.getOrderBookById(keys[1]);
+        (address baseToken2, address quoteToken2, bool status2, uint256 lastTradePrice2, uint256 fee2) =
+            factory.getOrderBookById(keys[1]);
         assertEq(baseToken2, trader1, unicode"El baseToken del segundo libro debería coincidir");
         assertEq(quoteToken2, address(tokenB), unicode"El quoteToken del segundo libro debería coincidir");
         assertEq(status2, true, unicode"El estado del segundo libro debería ser verdadero");
@@ -440,7 +421,6 @@ contract OrderBookFactoryTest is Test {
         assertEq(factory.getOwner(), owner, unicode"El nuevo propietario debería ser addr2");
     }
 
-
     //-------------------- SET ORDER BOOK STATUS ------------------------------
 
     //Verifica que el propietario pueda cambiar el estado de un libro de órdenes existente.
@@ -460,7 +440,7 @@ contract OrderBookFactoryTest is Test {
         factory.setOrderBookStatus(keys[0], false);
 
         // Verificar que el estado haya cambiado correctamente
-        (, , bool status, , ) = factory.getOrderBookById(keys[0]);
+        (,, bool status,,) = factory.getOrderBookById(keys[0]);
         assertEq(status, false, unicode"El estado del libro de órdenes debería ser inactivo");
     }
 
@@ -505,7 +485,7 @@ contract OrderBookFactoryTest is Test {
         factory.setOrderBookFee(keys[0], newFee);
 
         // Verificar que la tarifa haya cambiado correctamente
-        (, , , , uint256 fee) = factory.getOrderBookById(keys[0]);
+        (,,,, uint256 fee) = factory.getOrderBookById(keys[0]);
         assertEq(fee, newFee, unicode"La tarifa del libro de órdenes debería haberse actualizado al 5%");
     }
 
@@ -650,7 +630,11 @@ contract OrderBookFactoryTest is Test {
     //Verifica que la dirección del propietario sea la dirección inicialmente establecida al desplegar el contrato.
     function testGetOwnerInitially() public {
         // Verificar que la dirección del propietario inicial sea la correcta
-        assertEq(factory.getOwner(), owner, unicode"La dirección del propietario debería ser la dirección inicial establecida.");
+        assertEq(
+            factory.getOwner(),
+            owner,
+            unicode"La dirección del propietario debería ser la dirección inicial establecida."
+        );
     }
 
     //Verifica que la función getOwner devuelva la dirección correcta después de que el propietario haya sido cambiado utilizando la función setOwner.
@@ -661,14 +645,17 @@ contract OrderBookFactoryTest is Test {
         factory.setOwner(newOwner);
 
         // Verificar que la función getOwner devuelva la nueva dirección de propietario
-        assertEq(factory.getOwner(), newOwner, unicode"La dirección del propietario debería haber cambiado a la nueva dirección.");
+        assertEq(
+            factory.getOwner(),
+            newOwner,
+            unicode"La dirección del propietario debería haber cambiado a la nueva dirección."
+        );
     }
 
     //-------------------- ADD NEW ORDER ------------------------------
 
     //Verifica que una nueva orden de compra se agrega correctamente a un libro de órdenes existente.
     function testAddNewBuyOrder() public {
-
         vm.startPrank(owner);
         factory.addOrderBook(address(tokenA), address(tokenB), 10, feeAddress);
         vm.stopPrank();
@@ -685,11 +672,11 @@ contract OrderBookFactoryTest is Test {
         bool isBuy = true;
 
         vm.prank(trader2);
-        factory.addNewOrder(keys[0], quantity, price, isBuy, trader2, 1,1);
+        factory.addNewOrder(keys[0], quantity, price, isBuy, trader2, 1, 1);
 
         // Verificar que la orden de compra se haya agregado correctamente
         //TODO PQ SE INVIERTE EL TOKEN
-        (address baseTokenOrder, address quoteTokenOrder, , uint256 lastTradePrice,) = factory.getOrderBookById(keys[0]);
+        (address baseTokenOrder, address quoteTokenOrder,, uint256 lastTradePrice,) = factory.getOrderBookById(keys[0]);
         assertEq(baseTokenOrder, address(tokenB), "El token base debe coincidir");
         assertEq(quoteTokenOrder, address(tokenA), unicode"El token de cotización debe coincidir");
         assertEq(lastTradePrice, 0, unicode"El último precio negociado debe ser 0 al inicio");
@@ -713,10 +700,10 @@ contract OrderBookFactoryTest is Test {
         bool isBuy = false;
 
         vm.prank(trader1);
-        factory.addNewOrder(keys[0], quantity, price, false, trader1,1,1);
+        factory.addNewOrder(keys[0], quantity, price, false, trader1, 1, 1);
 
         // Verificar que la orden de venta se haya agregado correctamente
-        (address baseTokenOrder, address quoteTokenOrder, , uint256 lastTradePrice,) = factory.getOrderBookById(keys[0]);
+        (address baseTokenOrder, address quoteTokenOrder,, uint256 lastTradePrice,) = factory.getOrderBookById(keys[0]);
         assertEq(baseTokenOrder, address(tokenB), "El token base debe coincidir");
         assertEq(quoteTokenOrder, address(tokenA), unicode"El token de cotización debe coincidir");
         assertEq(lastTradePrice, 0, unicode"El último precio negociado debe ser 0 al inicio");
@@ -732,7 +719,7 @@ contract OrderBookFactoryTest is Test {
 
         vm.prank(owner);
         vm.expectRevert(OrderBookFactory.OrderBookFactory__OrderBookIdOutOfRange.selector);
-        factory.addNewOrder(nonExistentOrderBookId, quantity, price, isBuy, trader1,1,1);
+        factory.addNewOrder(nonExistentOrderBookId, quantity, price, isBuy, trader1, 1, 1);
     }
 
     //Verifica que no se pueda agregar una orden de compra con cantidad cero.
@@ -753,8 +740,8 @@ contract OrderBookFactoryTest is Test {
         uint256 quantity = 0;
 
         vm.prank(owner);
-        vm.expectRevert(OrderBookFactory.OrderBookFactory__InvalidQuantityValueZero.selector);  // Puedes agregar un revert message si implementas uno en el contrato
-        factory.addNewOrder(keys[0], quantity, price, isBuy, trader1,1,1);
+        vm.expectRevert(OrderBookFactory.OrderBookFactory__InvalidQuantityValueZero.selector); // Puedes agregar un revert message si implementas uno en el contrato
+        factory.addNewOrder(keys[0], quantity, price, isBuy, trader1, 1, 1);
     }
 
     //Verifica que no se pueda agregar una orden de venta con cantidad cero.
@@ -775,8 +762,8 @@ contract OrderBookFactoryTest is Test {
         uint256 quantity = 0;
 
         vm.prank(owner);
-        vm.expectRevert(OrderBookFactory.OrderBookFactory__InvalidQuantityValueZero.selector);  // Puedes agregar un revert message si implementas uno en el contrato
-        factory.addNewOrder(keys[0], quantity, price, isBuy, trader2,1,1);
+        vm.expectRevert(OrderBookFactory.OrderBookFactory__InvalidQuantityValueZero.selector); // Puedes agregar un revert message si implementas uno en el contrato
+        factory.addNewOrder(keys[0], quantity, price, isBuy, trader2, 1, 1);
     }
 
     /*//Verifica que no se pueda agregar una orden de compra con una dirección de trader inválida (por ejemplo, la dirección cero).
@@ -852,7 +839,6 @@ contract OrderBookFactoryTest is Test {
         factory.addNewOrder(orderBookId, quantity, price, isBuy, trader);
     }*/
 
-
     //-------------------- CANCEL ORDER ------------------------------
 
     //Verifica que una orden puede ser cancelada exitosamente en un libro de órdenes válido.
@@ -873,14 +859,14 @@ contract OrderBookFactoryTest is Test {
         bool isBuy = true;
 
         vm.prank(trader2);
-        factory.addNewOrder(keys[0], quantity, price, isBuy, trader2,1,1);
+        factory.addNewOrder(keys[0], quantity, price, isBuy, trader2, 1, 1);
         uint256 nonce = 1;
         bytes32 _orderId = keccak256(abi.encodePacked(trader2, "buy", price, nonce));
 
         console.logBytes32(keys[0]);
         // Cancelar la orden exitosamente
         vm.prank(trader2);
-        factory.cancelOrder(keys[0],_orderId);
+        factory.cancelOrder(keys[0], _orderId);
 
         // Verificar que la orden fue cancelada
         //vm.expectRevert(RedBlackTree.RedBlackTree__ValueCannotBeZero.selector);  // Puedes agregar un revert message si implementas uno en el contrato
@@ -927,6 +913,4 @@ contract OrderBookFactoryTest is Test {
         vm.expectRevert("Order already canceled");
         factory.cancelOrder(orderBookId);
     }*/
-
-
 }

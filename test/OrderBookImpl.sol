@@ -54,7 +54,7 @@ contract OrderBookImpl {
         return book.sellOrders.last();
     }
 
-    function getFirstOrderBuyById(uint256 keyNode) public returns(bytes32){
+    function getFirstOrderBuyById(uint256 keyNode) public returns (bytes32) {
         return book.buyOrders.nodes[keyNode].orders.first;
     }
 
@@ -62,11 +62,11 @@ contract OrderBookImpl {
         return book.cancelOrder(_orderId);
     }
 
-    function getTraderOrders(address _trader) public returns(bytes32[] memory) {
+    function getTraderOrders(address _trader) public returns (bytes32[] memory) {
         return book.getTraderOrders(_trader);
     }
 
-    function getOrderById(address _trader, bytes32 _orderId) public returns(OrderQueue.OrderBookNode memory) {
-        return book.getOrderById(_trader,_orderId);
+    function getOrderById(address _trader, bytes32 _orderId) public returns (OrderQueue.OrderBookNode memory) {
+        return book.getOrderById(_trader, _orderId);
     }
 }
