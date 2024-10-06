@@ -6,15 +6,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "forge-std/console.sol";
 import "./OrderBook.sol";
 
-
 library PairLib {
     using SafeERC20 for IERC20;
-
 
     error PairLib__TraderDoesNotCorrespond();
     error PairLib__KeyDoesNotExist();
     error PairLib__KeyAlreadyExists();
-
 
     struct TraderOrders {
         bytes32[] orderIds;
@@ -25,32 +22,29 @@ library PairLib {
         // TODO: Reorder variables to pack them more efficiently and reduce storage slots
         // uint256 and bytes32 variables should be grouped together
         bytes32 orderId;
-        address traderAddress;
-        bool isBuy;
         uint256 price;
         uint256 quantity;
         uint256 availableQuantity;
-        uint8 status; //created 1 / partially filled 2 / filled 3 / cancelada 4
         uint256 expiresAt;
         uint256 createdAt;
+        address traderAddress;
+        bool isBuy;
+        uint8 status; //created 1 / partially filled 2 / filled 3 / cancelada 4
     }
 
     struct Pair {
         address baseToken;
         address quoteToken;
+        address owner;
+        address feeAddress;
+        uint256 lastTradePrice;
+        uint256 fee;
+        bool status;
         BuyOrderBook buyOrders;
         SellOrderBook sellOrders;
-        uint256 lastTradePrice;
-        bool status;
-        address owner;
-        uint256 fee;
-        address feeAddress;
         mapping(address => TraderOrders) traderOrders;
         mapping(bytes32 => Order) orders;
-
-}
-
-
+    }
 
     /**
      *  @notice Evento que se emite cuando se crea una nueva orden.
@@ -69,245 +63,164 @@ library PairLib {
         bytes32 indexed id, address indexed baseToken, address indexed quoteToken, address trader
     );
 
+    function abs(int256 x) private pure returns (int256) {
+        return x >= 0 ? x : -x;
+    }
 
-    function saveBuyOrder(
-        Pair storage pair,
-        uint256 _price,
-        uint256 _quantity,
-        address _trader,
-        uint256 nonce,
-        uint256 _expired,
-        bytes32 _orderId
-    ) private {
+    function saveOrder(Pair storage pair, Order memory newOrder) private {
+        if (keyExists(pair, newOrder.orderId)) revert PairLib__KeyAlreadyExists();
 
-        if (keyExists(pair, _orderId)) revert PairLib__KeyAlreadyExists();
-
-        pair.traderOrders[_trader].orderIds.push(_orderId);
-        pair.traderOrders[_trader].index[_orderId] = pair.traderOrders[_trader].orderIds.length;
+        pair.traderOrders[msg.sender].orderIds.push(newOrder.orderId);
+        pair.traderOrders[msg.sender].index[newOrder.orderId] = pair.traderOrders[msg.sender].orderIds.length;
 
         //Agregar al arbol
-        pair.buyOrders.saveOrder(_price, _quantity, _trader, nonce, _expired, _orderId, pair.baseToken);
+        if (newOrder.isBuy) {
+            pair.buyOrders.saveOrder(newOrder.price, newOrder.quantity, newOrder.orderId, pair.baseToken);
+        } else {
+            pair.sellOrders.saveOrder(newOrder.price, newOrder.quantity, newOrder.orderId, pair.quoteToken);
+        }
 
-        Order storage newOrder = pair.orders[_orderId];
-        newOrder.orderId = _orderId;
-        newOrder.traderAddress = _trader;
-        newOrder.isBuy = false;
-        newOrder.price = _price;
-        newOrder.quantity = _quantity;
-        newOrder.availableQuantity = _quantity;
-        newOrder.status = 1;
-        newOrder.expiresAt = _expired;
-        newOrder.createdAt = nonce;
-
+        Order storage _newOrder = pair.orders[newOrder.orderId];
+        _newOrder.orderId = newOrder.orderId;
+        _newOrder.traderAddress = msg.sender;
+        _newOrder.isBuy = newOrder.isBuy;
+        _newOrder.price = newOrder.price;
+        _newOrder.quantity = newOrder.quantity;
+        _newOrder.availableQuantity = newOrder.quantity;
+        _newOrder.status = 1;
+        _newOrder.expiresAt = newOrder.expiresAt;
+        _newOrder.createdAt = newOrder.createdAt;
         //Emite el evento de orden creada
-        emit OrderCreated(_orderId, pair.baseToken, pair.quoteToken, _trader);
+        emit OrderCreated(_newOrder.orderId, pair.baseToken, pair.quoteToken, msg.sender);
     }
 
-    //Guardar orden de venta
-    function saveSellOrder(
+    function fillOrder(
         Pair storage pair,
-        uint256 _price,
-        uint256 _quantity,
-        address _trader,
-        uint256 nonce,
-        uint256 _expired,
-        bytes32 _orderId
+        Order storage matchedOrder,
+        IERC20 buyToken,
+        IERC20 sellToken,
+        uint256 buyTokenAmount,
+        uint256 sellTokenAmount
     ) private {
-
-        if (keyExists(pair, _orderId)) revert PairLib__KeyAlreadyExists();
-
-        pair.traderOrders[_trader].orderIds.push(_orderId);
-        pair.traderOrders[_trader].index[_orderId] = pair.traderOrders[_trader].orderIds.length;
-
-        //Agregar al arbol
-        pair.sellOrders.saveOrder(_price, _quantity, _trader, nonce, _expired, _orderId, pair.baseToken);
-
-        Order storage newOrder = pair.orders[_orderId];
-        newOrder.orderId = _orderId;
-        newOrder.traderAddress = _trader;
-        newOrder.isBuy = false;
-        newOrder.price = _price;
-        newOrder.quantity = _quantity;
-        newOrder.availableQuantity = _quantity;
-        newOrder.status = 1;
-        newOrder.expiresAt = _expired;
-        newOrder.createdAt = nonce;
-        //Emite el evento de orden creada
-        emit OrderCreated(_orderId, pair.baseToken, pair.quoteToken, _trader);
-    }
-
-    //Match orden de compra
-    function matchOrderBuy(
-        Pair storage pair,
-        uint256 _price,
-        uint256 quantityBuy,
-        address traderBuy,
-        bytes32 orderIdBuy,
-        uint256 orderCount
-    ) private returns (uint256 _remainingQuantity, uint256 _orderCount) {
-        uint256 lowestSellPrice = pair.sellOrders.getNextPrice();
-        bytes32 currentOrderId = pair.sellOrders.getNextOrderId(lowestSellPrice);
-
-        //Obtengo los tokens
-        IERC20 baseTokenContract = IERC20(pair.baseToken);
-        IERC20 quoteTokenContract = IERC20(pair.quoteToken);
-
-        do {
-            Order memory currentOrder = getOrderDetail(pair, currentOrderId);
-
-            uint256 quantitySell = currentOrder.availableQuantity;
-
-            if (quantityBuy >= quantitySell) {
-                //SI
-                //Transfiero la cantidad de tokens de OE al vendedor
-                pair.lastTradePrice = currentOrder.price;
-                baseTokenContract.safeTransferFrom(
-                    traderBuy, currentOrder.traderAddress, quantitySell * currentOrder.price
-                ); //Multiplico la cantidad de tokens de venta por el precio de venta
-                //Transfiero la cantidad de tokens de OV al comprador
-                quoteTokenContract.transferFrom(address(this), traderBuy, quantitySell); //Transfiero la cantidad que tiene la venta
-                //Actualizo la orden de compra disminuyendo la cantidad que ya tengo
-                quantityBuy -= quantitySell;
-                //La cola tiene mas ordenes ?
-                currentOrderId = pair.sellOrders.getNextOrderId(lowestSellPrice);
-                //Elimino la orden de venta
-                pair.sellOrders.remove(currentOrder);
-            } else {
-                //NO
-                quantityBuy = executePartial(
-                    baseTokenContract, quoteTokenContract, traderBuy, quantityBuy, quantitySell, currentOrder
-                );
-                pair.lastTradePrice = currentOrder.price;
-
-                //Emite el evento de orden entrante ejecutada
-                emit OrderExecuted(orderIdBuy, pair.baseToken, pair.quoteToken, traderBuy);
-
-                //Emite el evento de orden de venta ejecutada parcialmente
-                emit OrderPartialExecuted(
-                    currentOrder.orderId, pair.baseToken, pair.quoteToken, currentOrder.traderAddress
-                );
-                return (quantityBuy, orderCount);
-            }
-            ++orderCount;
-            console.log("orderCount Order:", orderCount);
-
-        } while (currentOrderId != 0 && orderCount < 150);
-        return (quantityBuy, orderCount);
-
-    }
-
-    //Match orden de compra
-    function matchOrderSell(
-        Pair storage pair,
-        uint256 _price,
-        uint256 quantitySell,
-        address traderSell,
-        bytes32 orderIdSell,
-        uint256 orderCount
-    ) private returns (uint256 _remainingQuantity, uint256 _orderCount) {
-        uint256 highestBuyPrice = pair.buyOrders.getNextPrice();
-        bytes32 currentOrderId = pair.sellOrders.getNextOrderId(highestBuyPrice);
-
-        //Obtengo los tokens
-        IERC20 baseTokenContract = IERC20(pair.baseToken);
-        IERC20 quoteTokenContract = IERC20(pair.quoteToken);
-
-        do {
-            Order memory currentOrder = getOrderDetail(pair, currentOrderId);
-
-            uint256 quantityBuy = currentOrder.availableQuantity;
-
-            if (quantitySell >= quantityBuy) {
-                //SI
-                //Transfiero la cantidad de tokens de OE al vendedor
-                pair.lastTradePrice = currentOrder.price;
-                quoteTokenContract.safeTransferFrom(
-                    traderSell, currentOrder.traderAddress, quantityBuy * currentOrder.price
-                ); //Multiplico la cantidad de tokens de venta por el precio de venta
-                //Transfiero la cantidad de tokens de OV al comprador
-                baseTokenContract.transferFrom(address(this), traderSell, quantityBuy); //Transfiero la cantidad que tiene la venta
-                //Actualizo la orden de compra disminuyendo la cantidad que ya tengo
-                quantitySell -= quantityBuy;
-                //La cola tiene mas ordenes ?
-                currentOrderId = pair.buyOrders.getNextOrderId(highestBuyPrice);
-                //Elimino la orden de venta
-                pair.buyOrders.remove(currentOrder);
-            } else {
-                //NO
-                //Transfiero la cantidad de tokens de OE al comprador
-                pair.lastTradePrice = currentOrder.price;
-                quoteTokenContract.safeTransferFrom(
-                    traderSell, currentOrder.traderAddress, quantitySell * currentOrder.price
-                ); //Multiplico la cantidad de tokens de venta por el precio de compra
-                //Transfiero la cantidad de tokens de OC al vendedor
-                baseTokenContract.safeTransferFrom(address(this), traderSell, quantitySell);
-                //Actualizar la OC restando la cantidad de la OE
-                currentOrder.availableQuantity = quantityBuy - quantitySell;
-                currentOrder.status = 2; // Partial Fille TODO Pasar a constante
-                quantitySell = 0;
-                //Emite el evento de orden entrante ejecutada
-                emit OrderExecuted(orderIdSell, pair.baseToken, pair.quoteToken, traderSell);
-
-                //Emite el evento de orden de venta ejecutada parcialmente
-                emit OrderPartialExecuted(
-                    currentOrder.orderId, pair.baseToken, pair.quoteToken, currentOrder.traderAddress
-                );
-                return (quantitySell, orderCount);
-            }
-            ++orderCount;
-            console.log("orderCount Order:", orderCount);
-
-        } while (currentOrderId != 0 && orderCount < 150);
-        return (quantitySell, orderCount);
-
-    }
-
-    function executePartial(
-        IERC20 baseTokenContract,
-        IERC20 quoteTokenContract,
-        address traderBuy,
-        uint256 quantityBuy,
-        uint256 quantitySell,
-        Order memory order
-    ) private returns (uint256) {
+        //SI
         //Transfiero la cantidad de tokens de OE al vendedor
-        uint256 pValue = quantityBuy * order.price;
-        baseTokenContract.safeTransferFrom(traderBuy, order.traderAddress, pValue); //Multiplico la cantidad de tokens de compra por el precio de venta
+        pair.lastTradePrice = matchedOrder.price;
+        sellToken.safeTransferFrom(msg.sender, matchedOrder.traderAddress, sellTokenAmount); //Multiplico la cantidad de tokens de venta por el precio de venta
         //Transfiero la cantidad de tokens de OV al comprador
-        quoteTokenContract.safeTransferFrom(address(this), traderBuy, quantityBuy);
-        //Actualizar la OV restando la cantidad de la OE
-        order.availableQuantity = quantitySell - quantityBuy;
-        order.status = 2; // Partial filled TODO Pasar a constantes
-        quantityBuy = 0;
-        //Emite el evento de orden entrante ejecutada
-        //emit OrderExecuted(orderIdBuy, bookBaseToken, bookQuoteToken, traderBuy);
+        buyToken.transferFrom(address(this), msg.sender, buyTokenAmount); //Transfiero la cantidad que tiene la venta
+        //Elimino la orden
+        if (matchedOrder.isBuy) {
+            pair.buyOrders.remove(matchedOrder);
+        } else {
+            pair.sellOrders.remove(matchedOrder);
+        }
+    }
 
-        //Emite el evento de orden de venta ejecutada parcialmente
-        //emit OrderPartialExecuted(orderBookNode.orderId, bookBaseToken, bookQuoteToken, orderBookNode.traderAddress);
-        return quantityBuy;
+    function partialFillOrder(
+        Pair storage pair,
+        Order storage matchedOrder,
+        IERC20 buyToken,
+        IERC20 sellToken,
+        uint256 buyTokenAmount,
+        uint256 sellTokenAmount
+    ) private {
+        //NO
+        //Transfiero la cantidad de tokens de OE al comprador
+        pair.lastTradePrice = matchedOrder.price;
+        sellToken.safeTransferFrom(msg.sender, matchedOrder.traderAddress, sellTokenAmount); //Multiplico la cantidad de tokens de venta por el precio de compra
+        //Transfiero la cantidad de tokens de OC al vendedor
+        buyToken.safeTransferFrom(address(this), msg.sender, buyTokenAmount);
+    }
+
+    //Match orden de compra
+    function matchOrder(Pair storage pair, uint256 orderCount, IERC20 buyToken, IERC20 sellToken, Order memory newOrder)
+        private
+        returns (uint256 _remainingQuantity, uint256 _orderCount)
+    {
+        uint256 matchingPrice = 0;
+        bytes32 matchingOrderId = bytes32(uint256(0));
+
+        if (newOrder.isBuy) {
+            matchingPrice = pair.sellOrders.getNextPrice();
+            matchingOrderId = pair.sellOrders.getNextOrderId(matchingPrice);
+        } else {
+            matchingPrice = pair.buyOrders.getNextPrice();
+            matchingOrderId = pair.buyOrders.getNextOrderId(matchingPrice);
+        }
+
+        do {
+            Order storage matchingOrder = getOrderDetail(pair, matchingOrderId);
+
+            uint256 matchingOrderQty = matchingOrder.availableQuantity;
+
+            if (newOrder.quantity >= matchingOrderQty) {
+                fillOrder(
+                    pair, matchingOrder, buyToken, sellToken, matchingOrderQty, matchingOrderQty * matchingOrder.price
+                );
+                //Actualizo la orden de compra disminuyendo la cantidad que ya tengo
+                newOrder.quantity -= matchingOrderQty;
+                //La cola tiene mas ordenes ?
+                matchingOrderId = pair.sellOrders.getNextOrderId(matchingPrice);
+                // Emito ejecucion de orden completada
+                emit OrderExecuted(matchingOrder.orderId, pair.baseToken, pair.quoteToken, matchingOrder.traderAddress);
+            } else {
+                partialFillOrder(
+                    pair, matchingOrder, buyToken, sellToken, newOrder.quantity, newOrder.quantity * matchingOrder.price
+                );
+
+                //Actualizar la OC restando la cantidad de la OE
+                matchingOrder.availableQuantity = matchingOrderQty - newOrder.quantity;
+                matchingOrder.status = 2; // Partial Fille TODO Pasar a constante
+                newOrder.quantity = 0;
+
+                //Emite el evento de orden entrante ejecutada
+                emit OrderExecuted(newOrder.orderId, pair.baseToken, pair.quoteToken, msg.sender);
+
+                //Emite el evento de orden de venta ejecutada parcialmente
+                emit OrderPartialExecuted(
+                    matchingOrder.orderId, pair.baseToken, pair.quoteToken, matchingOrder.traderAddress
+                );
+                return (newOrder.quantity, orderCount);
+            }
+            ++orderCount;
+            console.log("orderCount Order:", orderCount);
+        } while (matchingOrderId != 0 && orderCount < 150);
+        return (newOrder.quantity, orderCount);
     }
 
     //Agregar orden de compra
-    function addBuyOrder(
-        Pair storage pair,
-        uint256 _price,
-        uint256 _quantity,
-        address _trader,
-        uint256 nonce,
-        uint256 _expired
-    ) internal {
+    function addBuyOrder(Pair storage pair, uint256 _price, uint256 _quantity, uint256 nonce, uint256 _expired)
+        internal
+    {
+        //Obtengo los tokens
+        IERC20 buyToken = IERC20(pair.baseToken);
+        IERC20 sellToken = IERC20(pair.quoteToken);
+
         //¿Arbol de ventas tiene nodos?
         uint256 currentNode = pair.sellOrders.getNextPrice();
         console.log("currentNode", currentNode);
         console.log("addresss this", address(this));
 
-        bytes32 _orderId = keccak256(abi.encodePacked(_trader, "buy", _price, nonce));
+        bytes32 _orderId = keccak256(abi.encodePacked(msg.sender, "buy", _price, nonce));
+
+        Order memory newOrder = Order({
+            orderId: _orderId,
+            price: _price,
+            quantity: _quantity,
+            availableQuantity: _quantity,
+            expiresAt: _expired,
+            isBuy: true,
+            createdAt: nonce,
+            traderAddress: msg.sender,
+            status: 1
+        });
+
         console.logBytes32(_orderId);
         uint256 orderCount = 0;
         do {
             if (currentNode == 0 || orderCount >= 150) {
                 //NO
-                saveBuyOrder(pair, _price, _quantity, _trader, nonce, _expired, _orderId);
+                saveOrder(pair, newOrder);
                 return;
             } else {
                 //SI
@@ -315,12 +228,12 @@ library PairLib {
                 if (_price >= currentNode) {
                     //SI
                     //Aplico el match de ordenes de compra
-                    (_quantity, orderCount) =
-                    matchOrderBuy(pair, _price, _quantity, _trader, _orderId, orderCount);
+                    (_quantity, orderCount) = matchOrder(pair, orderCount, buyToken, sellToken, newOrder);
+                    newOrder.quantity = _quantity;
                     currentNode = pair.sellOrders.getNextPrice();
                 } else {
                     //NO
-                    saveBuyOrder(pair, _price, _quantity, _trader, nonce, _expired, _orderId);
+                    saveOrder(pair, newOrder);
                     return;
                 }
             }
@@ -328,23 +241,34 @@ library PairLib {
     }
 
     //Agregar orden de venta
-    function addSellOrder(
-        Pair storage pair,
-        uint256 _price,
-        uint256 _quantity,
-        address _trader,
-        uint256 nonce,
-        uint256 _expired
-    ) internal {
+    function addSellOrder(Pair storage pair, uint256 _price, uint256 _quantity, uint256 nonce, uint256 _expired)
+        internal
+    {
+        //Obtengo los tokens
+        IERC20 buyToken = IERC20(pair.quoteToken);
+        IERC20 sellToken = IERC20(pair.baseToken);
+
         //¿Arbol de compras tiene nodos?
         uint256 currentNode = pair.buyOrders.getNextPrice();
-        bytes32 _orderId = keccak256(abi.encodePacked(_trader, "sell", _price, nonce));
+        bytes32 _orderId = keccak256(abi.encodePacked(msg.sender, "sell", _price, nonce));
         uint256 orderCount = 0;
+
+        Order memory newOrder = Order({
+            orderId: _orderId,
+            price: _price,
+            quantity: _quantity,
+            availableQuantity: _quantity,
+            expiresAt: _expired,
+            isBuy: true,
+            createdAt: nonce,
+            traderAddress: msg.sender,
+            status: 1
+        });
 
         do {
             if (currentNode == 0 || orderCount >= 150) {
                 //NO
-                saveSellOrder(pair, _price, _quantity, _trader, nonce, _expired, _orderId);
+                saveOrder(pair, newOrder);
                 return;
             } else {
                 //SI
@@ -352,11 +276,12 @@ library PairLib {
                 if (_price <= currentNode) {
                     //SI
                     //Aplico el match de ordenes de compra
-                    (_quantity, orderCount) = matchOrderSell(pair, _price, _quantity, _trader, _orderId, orderCount);
+                    (_quantity, orderCount) = matchOrder(pair, orderCount, buyToken, sellToken, newOrder);
+                    newOrder.quantity = _quantity;
                     currentNode = pair.buyOrders.getNextPrice();
                 } else {
                     //NO
-                    saveSellOrder(pair, _price, _quantity, _trader, nonce, _expired, _orderId);
+                    saveOrder(pair, newOrder);
                     return;
                 }
             }
@@ -370,9 +295,7 @@ library PairLib {
         console.log(msg.sender);
 
         if (removedOrder.isBuy) {
-
             pair.buyOrders.remove(removedOrder);
-
         } else {
             pair.sellOrders.remove(removedOrder);
         }
@@ -380,32 +303,18 @@ library PairLib {
 
         // Reemplazar el elemento a eliminar con el último elemento del array
         pair.traderOrders[msg.sender].orderIds[pair.traderOrders[msg.sender].index[_orderId]] =
-                                    pair.traderOrders[msg.sender].orderIds[pair.traderOrders[msg.sender].orderIds.length - 1];
+            pair.traderOrders[msg.sender].orderIds[pair.traderOrders[msg.sender].orderIds.length - 1];
         // Remover el último elemento
         pair.traderOrders[msg.sender].orderIds.pop();
 
         delete pair.traderOrders[msg.sender].index[_orderId];
-
     }
 
     function getTraderOrders(Pair storage pair, address _trader) public view returns (bytes32[] memory) {
         return pair.traderOrders[_trader].orderIds;
     }
 
-//    function getOrderById(Pair storage pair, address _trader, bytes32 _orderId)
-//    public
-//    returns (Order memory)
-//    {
-//        TraderOrder memory _order = pair.traderOrders[_trader].orders[_orderId];
-//        if (_order.isBuy) {
-//            return pair.buyOrders.getOrderDetail(_orderId);
-//        } else {
-//            return pair.sellOrders.getOrderDetail(_orderId);
-//        }
-//    }
-
-
-    function getOrderDetail(Pair storage pair, bytes32 orderId) public view returns (Order memory) {
+    function getOrderDetail(Pair storage pair, bytes32 orderId) public view returns (Order storage) {
         if (keyExists(pair, orderId)) revert PairLib__KeyDoesNotExist();
         return pair.orders[orderId];
     }
@@ -413,6 +322,4 @@ library PairLib {
     function keyExists(Pair storage pair, bytes32 key) internal view returns (bool _exists) {
         return pair.orders[key].orderId == 0;
     }
-
-
 }

@@ -202,7 +202,6 @@ contract OrderBookFactory {
         uint256 quantity,
         uint256 price,
         bool isBuy,
-        address trader,
         uint256 nonce,
         uint256 _expired
     ) public onlyEnabledBook(idOrderBook) {
@@ -210,9 +209,9 @@ contract OrderBookFactory {
         if (quantity == 0) revert OrderBookFactory__InvalidQuantityValueZero();
         PairLib.Pair storage order = ordersBook[idOrderBook];
         if (isBuy) {
-            order.addBuyOrder(price, quantity, trader, nonce, _expired);
+            order.addBuyOrder(price, quantity, nonce, _expired);
         } else {
-            order.addSellOrder(price, quantity, trader, nonce, _expired);
+            order.addSellOrder(price, quantity, nonce, _expired);
         }
     }
 

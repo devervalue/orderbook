@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {PairLib} from "./PairLib.sol";
 
-
 abstract contract OrderBook {
     using RedBlackTree for RedBlackTree.Tree;
     using OrderQueue for OrderQueue.Queue;
@@ -24,23 +23,13 @@ abstract contract OrderBook {
     RedBlackTree.Tree public tree;
     mapping(uint256 => Price) internal prices; // Mapping of keys to their corresponding nodes
 
-    function insert(
-        bytes32 key,
-        uint256 value,
-        address _traderAddress,
-        uint256 _quantity,
-        uint256 nonce,
-        uint256 _expired,
-        bool _isBuy
-    ) internal {
-
+    function insert(bytes32 key, uint256 value, uint256 _quantity) internal {
         tree.insert(value);
 
         Price storage price = prices[value];
         price.q.push(key);
         price.countTotalOrders = price.countTotalOrders + 1;
         price.countValueOrders = price.countValueOrders + _quantity;
-
     }
 
     function remove(PairLib.Order calldata order) public {
@@ -54,51 +43,34 @@ abstract contract OrderBook {
         }
     }
 
-    function saveOrder(
-        uint256 _price,
-        uint256 _quantity,
-        address _trader,
-        uint256 nonce,
-        uint256 _expired,
-        bytes32 _orderId,
-        address tokenAddress,
-        uint256 transferQty,
-        bool isBuy
-    ) internal {
+    function saveOrder(uint256 _price, uint256 _quantity, bytes32 _orderId, address tokenAddress, uint256 transferQty)
+        internal
+    {
         //Transfiero los tokens al contrato
         console.log("Token", tokenAddress);
         IERC20 token = IERC20(tokenAddress);
-        token.safeTransferFrom(_trader, address(this), transferQty); //Transfiero la cantidad indicada
+        token.safeTransferFrom(msg.sender, address(this), transferQty); //Transfiero la cantidad indicada
         console.log("prueba");
 
         //Agregar al arbol
-        insert(_orderId, _price, _trader, _quantity, nonce, _expired, isBuy);
+        insert(_orderId, _price, _quantity);
     }
 
-    function getNextOrderId( uint256 price) public view returns (bytes32){
+    function getNextOrderId(uint256 price) public view returns (bytes32) {
         return prices[price].q.first;
     }
 
-    function getNextPrice() public virtual view returns (uint256);
+    function getNextPrice() public view virtual returns (uint256);
 }
 
 contract SellOrderBook is OrderBook {
     using RedBlackTree for RedBlackTree.Tree;
 
-
-    function saveOrder(
-        uint256 _price,
-        uint256 _quantity,
-        address _trader,
-        uint256 nonce,
-        uint256 _expired,
-        bytes32 _orderId,
-        address tokenAddress
-    ) public {
-        saveOrder(_price,_quantity,_trader,nonce,_expired,_orderId,tokenAddress,_quantity * _price, false);
+    function saveOrder(uint256 _price, uint256 _quantity, bytes32 _orderId, address tokenAddress) public {
+        saveOrder(_price, _quantity, _orderId, tokenAddress, _quantity * _price);
     }
 
-    function getNextPrice() public override view returns (uint256){
+    function getNextPrice() public view override returns (uint256) {
         return tree.first();
     }
 }
@@ -106,22 +78,11 @@ contract SellOrderBook is OrderBook {
 contract BuyOrderBook is OrderBook {
     using RedBlackTree for RedBlackTree.Tree;
 
-
-    function saveOrder(
-        uint256 _price,
-        uint256 _quantity,
-        address _trader,
-        uint256 nonce,
-        uint256 _expired,
-        bytes32 _orderId,
-        address tokenAddress) public {
-        saveOrder(_price,_quantity,_trader,nonce,_expired,_orderId,tokenAddress,_quantity,true);
+    function saveOrder(uint256 _price, uint256 _quantity, bytes32 _orderId, address tokenAddress) public {
+        saveOrder(_price, _quantity, _orderId, tokenAddress, _quantity);
     }
 
-    function getNextPrice() public override view returns (uint256){
+    function getNextPrice() public view override returns (uint256) {
         return tree.last();
     }
-
-
-
 }

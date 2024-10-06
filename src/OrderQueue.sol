@@ -61,7 +61,9 @@ library OrderQueue {
         //TODO QUE PASA SI INTENTO AGREGAR UN VALOR O ID QUE YA EXISTE ? PUEDE SUCEDER?
         if (q.last != 0) {
             q.orders[q.last].next = _orderId;
-        } else if (q.first == 0) q.first = _orderId;
+        } else if (q.first == 0) {
+            q.first = _orderId;
+        }
 
         // TODO: Consider using assembly for this storage operation to save gas
         q.orders[_orderId] = OrderBookNode({orderId: _orderId, prev: q.last, next: 0});
@@ -79,7 +81,7 @@ library OrderQueue {
         OrderBookNode memory orderBookNode = q.orders[orderId];
         // TODO: Use assembly for deleting storage to save gas
         delete q.orders[orderId];
-// Combine conditions to reduce storage reads
+        // Combine conditions to reduce storage reads
         bytes32 newFirst = q.first;
         bytes32 newLast = q.last;
 
@@ -90,7 +92,7 @@ library OrderQueue {
             newLast = orderBookNode.prev;
         }
 
-// Only update storage if values have changed
+        // Only update storage if values have changed
         if (newFirst != q.first) {
             q.first = newFirst;
         }

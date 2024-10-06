@@ -6,9 +6,7 @@ pragma solidity ^0.8.26;
  * @dev This contract implements a red-black tree, which is a self-balancing binary search tree.
  *      It is designed to be used for managing order books or any other sorted data structures efficiently.
  */
-
 library RedBlackTree {
-
     /* Errors */
 
     error RedBlackTree__StartingValueCannotBeZero();
@@ -31,7 +29,6 @@ library RedBlackTree {
         uint256 right; // Right child node
         bool red; // Color of the node, true if red, false if black
     }
-
 
     /**
      *  @notice Struct representing the entire Red-Black Tree
@@ -278,7 +275,6 @@ library RedBlackTree {
         nValue.left = EMPTY;
         nValue.right = EMPTY;
         nValue.red = true;
-
 
         if (cursor == EMPTY) {
             self.root = value;
