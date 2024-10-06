@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-//import {OrderQueue} from "./OrderQueue.sol";
-import "./OrderQueue.sol";
 /**
  * @title Red-Black Tree Implementation for Solidity
  * @dev This contract implements a red-black tree, which is a self-balancing binary search tree.
@@ -10,8 +8,7 @@ import "./OrderQueue.sol";
  */
 
 library RedBlackTree {
-    using OrderQueue for OrderQueue.Queue;
-    using OrderQueue for OrderQueue.OrderBookNode;
+
     /* Errors */
 
     error RedBlackTree__StartingValueCannotBeZero();
@@ -34,9 +31,7 @@ library RedBlackTree {
         uint256 right; // Right child node
         bool red; // Color of the node, true if red, false if black
     }
-    //uint[] ordersKeys; //Array with the keys of the orders (the key is the price)
-    //bytes32[] ordersKeys;
-    //mapping(bytes32 => OrderBookNode) orders; //Mapping with the structure of the orders in a node
+
 
     /**
      *  @notice Struct representing the entire Red-Black Tree
@@ -284,12 +279,6 @@ library RedBlackTree {
         nValue.right = EMPTY;
         nValue.red = true;
 
-        /*nValue.orders[key] = OrderBookNode({
-            traderAddress: _traderAddress,
-            orderId: key
-        });
-        nValue.ordersKeys.push(key);*/
-        //nValue.keyMap[key] = nValue.keys.push(key) - uint(1);
 
         if (cursor == EMPTY) {
             self.root = value;
