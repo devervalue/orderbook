@@ -25,7 +25,6 @@ abstract contract OrderBook {
     mapping(uint256 => Price) internal prices; // Mapping of keys to their corresponding nodes
 
     function insert(
-
         bytes32 key,
         uint256 value,
         address _traderAddress,
@@ -55,22 +54,7 @@ abstract contract OrderBook {
         }
     }
 
-    function popOrder(uint256 value) internal {
-//        Price storage price = prices[value];
-//        bytes32 poppedOrderId = price.q.pop();
-//        Order poppedOrder = orders[poppedOrderId];
-//        price.countTotalOrders = price.countTotalOrders - 1;
-//        price.countValueOrders = price.countValueOrders - poppedOrder.quantity;
-//
-//        delete orders[poppedOrderId];
-//
-//        if (price.q.isEmpty()) {
-//            tree.remove(value);
-//        }
-    }
-
     function saveOrder(
-
         uint256 _price,
         uint256 _quantity,
         address _trader,
