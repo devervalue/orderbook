@@ -3,14 +3,17 @@ pragma solidity ^0.8.0;
 
 import "./RedBlackTree.sol";
 import "./OrderQueue.sol";
+import "forge-std/console.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {PairLib} from "./PairLib.sol";
 
-contract OrderBook {
+
+abstract contract OrderBook {
     using RedBlackTree for RedBlackTree.Tree;
     using OrderQueue for OrderQueue.Queue;
     using OrderQueue for OrderQueue.OrderBookNode;
-
-    error OrderBook__ValueAndKeyPairExists();
-    error OrderBook__KeyDoesNotExist();
+    using SafeERC20 for IERC20;
 
     struct Price {
         uint256 countTotalOrders; // Total Orders of the Node
@@ -18,31 +21,11 @@ contract OrderBook {
         OrderQueue.Queue q;
     }
 
-    struct Order {
-        // TODO: Reorder variables to pack them more efficiently and reduce storage slots
-        // uint256 and bytes32 variables should be grouped together
-        bytes32 orderId;
-        address traderAddress;
-        bool isBuy;
-        uint256 price;
-        uint256 quantity;
-        uint256 availableQuantity;
-        uint8 status; //created 1 / partially filled 2 / filled 3 / cancelada 4
-        uint256 expiresAt;
-        uint256 createdAt;
-    }
-
-    RedBlackTree.Tree private tree;
-    mapping(uint256 => Price) private prices; // Mapping of keys to their corresponding nodes
-    mapping(bytes32 => Order) private orders;
-
-    constructor() {}
-
-    function keyExists(bytes32 key) internal view returns (bool _exists) {
-        return orders[key] == 0;
-    }
+    RedBlackTree.Tree public tree;
+    mapping(uint256 => Price) internal prices; // Mapping of keys to their corresponding nodes
 
     function insert(
+
         bytes32 key,
         uint256 value,
         address _traderAddress,
@@ -51,58 +34,110 @@ contract OrderBook {
         uint256 _expired,
         bool _isBuy
     ) internal {
-        if (keyExists(key)) revert OrderBook__ValueAndKeyPairExists();
 
         tree.insert(value);
 
         Price storage price = prices[value];
-        price.q.push(_traderAddress, key, value, _quantity, nonce, _expired);
+        price.q.push(key);
         price.countTotalOrders = price.countTotalOrders + 1;
         price.countValueOrders = price.countValueOrders + _quantity;
 
-        Order storage newOrder = orders[key];
-        newOrder.orderId = key;
-        newOrder.traderAddress = _traderAddress;
-        newOrder.isBuy = _isBuy;
-        newOrder.price = value;
-        newOrder.quantity = _quantity;
-        newOrder.availableQuantity = _quantity;
-        newOrder.status = 1;
-        newOrder.expiresAt = _expired;
-        newOrder.createdAt = nonce;
     }
 
-    function remove(bytes32 key) internal {
-        if (!keyExists(key)) revert OrderBook__KeyDoesNotExist();
-
-        Order memory removedOrder = orders[key];
-        delete orders[key];
-        Price storage price = prices[removedOrder.price];
+    function remove(PairLib.Order calldata order) public {
+        Price storage price = prices[order.price];
         price.countTotalOrders = price.countTotalOrders - 1;
-        price.countValueOrders = price.countValueOrders - removedOrder.quantity;
-        price.q.removeOrder(key);
+        price.countValueOrders = price.countValueOrders - order.quantity;
+        price.q.removeOrder(order.orderId);
 
         if (price.q.isEmpty()) {
-            tree.remove(removedOrder.price);
+            tree.remove(order.price);
         }
     }
 
     function popOrder(uint256 value) internal {
-        Price storage price = prices[value];
-        bytes32 poppedOrderId = price.q.pop();
-        Order poppedOrder = orders[poppedOrderId];
-        price.countTotalOrders = price.countTotalOrders - 1;
-        price.countValueOrders = price.countValueOrders - poppedOrder.quantity;
-
-        delete orders[poppedOrderId];
-
-        if (price.q.isEmpty()) {
-            tree.remove(value);
-        }
+//        Price storage price = prices[value];
+//        bytes32 poppedOrderId = price.q.pop();
+//        Order poppedOrder = orders[poppedOrderId];
+//        price.countTotalOrders = price.countTotalOrders - 1;
+//        price.countValueOrders = price.countValueOrders - poppedOrder.quantity;
+//
+//        delete orders[poppedOrderId];
+//
+//        if (price.q.isEmpty()) {
+//            tree.remove(value);
+//        }
     }
 
-    function getOrderDetail(bytes32 orderId) public view returns (Order memory) {
-        if (keyExists(orderId)) revert OrderBook__KeyDoesNotExist();
-        return orders[orderId];
+    function saveOrder(
+
+        uint256 _price,
+        uint256 _quantity,
+        address _trader,
+        uint256 nonce,
+        uint256 _expired,
+        bytes32 _orderId,
+        address tokenAddress,
+        uint256 transferQty,
+        bool isBuy
+    ) internal {
+        //Transfiero los tokens al contrato
+        console.log("Token", tokenAddress);
+        IERC20 token = IERC20(tokenAddress);
+        token.safeTransferFrom(_trader, address(this), transferQty); //Transfiero la cantidad indicada
+        console.log("prueba");
+
+        //Agregar al arbol
+        insert(_orderId, _price, _trader, _quantity, nonce, _expired, isBuy);
     }
+
+    function getNextOrderId( uint256 price) public view returns (bytes32){
+        return prices[price].q.first;
+    }
+
+    function getNextPrice() public virtual view returns (uint256);
+}
+
+contract SellOrderBook is OrderBook {
+    using RedBlackTree for RedBlackTree.Tree;
+
+
+    function saveOrder(
+        uint256 _price,
+        uint256 _quantity,
+        address _trader,
+        uint256 nonce,
+        uint256 _expired,
+        bytes32 _orderId,
+        address tokenAddress
+    ) public {
+        saveOrder(_price,_quantity,_trader,nonce,_expired,_orderId,tokenAddress,_quantity * _price, false);
+    }
+
+    function getNextPrice() public override view returns (uint256){
+        return tree.first();
+    }
+}
+
+contract BuyOrderBook is OrderBook {
+    using RedBlackTree for RedBlackTree.Tree;
+
+
+    function saveOrder(
+        uint256 _price,
+        uint256 _quantity,
+        address _trader,
+        uint256 nonce,
+        uint256 _expired,
+        bytes32 _orderId,
+        address tokenAddress) public {
+        saveOrder(_price,_quantity,_trader,nonce,_expired,_orderId,tokenAddress,_quantity,true);
+    }
+
+    function getNextPrice() public override view returns (uint256){
+        return tree.last();
+    }
+
+
+
 }

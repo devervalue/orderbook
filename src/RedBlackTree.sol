@@ -68,7 +68,7 @@ library RedBlackTree {
      * @return _value The value of the leftmost node in the tree. If the tree is
      *         empty, it returns `0`.
      */
-    function first(Tree storage self) internal view returns (uint256 _value) {
+    function first(Tree storage self) public view returns (uint256 _value) {
         _value = self.root;
         if (_value == EMPTY) return 0;
         Node storage currentNode = self.nodes[_value];
@@ -259,12 +259,11 @@ library RedBlackTree {
      * 5. The function then fixes up the tree to maintain the Red-Black properties.
      *
      * @param self A reference to the `Tree` struct in storage that contains the nodes and root of the Red-Black tree.
-     * @param key The key associated with the value to be inserted.
      * @param value The value of the node to be inserted into the tree.
      */
     function insert(Tree storage self, uint256 value) internal {
         if (value == EMPTY) revert RedBlackTree__ValueToInsertCannotBeZero();
-        if (exists(value)) return;
+        if (exists(self, value)) return;
 
         uint256 cursor; //Sigue al nodo que precede al nuevo nodo
         uint256 probe = self.root; //Nodo Actual
@@ -317,7 +316,6 @@ library RedBlackTree {
      *
      * @param self A reference to the `Tree` struct in storage, which contains the
      *        nodes and root of the Red-Black tree.
-     * @param key The key to be removed from the node.
      * @param value The value identifying the node where the key is to be removed.
      */
     function remove(Tree storage self, uint256 value) internal {

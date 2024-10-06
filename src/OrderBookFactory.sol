@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import "./OrderBookLib.sol";
 import "./RedBlackTree.sol";
+import {PairLib} from "./PairLib.sol";
 
 /**
  * @title Contrato Principal para la Gestión de Libros de Órdenes
@@ -11,7 +11,7 @@ import "./RedBlackTree.sol";
  * @dev Este contrato administra la información de los libros de ordenes.
  */
 contract OrderBookFactory {
-    using OrderBookLib for OrderBookLib.OrderBook;
+    using PairLib for PairLib.Pair;
     using RedBlackTree for RedBlackTree.Tree;
 
     error OrderBookFactory__InvalidTokenAddress();
@@ -30,7 +30,7 @@ contract OrderBookFactory {
 
     bytes32[] public orderBooksKeys;
 
-    mapping(bytes32 => OrderBookLib.OrderBook) ordersBook;
+    mapping(bytes32 => PairLib.Pair) ordersBook;
 
     /**
      *  @notice Evento que se emite cuando se crea un nuevo libro de órdenes.
@@ -107,7 +107,7 @@ contract OrderBookFactory {
         orderBooksKeys.push(identifier);
 
         //Add data mapping
-        OrderBookLib.OrderBook storage orderBook = ordersBook[identifier];
+        PairLib.Pair storage orderBook = ordersBook[identifier];
         orderBook.baseToken = baseToken;
         orderBook.quoteToken = quoteToken;
         orderBook.lastTradePrice = 0;
@@ -208,7 +208,7 @@ contract OrderBookFactory {
     ) public onlyEnabledBook(idOrderBook) {
         if (!orderBookExists(idOrderBook)) revert OrderBookFactory__OrderBookIdOutOfRange();
         if (quantity == 0) revert OrderBookFactory__InvalidQuantityValueZero();
-        OrderBookLib.OrderBook storage order = ordersBook[idOrderBook];
+        PairLib.Pair storage order = ordersBook[idOrderBook];
         if (isBuy) {
             order.addBuyOrder(price, quantity, trader, nonce, _expired);
         } else {
@@ -218,7 +218,7 @@ contract OrderBookFactory {
 
     function cancelOrder(bytes32 idOrderBook, bytes32 idOrder) public {
         if (!orderBookExists(idOrderBook)) revert OrderBookFactory__OrderBookIdOutOfRange();
-        OrderBookLib.OrderBook storage order = ordersBook[idOrderBook];
+        PairLib.Pair storage order = ordersBook[idOrderBook];
         order.cancelOrder(idOrder);
     }
 }
