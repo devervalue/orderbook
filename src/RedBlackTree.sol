@@ -18,9 +18,7 @@ library RedBlackTree {
     error RedBlackTree__ValuesDoesNotExist();
     error RedBlackTree__NodeDoesNotExist();
     error RedBlackTree__ValueToInsertCannotBeZero();
-    error RedBlackTree__ValueAndKeyPairExists();
     error RedBlackTree__ValueCannotBeZero();
-    error RedBlackTree__KeyDoesNotExist();
 
     /**
      *  @notice Represents an empty value in the tree; it is used to denote nodes that do not exist or are empty.
@@ -35,9 +33,6 @@ library RedBlackTree {
         uint256 left; // Left child node
         uint256 right; // Right child node
         bool red; // Color of the node, true if red, false if black
-        uint256 countTotalOrders; // Total Orders of the Node
-        uint256 countValueOrders; // Sum of the value of the orders
-        OrderQueue.Queue orders;
     }
     //uint[] ordersKeys; //Array with the keys of the orders (the key is the price)
     //bytes32[] ordersKeys;
@@ -219,32 +214,6 @@ library RedBlackTree {
         return false;
     }
 
-    /**
-     * @dev Checks if a specific key exists in a node identified by its value.
-     *
-     * This function verifies whether a given key is present in the node associated
-     * with the provided value in the Red-Black tree. The process involves:
-     *
-     * 1. Confirming that the node with the given value exists in the tree.
-     *    - If the node does not exist, the function returns `false`.
-     * 2. If the node exists, it checks if the key is stored in the node's key map.
-     *    - The key map (`keyMap`) is used to retrieve the position of the key in
-     *      the keys array (`keys`).
-     *    - If the key exists at the retrieved position, the function returns `true`;
-     *      otherwise, it returns `false`.
-     *
-     * @param self A reference to the `Tree` struct in storage, which contains the
-     *        nodes and root of the Red-Black tree.
-     * @param key The key to be checked within the node.
-     * @param value The value identifying the node where the key is to be checked.
-     *
-     * @return _exists `true` if the key exists within the node; otherwise `false`.
-     */
-    function keyExists(Tree storage self, bytes32 key, uint256 value) internal view returns (bool _exists) {
-        if (!exists(self, value)) return false;
-        Node storage node = self.nodes[value];
-        return node.orders.orderExists(key);
-    }
 
     /**
      * @dev Retrieves various attributes of a node in the Red-Black tree.
@@ -296,15 +265,10 @@ library RedBlackTree {
      */
     function insert(
         Tree storage self,
-        bytes32 key,
-        uint256 value,
-        address _traderAddress,
-        uint256 _quantity,
-        uint256 nonce,
-        uint256 _expired
+        uint256 value
     ) internal {
         if (value == EMPTY) revert RedBlackTree__ValueToInsertCannotBeZero();
-        if (keyExists(self, key, value)) revert RedBlackTree__ValueAndKeyPairExists();
+        if (exists(value)) return;
 
         uint256 cursor; //Sigue al nodo que precede al nuevo nodo
         uint256 probe = self.root; //Nodo Actual
@@ -316,19 +280,7 @@ library RedBlackTree {
                 probe = currentNode.left;
             } else if (value > probe) {
                 probe = currentNode.right;
-            } else {
-                currentNode.orders.push(_traderAddress, key, value, _quantity, nonce, _expired);
-                currentNode.countTotalOrders = currentNode.countTotalOrders + 1;
-                currentNode.countValueOrders = currentNode.countValueOrders + _quantity;
-                /*currentNode.orders[key] = OrderBookNode({
-                    traderAddress: _traderAddress,
-                    orderId: key
-                });*/
-                //currentNode.ordersKeys.push(key);
-                //currentNode.keyMap[key] = currentNode.keys.push(key) - uint(1);
-                return;
             }
-            //currentNode.count++;
         }
 
         Node storage nValue = self.nodes[value];
@@ -336,9 +288,6 @@ library RedBlackTree {
         nValue.left = EMPTY;
         nValue.right = EMPTY;
         nValue.red = true;
-        nValue.orders.push(_traderAddress, key, value, _quantity, nonce, _expired);
-        nValue.countTotalOrders = nValue.countTotalOrders + 1;
-        nValue.countValueOrders = nValue.countValueOrders + _quantity;
 
         /*nValue.orders[key] = OrderBookNode({
             traderAddress: _traderAddress,
@@ -375,31 +324,19 @@ library RedBlackTree {
      * @param key The key to be removed from the node.
      * @param value The value identifying the node where the key is to be removed.
      */
-    function remove(Tree storage self, bytes32 key, uint256 value) internal {
+    function remove(Tree storage self, uint256 value) internal {
         // Ensure the value and key exist
         if (value == EMPTY) revert RedBlackTree__ValueCannotBeZero();
-        if (!keyExists(self, key, value)) revert RedBlackTree__KeyDoesNotExist();
         //Eliminación de la Clave
         // Reference to the node to be removed
         Node storage nValue = self.nodes[value];
-
-        /*uint rowToDelete = nValue.keyMap[key];
-
-        // Remove the key from the node's keys array
-        uint lastIndex = nValue.keys.length - 1;
-        nValue.keys[rowToDelete] = nValue.keys[lastIndex];
-        nValue.keyMap[nValue.keys[rowToDelete]] = rowToDelete;
-        nValue.keys.pop(); // Equivalent to nValue.keys.length--*/
-        nValue.countTotalOrders = nValue.countTotalOrders - 1;
-        nValue.countValueOrders = nValue.countValueOrders - nValue.orders.orders[key].quantity;
-        nValue.orders.removeOrder(key);
 
         uint256 probe; //El hijo del nodo sucesor o el hijo del nodo eliminado que se conecta al padre del nodo sucesor
         uint256 cursor; //Nodo reemplazante
 
         //Manejo de la Eliminación del Nodo: Si el nodo queda sin claves
         // Node has no keys left, handle its removal
-        if (nValue.orders.isEmpty()) {
+
             // Determine replacement node
             //Si el nodo tiene un solo hijo
             if (nValue.left == EMPTY || nValue.right == EMPTY) {
@@ -452,87 +389,7 @@ library RedBlackTree {
 
             // Delete the old node
             delete self.nodes[cursor];
-        }
-    }
 
-    function popOrder(Tree storage self, uint256 value) internal {
-        // Ensure the value and key exist
-        if (value == EMPTY) revert RedBlackTree__ValueCannotBeZero();
-        // TODO Validar que el nodo exista
-        //Eliminación de la Clave
-        // Reference to the node to be removed
-        Node storage nValue = self.nodes[value];
-
-        /*uint rowToDelete = nValue.keyMap[key];
-
-        // Remove the key from the node's keys array
-        uint lastIndex = nValue.keys.length - 1;
-        nValue.keys[rowToDelete] = nValue.keys[lastIndex];
-        nValue.keyMap[nValue.keys[rowToDelete]] = rowToDelete;
-        nValue.keys.pop(); // Equivalent to nValue.keys.length--*/
-        nValue.countTotalOrders = nValue.countTotalOrders - 1;
-        nValue.countValueOrders = nValue.countValueOrders - nValue.orders.orders[nValue.orders.first].quantity;
-        nValue.orders.pop();
-
-        uint256 probe; //El hijo del nodo sucesor o el hijo del nodo eliminado que se conecta al padre del nodo sucesor
-        uint256 cursor; //Nodo reemplazante
-
-        //Manejo de la Eliminación del Nodo: Si el nodo queda sin claves
-        // Node has no keys left, handle its removal
-        if (nValue.orders.isEmpty()) {
-            // Determine replacement node
-            //Si el nodo tiene un solo hijo
-            if (nValue.left == EMPTY || nValue.right == EMPTY) {
-                cursor = value;
-            } else {
-                //Si el nodo tiene dos hijos, se encuentra el nodo más pequeño
-                cursor = nValue.right;
-                Node storage currentNode = self.nodes[cursor];
-                while (currentNode.left != EMPTY) {
-                    cursor = currentNode.left;
-                    currentNode = self.nodes[cursor];
-                }
-            }
-
-            // Set probe to the child of cursor
-            probe = self.nodes[cursor].left != EMPTY ? self.nodes[cursor].left : self.nodes[cursor].right;
-
-            uint256 cursorParent = self.nodes[cursor].parent;
-            self.nodes[probe].parent = cursorParent;
-
-            // Update parent's link
-            if (cursorParent != EMPTY) {
-                if (cursor == self.nodes[cursorParent].left) {
-                    self.nodes[cursorParent].left = probe;
-                } else {
-                    self.nodes[cursorParent].right = probe;
-                }
-            } else {
-                self.root = probe;
-            }
-
-            // Determine if fixup is needed
-            bool doFixup = !self.nodes[cursor].red;
-
-            // Handle case where cursor is not the value node
-            if (cursor != value) {
-                replaceParent(self, cursor, value);
-                self.nodes[cursor].left = nValue.left;
-                self.nodes[self.nodes[cursor].left].parent = cursor;
-                self.nodes[cursor].right = nValue.right;
-                self.nodes[self.nodes[cursor].right].parent = cursor;
-                self.nodes[cursor].red = nValue.red;
-                (cursor, value) = (value, cursor);
-            }
-
-            // Fix Red-Black tree properties
-            if (doFixup) {
-                removeFixup(self, probe);
-            }
-
-            // Delete the old node
-            delete self.nodes[cursor];
-        }
     }
 
     /**
@@ -873,13 +730,4 @@ library RedBlackTree {
         self.nodes[value].red = false;
     }
 
-    function getOrderDetail(Tree storage self, bytes32 orderId, uint256 value)
-        public
-        view
-        returns (OrderQueue.OrderBookNode memory)
-    {
-        Node storage node = getNode(self, value);
-        if (node.orders.orders[orderId].price == 0) revert RedBlackTree__NodeDoesNotExist();
-        return node.orders.orders[orderId];
-    }
 }
