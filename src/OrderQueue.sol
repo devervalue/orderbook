@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+import "forge-std/console.sol";
+
+
 library OrderQueue {
     /* Errors */
     // TODO: Consider using custom error strings instead of error types to save gas
@@ -78,6 +81,7 @@ library OrderQueue {
         // TODO: Consider using assembly for storage reads to save gas
         //TODO VERIFICAR QUE LA ORDEN EXISTA DEBEMOS VALIDAR?
         OrderBookNode memory orderBookNode = q.orders[orderId];
+        console.logBytes32(orderBookNode.orderId);
         // TODO: Use assembly for deleting storage to save gas
         delete q.orders[orderId];
         // Combine conditions to reduce storage reads
@@ -107,5 +111,6 @@ library OrderQueue {
             q.orders[orderBookNode.prev].next = orderBookNode.next;
         }
         // TODO: Consider emitting an event for off-chain tracking
+        console.log("REMOVED");
     }
 }
