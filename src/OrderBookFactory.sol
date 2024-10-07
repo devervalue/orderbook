@@ -12,7 +12,6 @@ import {PairLib} from "./PairLib.sol";
  */
 contract OrderBookFactory {
     using PairLib for PairLib.Pair;
-    using RedBlackTree for RedBlackTree.Tree;
 
     error OrderBookFactory__InvalidTokenAddress();
     error OrderBookFactory__InvalidOwnerAddress();
