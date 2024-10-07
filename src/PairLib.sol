@@ -186,7 +186,6 @@ library PairLib {
 
         //¿Arbol de ventas tiene nodos?
         uint256 currentNode = pair.sellOrders.getLowestPrice();
-
         bytes32 _orderId = keccak256(abi.encodePacked(msg.sender, "buy", _price, nonce));
 
         OrderBookLib.Order memory newOrder = OrderBookLib.Order({
@@ -203,7 +202,8 @@ library PairLib {
 
         uint256 orderCount = 0;
         do {
-            if (currentNode == 0 || orderCount >= 150) {
+            console.log("CurrentNode: %d orderCount: %d", currentNode, orderCount);
+        if (currentNode == 0 || orderCount >= 1500) {
                 //NO
                 saveOrder(pair, newOrder);
                 return;
@@ -252,7 +252,7 @@ library PairLib {
         });
 
     do {
-            if (currentNode == 0 || orderCount >= 150) {
+            if (currentNode == 0 || orderCount >= 1500) {
                 //NO
                 saveOrder(pair, newOrder);
                 return;

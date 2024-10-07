@@ -40,6 +40,7 @@ contract OrderBookFactoryTest is Test {
         tokenB = new MyTokenB(1000 * 10 ** 18); //Crear un nuevo token con suministro inicial
         //        console.log(address(factory));
         //        console.log(msg.sender);
+
         tokenA.transfer(trader1, 1500);
         tokenB.transfer(trader2, 1500);
 
@@ -872,6 +873,51 @@ contract OrderBookFactoryTest is Test {
         //vm.expectRevert(RedBlackTree.RedBlackTree__ValueCannotBeZero.selector);  // Puedes agregar un revert message si implementas uno en el contrato
         //(, , bool status,,) = factory.getOrderBookById(keys[0]);
         //assertFalse(status, unicode"La orden debería estar cancelada");
+    }
+
+    function testOneBuy10Sells() public {
+        vm.startPrank(owner);
+        factory.addOrderBook(address(tokenA), address(tokenB), 10, feeAddress);
+        vm.stopPrank();
+
+        // Obtener las claves de los libros de órdenes
+        bytes32[] memory keys = factory.getKeysOrderBooks();
+
+        // Verificar que hay exactamente una clave
+        assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
+
+        vm.startPrank(trader1);
+        // Agregar ventas
+        uint256 quantity = 1;
+        bool isBuy = true;
+
+        for (uint256 i = 1; i <= 10; i++) {
+            // Generate a unique order ID
+            bytes32 orderId = keccak256(abi.encodePacked(address(this), i));
+            // Push the order into the queue
+            factory.addNewOrder(keys[0], quantity, 1, false, i, i+1);
+            factory.addNewOrder(keys[0], quantity, 2, false, i + 1, i+1);
+            factory.addNewOrder(keys[0], quantity, 3, false, i + 2, i+1);
+            factory.addNewOrder(keys[0], quantity, 4, false, i + 2, i+1);
+            factory.addNewOrder(keys[0], quantity, 5, false, i + 2, i+1);
+            factory.addNewOrder(keys[0], quantity, 6, false, i + 2, i+1);
+        }
+
+        vm.stopPrank();
+
+        vm.startPrank(trader2);
+        uint256 startGas = gasleft();
+        factory.addNewOrder(keys[0], 5, 50, true, 11, 12);
+        uint256 gasUsed = startGas - gasleft();
+        console.log("Gas used for adding Order: %d", gasUsed);
+        vm.stopPrank();
+
+        // Verificar que la orden de compra se haya agregado correctamente
+        //TODO PQ SE INVIERTE EL TOKEN
+//        (address baseTokenOrder, address quoteTokenOrder,, uint256 lastTradePrice,) = factory.getOrderBookById(keys[0]);
+//        assertEq(baseTokenOrder, address(tokenB), "El token base debe coincidir");
+//        assertEq(quoteTokenOrder, address(tokenA), unicode"El token de cotización debe coincidir");
+//        assertEq(lastTradePrice, 0, unicode"El último precio negociado debe ser 0 al inicio");
     }
 
     /*function testCancelOrderNonExistentOrderBook() public {
