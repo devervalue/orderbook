@@ -65,7 +65,7 @@ contract EmptyQueueTest is Test, QueueHelper {
         uint256 startGas = gasleft();
         uint256 price = 1;
         uint256 quantity = 100;
-        queue.push(address(this), orderId, price, quantity, block.timestamp, block.timestamp + 1 days);
+        queue.push( orderId);
         uint256 gasUsed = startGas - gasleft();
         console.log("Gas used for pushing order on empty queue: %d", gasUsed);
     }
@@ -75,8 +75,8 @@ contract EmptyQueueTest is Test, QueueHelper {
     function testPop() public {
         // Now, test pop
         uint256 startGas = gasleft();
-        vm.expectRevert(OrderQueue.OrderQueue__CantPopAnEmptyQueue.selector);
-        OrderQueue.OrderBookNode memory node = queue.pop();
+        vm.expectRevert(OrderQueue.OrderQueue__CantRemoveFromAnEmptyQueue.selector);
+        queue.pop();
         uint256 gasUsed = startGas - gasleft();
         console.log("Gas used for trying to pop an order from queue with one element: %d", gasUsed);
     }
@@ -122,7 +122,7 @@ contract SmallQueueTest is Test, QueueHelper {
             orderIds[i] = orderId;
             if (i == halfPoint) halfPointOrderId = orderId;
             // Push the order into the queue
-            queue.push(address(this), orderId, i, 100, block.timestamp, block.timestamp + 1 days);
+            queue.push( orderId);
         }
     }
 
@@ -156,7 +156,7 @@ contract SmallQueueTest is Test, QueueHelper {
         bytes32 orderId = keccak256(abi.encodePacked(address(this), orderNumber));
         uint256 startGas = gasleft();
         uint256 quantity = 100;
-        queue.push(address(this), orderId, orderNumber, quantity, block.timestamp, block.timestamp + 1 days);
+        queue.push(orderId);
         uint256 gasUsed = startGas - gasleft();
         console.log("Gas used for pushing order on queue: %d", gasUsed);
     }
@@ -166,7 +166,7 @@ contract SmallQueueTest is Test, QueueHelper {
     /// @custom:gas-test This function measures gas usage for the pop operation on a small queue
     function testPop() public {
         uint256 startGas = gasleft();
-        OrderQueue.OrderBookNode memory node = queue.pop();
+        queue.pop();
         uint256 gasUsed = startGas - gasleft();
         console.log("Gas used for popping an order from queue: %d", gasUsed);
     }
@@ -187,7 +187,7 @@ contract SmallQueueTest is Test, QueueHelper {
     function testPopHalf() public {
         uint256 startGas = gasleft();
         for (uint256 i = 0; i < halfPoint; i++) {
-            OrderQueue.OrderBookNode memory node = queue.pop();
+            queue.pop();
         }
         uint256 gasUsed = startGas - gasleft();
         console.log("Gas used for popping half of the queue: %d", gasUsed);
@@ -207,8 +207,8 @@ contract LargeQueueTest is SmallQueueTest {
         // Initialize the queue
         queue = new OrderQueueImpl();
         // Set the number of orders and halfway point
-        numOrders = 100;
-        halfPoint = 50;
+        numOrders = 1000;
+        halfPoint = 500;
         // Create an array to store order IDs
         bytes32[] memory orderIds = new bytes32[](numOrders);
 
@@ -219,7 +219,7 @@ contract LargeQueueTest is SmallQueueTest {
             orderIds[i] = orderId;
             if (i == halfPoint) halfPointOrderId = orderId;
             // Push the order into the queue
-            queue.push(address(this), orderId, i, 100, block.timestamp, block.timestamp + 1 days);
+            queue.push(orderId);
         }
     }
 }
