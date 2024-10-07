@@ -62,31 +62,20 @@ contract OrderQueueImpl {
     /**
      * @notice Adds a new order to the queue
      * @dev Pushes a new order with the given parameters to the end of the queue
-     * @param _traderAddress The address of the trader placing the order
      * @param _orderId A unique identifier for the order
-     * @param _price The price of the order
-     * @param _quantity The quantity of the asset in the order
-     * @param _nonce A unique number to prevent duplicate orders
-     * @param _expired The expiration timestamp of the order
      */
     function push(
-        address _traderAddress,
-        bytes32 _orderId,
-        uint256 _price,
-        uint256 _quantity,
-        uint256 _nonce,
-        uint256 _expired
+        bytes32 _orderId
     ) public {
-        queue.push(_traderAddress, _orderId, _price, _quantity, _nonce, _expired);
+        queue.push(_orderId);
     }
 
     /**
      * @notice Removes and returns the first order from the queue
      * @dev This function pops the first order from the queue and returns it
-     * @return _order The OrderBookNode struct representing the first order in the queue
      */
-    function pop() public returns (OrderQueue.OrderBookNode memory _order) {
-        _order = queue.pop();
+    function pop() public {
+        queue.removeOrder(queue.first);
     }
 
     /**
@@ -97,17 +86,4 @@ contract OrderQueueImpl {
     function removeOrder(bytes32 _orderId) public {
         queue.removeOrder(_orderId);
     }
-
-    /**
-     * @notice Removes multiple orders from the queue up to a specified order ID
-     * @dev This function removes orders from the front of the queue until it reaches the specified order ID
-     * @param _newFirstOrderId The bytes32 ID of the order that should become the new first order in the queue
-     * @return _firstRemoved The bytes32 ID of the first order that was removed from the queue
-     */
-    // TODO Enable this test when the batch pop operation is ready
-    /*    function batchPopUntil(bytes32 _newFirstOrderId) public returns (bytes32 _firstRemoved) {
-
-        _firstRemoved = queue.batchPopUntil(_newFirstOrderId);
-        console.logBytes32(_firstRemoved);
-    }*/
 }

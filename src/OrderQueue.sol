@@ -5,7 +5,6 @@ library OrderQueue {
     /* Errors */
     // TODO: Consider using custom error strings instead of error types to save gas
     // Custom errors with strings are more gas-efficient than error types in Solidity 0.8.4+
-    error OrderQueue__CantPopAnEmptyQueue();
     error OrderQueue__CantRemoveFromAnEmptyQueue();
 
     // TODO: If these errors are used frequently, consider using shorter names to reduce deployment cost
