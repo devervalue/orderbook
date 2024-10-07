@@ -94,7 +94,6 @@ library RedBlackTree {
      *         empty, it returns `0`.
      */
     function last(Tree storage self) internal view returns (uint256 _value) {
-        console.log("PRUEBA A");
         _value = self.root;
         if (_value == EMPTY) return 0;
         Node storage currentNode = self.nodes[_value];

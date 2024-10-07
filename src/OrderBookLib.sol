@@ -48,8 +48,6 @@ library OrderBookLib {
     }
 
     function remove(Book storage b, Order calldata order) public {
-        console.log(order.price);
-        console.logBytes32(order.orderId);
         Price storage price = b.prices[order.price];
         price.countTotalOrders = price.countTotalOrders - 1;
         price.countValueOrders = price.countValueOrders - order.quantity;
@@ -58,18 +56,14 @@ library OrderBookLib {
         if (price.q.isEmpty()) {
             b.tree.remove(order.price);
         }
-        console.log("REMOVE ALL");
     }
 
     function saveOrder(Book storage b, uint256 _price, uint256 _quantity, bytes32 _orderId, address tokenAddress, uint256 transferQty)
         internal
     {
         //Transfiero los tokens al contrato
-        console.log("Token", tokenAddress);
         IERC20 token = IERC20(tokenAddress);
-        console.log(msg.sender);
         token.safeTransferFrom(msg.sender, address(this), transferQty); //Transfiero la cantidad indicada
-        console.log("prueba");
 
         //Agregar al arbol
         insert(b,_orderId, _price, _quantity);

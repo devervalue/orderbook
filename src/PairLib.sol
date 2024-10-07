@@ -59,8 +59,6 @@ library PairLib {
 
         if (keyExists(pair, newOrder.orderId)) revert PairLib__KeyAlreadyExists();
 
-        console.log("PRUEBAAA");
-
         pair.traderOrders[msg.sender].orderIds.push(newOrder.orderId);
         pair.traderOrders[msg.sender].index[newOrder.orderId] = pair.traderOrders[msg.sender].orderIds.length - 1;
 
@@ -139,13 +137,10 @@ library PairLib {
             matchingOrderId = pair.buyOrders.getNextOrderId(matchingPrice);
         }
 
-        console.log("matchingPrice:", matchingPrice);
-
         do {
             OrderBookLib.Order storage matchingOrder = getOrderDetail(pair, matchingOrderId);
 
             uint256 matchingOrderQty = matchingOrder.availableQuantity;
-            console.log("matchingOrderQty:", matchingOrderQty);
 
             if (newOrder.quantity >= matchingOrderQty) {
                 fillOrder(
@@ -177,7 +172,6 @@ library PairLib {
                 return (newOrder.quantity, orderCount);
             }
             ++orderCount;
-            console.log("orderCount Order:", orderCount);
         } while (matchingOrderId != 0 && orderCount < 150);
         return (newOrder.quantity, orderCount);
     }
@@ -192,8 +186,6 @@ library PairLib {
 
         //¿Arbol de ventas tiene nodos?
         uint256 currentNode = pair.sellOrders.getLowestPrice();
-        console.log("currentNode", currentNode);
-        console.log("addresss this", address(this));
 
         bytes32 _orderId = keccak256(abi.encodePacked(msg.sender, "buy", _price, nonce));
 
@@ -209,7 +201,6 @@ library PairLib {
             status: 1
         });
 
-        console.logBytes32(_orderId);
         uint256 orderCount = 0;
         do {
             if (currentNode == 0 || orderCount >= 150) {
@@ -242,15 +233,11 @@ library PairLib {
         IERC20 buyToken = IERC20(pair.baseToken);
         IERC20 sellToken = IERC20(pair.quoteToken);
 
-        console.log("PRUEBA2");
-        console.log(pair.baseToken);
 
         //¿Arbol de compras tiene nodos?
         uint256 currentNode = pair.buyOrders.getHighestPrice();
-        console.log("PRUEBA2.5");
         bytes32 _orderId = keccak256(abi.encodePacked(msg.sender, "sell", _price, nonce));
         uint256 orderCount = 0;
-        console.log("PRUEBA3");
 
         OrderBookLib.Order memory newOrder = OrderBookLib.Order({
             orderId: _orderId,
@@ -263,7 +250,6 @@ library PairLib {
             traderAddress: msg.sender,
             status: 1
         });
-        console.log("PRUEBA4");
 
     do {
             if (currentNode == 0 || orderCount >= 150) {
@@ -293,32 +279,25 @@ library PairLib {
         if (pair.orders[_orderId].traderAddress != msg.sender) revert PairLib__TraderDoesNotCorrespond();
         OrderBookLib.Order memory removedOrder = pair.orders[_orderId];
 
-        console.log(msg.sender);
-
         if (removedOrder.isBuy) {
             pair.buyOrders.remove(removedOrder);
         } else {
             pair.sellOrders.remove(removedOrder);
         }
         delete pair.orders[_orderId];
-        console.log("FINALIZANDO ANTES");
 
         // Reemplazar el elemento a eliminar con el último elemento del array
         TraderOrders storage to = pair.traderOrders[msg.sender];
 
         uint256 deleteIndex = to.index[_orderId];
         uint256 lastIndex = to.orderIds.length - 1;
-        console.log("DEL", deleteIndex);
-        console.log("LAST", lastIndex);
+
         if (deleteIndex != lastIndex){
             to.orderIds[deleteIndex] = to.orderIds[lastIndex];
         }
 
-        console.log("PRE POP");
-
         // Remover el último elemento
         to.orderIds.pop();
-        console.log("FINALIZANDO");
         delete to.index[_orderId];
     }
 
@@ -327,14 +306,11 @@ library PairLib {
     }
 
     function getOrderDetail(Pair storage pair, bytes32 orderId) public returns (OrderBookLib.Order storage) {
-        console.logBytes32(orderId);
         if (!keyExists(pair, orderId)) revert PairLib__KeyDoesNotExist();
         return pair.orders[orderId];
     }
 
     function keyExists(Pair storage pair, bytes32 key) internal view returns (bool) {
-        console.logBytes32(key);
-        console.log(pair.orders[key].orderId != bytes32(0));
         return pair.orders[key].orderId != bytes32(0);
     }
 
