@@ -959,4 +959,136 @@ contract OrderBookFactoryTest is Test {
         vm.expectRevert("Order already canceled");
         factory.cancelOrder(orderBookId);
     }*/
+
+    // -------------------- PRUEBAS VALORES LIMITES --------------------
+    // Test: Revertir cuando la cantidad es 0
+    function testAddOrderRevertOnZeroQuantity() public {
+        vm.startPrank(owner);
+        factory.addOrderBook(address(tokenA), address(tokenB), 10, feeAddress);
+        vm.stopPrank();
+
+        // Obtener las claves de los libros de órdenes
+        bytes32[] memory keys = factory.getKeysOrderBooks();
+
+        // Verificar que hay exactamente una clave
+        assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
+
+        // Agregar una nueva orden de compra
+        uint256 quantity = 0;
+        uint256 price = 100;
+        bool isBuy = true;
+
+        vm.prank(trader2);
+        vm.expectRevert(OrderBookFactory.OrderBookFactory__InvalidQuantityValueZero.selector);
+        factory.addNewOrder(keys[0], quantity, price, isBuy,  1, 1);
+    }
+
+    // Test: Revertir cuando el id del libro de órdenes no existe
+    function testAddOrderRevertOnInvalidOrderBookId() public {
+        bytes32 invalidOrderBookKey = keccak256(abi.encodePacked("InvalidOrderBook"));
+        // Agregar una nueva orden de compra
+        uint256 quantity = 10;
+        uint256 price = 100;
+        bool isBuy = true;
+
+        vm.prank(trader2);
+        vm.expectRevert(OrderBookFactory.OrderBookFactory__OrderBookNotEnabled.selector);
+        factory.addNewOrder(invalidOrderBookKey, quantity, price, isBuy,  1, 1);
+    }
+
+    // Test: Agregar orden con cantidad mínima válida
+    function testAddOrderWithMinQuantity() public {
+        vm.startPrank(owner);
+        factory.addOrderBook(address(tokenA), address(tokenB), 10, feeAddress);
+        vm.stopPrank();
+
+        // Obtener las claves de los libros de órdenes
+        bytes32[] memory keys = factory.getKeysOrderBooks();
+
+        // Verificar que hay exactamente una clave
+        assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
+
+        // Agregar una nueva orden de compra
+        uint256 quantity = 1;
+        uint256 price = 100;
+        bool isBuy = true;
+
+        vm.prank(trader2);
+        factory.addNewOrder(keys[0], quantity, price, isBuy,  1, 1);
+    }
+
+    // Test: Revertir cuando el precio es 0 (si el precio 0 es inválido)
+    function testAddOrderRevertOnZeroPrice() public {
+        vm.startPrank(owner);
+        factory.addOrderBook(address(tokenA), address(tokenB), 10, feeAddress);
+        vm.stopPrank();
+
+        // Obtener las claves de los libros de órdenes
+        bytes32[] memory keys = factory.getKeysOrderBooks();
+
+        // Verificar que hay exactamente una clave
+        assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
+
+        // Agregar una nueva orden de compra
+        uint256 quantity = 1;
+        uint256 price = 0;
+        bool isBuy = true;
+
+        vm.prank(trader2);
+        vm.expectRevert(); // Puedes ajustar el revert específico si tienes uno para este caso.
+        factory.addNewOrder(keys[0], quantity, price, isBuy,  1, 1);
+    }
+
+    // Test: Agregar orden con precio máximo válido
+    function testAddOrderWithMaxPrice() public {
+        vm.startPrank(owner);
+        factory.addOrderBook(address(tokenA), address(tokenB), 10, feeAddress);
+        vm.stopPrank();
+
+        // Obtener las claves de los libros de órdenes
+        bytes32[] memory keys = factory.getKeysOrderBooks();
+
+        // Verificar que hay exactamente una clave
+        assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
+
+        // Agregar una nueva orden de compra
+        uint256 quantity = 1;
+        uint256 maxPrice = type(uint256).max;
+        bool isBuy = true;
+
+        vm.prank(trader2);
+        factory.addNewOrder(keys[0], quantity, maxPrice, isBuy,  1, 1);
+    }
+
+    //Test: Agregar orden con cantidad maxima valida
+    /*function testAddOrderWithMaxQuantity() public {
+        vm.startPrank(owner);
+        factory.addOrderBook(address(tokenA), address(tokenB), 10, feeAddress);
+        vm.stopPrank();
+
+        // Obtener las claves de los libros de órdenes
+        bytes32[] memory keys = factory.getKeysOrderBooks();
+
+        // Verificar que hay exactamente una clave
+        assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
+
+        // Agregar una nueva orden de compra
+
+        uint256 maxQuantity = type(uint256).max;
+        uint256 price = 100;
+        bool isBuy = true;
+
+        vm.prank(trader2);
+        factory.addNewOrder(keys[0], maxQuantity, price, isBuy,  1, 1);
+    }*/
+
+    //Test: Agregar orden con cantidad y precio maximo valido
+
+    /*// Test: Agregar orden con precio máximo válido
+    function testAddOrderWithMinNonce() public {
+        factory.addNewOrder(orderBookKey, validQuantity, validPrice, true, 0, validExpiry);
+        // Añadir verificaciones si es necesario
+    }*/
+
+
 }
