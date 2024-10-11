@@ -305,7 +305,7 @@ library PairLib {
         return pair.traderOrders[_trader].orderIds;
     }
 
-    function getOrderDetail(Pair storage pair, bytes32 orderId) public returns (OrderBookLib.Order storage) {
+    function getOrderDetail(Pair storage pair, bytes32 orderId) public view returns (OrderBookLib.Order storage) {
         if (!keyExists(pair, orderId)) revert PairLib__KeyDoesNotExist();
         return pair.orders[orderId];
     }
