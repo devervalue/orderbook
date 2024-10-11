@@ -68,7 +68,7 @@ contract OrderBookFactory {
     }
 
     constructor() {
-        owner = address(this); // Set the contract deployer as the owner
+        owner = msg.sender; // Set the contract deployer as the owner
     }
 
     /**
