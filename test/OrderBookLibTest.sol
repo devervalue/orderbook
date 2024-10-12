@@ -84,14 +84,14 @@ contract OrderBookLibTest is Test {
     //Valida que si no hay órdenes de venta, la orden de compra se almacena en el libro.
     function testAddBuyOrderWithoutSellOrders() public {
         // Caso 1: Orden de compra sin órdenes de venta
-        uint256 balanceContractInitial = tokenA.balanceOf(address(orderBookImpl));
+        uint256 balanceContractInitial = tokenB.balanceOf(address(orderBookImpl));
 
-        vm.startPrank(trader1);
+        vm.startPrank(trader2);
         orderBookImpl.addBuyBaseToken(price, quantity, trader1, nonce, expired);
         vm.stopPrank();
 
-        uint256 balanceContract = tokenA.balanceOf(address(orderBookImpl));
-        assertEq(balanceContract - balanceContractInitial, 10); // Verificar que el balance restante es correcto
+        uint256 balanceContract = tokenB.balanceOf(address(orderBookImpl));
+        assertEq(balanceContract - balanceContractInitial, 1000); // Verificar que el balance restante es correcto
         assertEq(orderBookImpl.getFirstBuyOrders(), 100, "La orden de compra debe estar almacenada");
     }
 
@@ -99,44 +99,44 @@ contract OrderBookLibTest is Test {
     function testAddBuyOrderWithMatchingSellOrder() public {
         // Caso 2: Orden de compra con precio igual a una orden de venta
 
-        vm.startPrank(trader2);
+        vm.startPrank(trader1);
         orderBookImpl.addSellBaseToken(price, quantity, trader2, nonce, expired);
         vm.stopPrank();
 
-        vm.prank(trader1);
+        vm.prank(trader2);
         orderBookImpl.addBuyBaseToken(price, quantity, trader1, nonce, expired);
 
         // Verificar que la orden de compra se haya emparejado y eliminado
         assertEq(orderBookImpl.getFirstSellOrders(), 0, "La orden de venta debe haberse emparejado completamente");
         assertEq(orderBookImpl.getFirstBuyOrders(), 0, "La orden de compra debe haberse ejecutado completamente");
-        assertEq(tokenB.balanceOf(trader1), 10); // Verificar que el balance restante es correcto
-        assertEq(tokenA.balanceOf(trader2), 1000); // Verificar que el balance restante es correcto
+        assertEq(tokenB.balanceOf(trader1), 1000); // Verificar que el balance restante es correcto
+        assertEq(tokenA.balanceOf(trader2), 10); // Verificar que el balance restante es correcto
     }
 
     function testAddBuyOrderWithMatchingDifferentSellOrder() public {
         // Caso 2: Orden de compra con precio igual varias ordenes de compra
 
-        vm.startPrank(trader2);
+        vm.startPrank(trader1);
         orderBookImpl.addSellBaseToken(price, 5, trader2, nonce, expired);
         vm.stopPrank();
 
-        vm.startPrank(trader2);
+        vm.startPrank(trader1);
         orderBookImpl.addSellBaseToken(price, 5, trader2, nonce + 1, expired);
         vm.stopPrank();
 
-        vm.startPrank(trader2);
+        vm.startPrank(trader1);
         orderBookImpl.addSellBaseToken(price, 5, trader2, nonce + 2, expired);
         vm.stopPrank();
 
         //vm.prank(trader1);
-        vm.startPrank(trader1);
+        vm.startPrank(trader2);
         orderBookImpl.addBuyBaseToken(price, 15, trader1, nonce, expired);
         vm.stopPrank();
 
         assertEq(orderBookImpl.getFirstSellOrders(), 0, "La orden de venta debe haberse emparejado completamente");
         assertEq(orderBookImpl.getFirstBuyOrders(), 0, "La orden de compra debe haberse ejecutado completamente");
-        assertEq(tokenB.balanceOf(trader1), 15); // Verificar que el balance restante es correcto
-        assertEq(tokenA.balanceOf(trader2), 1500); // Verificar que el balance restante es correcto
+        assertEq(tokenB.balanceOf(trader1), 1500); // Verificar que el balance restante es correcto
+        assertEq(tokenA.balanceOf(trader2), 15); // Verificar que el balance restante es correcto
     }
 
     //Prueba que una orden de compra con un precio mayor empareje y ejecute una orden de venta.
@@ -148,7 +148,7 @@ contract OrderBookLibTest is Test {
         console.log("Balance Contract TA INICIAL", tokenA.balanceOf(address(orderBookImpl)));
         console.log("Balance Contract TB INICIAL", tokenB.balanceOf(address(orderBookImpl)));
 
-        vm.prank(trader2);
+        vm.prank(trader1);
         orderBookImpl.addSellBaseToken(90, quantity, trader2, nonce, expired); //Vende tokenB por TokenA 10 tokens a 90
 
         console.log("Balance T2_A ADD SELL", tokenA.balanceOf(trader2));
@@ -158,7 +158,7 @@ contract OrderBookLibTest is Test {
         console.log("Balance Contract TB", tokenB.balanceOf(address(orderBookImpl)));
 
         price = 100;
-        vm.prank(trader1);
+        vm.prank(trader2);
         orderBookImpl.addBuyBaseToken(price, quantity, trader1, nonce, expired); //Compra tokenB por tokenA 10 tokens a 100
 
         console.log("Balance T2_A FIN", tokenA.balanceOf(trader2));
@@ -170,14 +170,14 @@ contract OrderBookLibTest is Test {
         assertEq(orderBookImpl.lastTradePrice(), 90, "El ultimo precio deberia ser 90");
         assertEq(orderBookImpl.getFirstSellOrders(), 0, "La orden de venta debe haberse emparejado completamente");
         assertEq(orderBookImpl.getFirstBuyOrders(), 0, "La orden de compra debe haberse ejecutado completamente");
-        assertEq(tokenB.balanceOf(trader1), 10); // Verificar que el balance restante es correcto
-        assertEq(tokenA.balanceOf(trader2), 900); // Verificar que el balance restante es correcto
+        assertEq(tokenB.balanceOf(trader1), 900); // Verificar que el balance restante es correcto
+        assertEq(tokenA.balanceOf(trader2), 10); // Verificar que el balance restante es correcto
     }
 
     //Confirma que una orden de compra con un precio más bajo se almacena sin ejecutarse si no encuentra un match.
     function testAddBuyOrderWithLowerPriceThanSellOrder() public {
         // Caso 4: Orden de compra con precio menor que la orden de venta
-        vm.prank(trader2);
+        vm.prank(trader1);
         orderBookImpl.addSellBaseToken(110, quantity, trader2, nonce, expired);
 
         console.log("Balance T2_A FIN", tokenA.balanceOf(trader2));
@@ -186,7 +186,7 @@ contract OrderBookLibTest is Test {
         console.log("Balance T1_A FIN", tokenA.balanceOf(trader1));
         console.log("Balance T1_B FIN", tokenB.balanceOf(trader1));
 
-        vm.prank(trader1);
+        vm.prank(trader2);
         orderBookImpl.addBuyBaseToken(price, quantity, trader1, nonce, expired);
 
         // Verificar que la orden de compra no se empareja y se almacena
@@ -197,9 +197,9 @@ contract OrderBookLibTest is Test {
     //Asegura que una orden de compra parcial se almacene correctamente si la orden de venta tiene menor cantidad.
     function testAddBuyOrderWithPartialQuantity() public {
         // Caso 5: Orden de compra con cantidad parcial
-        vm.prank(trader2);
-        orderBookImpl.addSellBaseToken(price, 5, trader2, nonce, expired);
         vm.prank(trader1);
+        orderBookImpl.addSellBaseToken(price, 5, trader2, nonce, expired);
+        vm.prank(trader2);
         orderBookImpl.addBuyBaseToken(price, quantity, trader1, nonce, expired);
 
         // Verificar que la orden de compra se empareje parcialmente
@@ -207,8 +207,8 @@ contract OrderBookLibTest is Test {
         assertEq(
             orderBookImpl.getFirstBuyOrders(), 100, "La cantidad restante de la orden de compra debe estar almacenada"
         );
-        assertEq(tokenB.balanceOf(trader1), 5); // Verificar que el balance restante es correcto
-        assertEq(tokenA.balanceOf(trader2), 500); // Verificar que el balance restante es correcto
+        assertEq(tokenB.balanceOf(trader1), 500); // Verificar que el balance restante es correcto
+        assertEq(tokenA.balanceOf(trader2), 5); // Verificar que el balance restante es correcto
     }
 
     //Verifica que una orden de compra con exceso de cantidad se ejecute correctamente y que el remanente de la venta quede en el libro.
@@ -220,7 +220,7 @@ contract OrderBookLibTest is Test {
         console.log("Balance T1_A FIN", tokenA.balanceOf(trader1));
         console.log("Balance T1_B FIN", tokenB.balanceOf(trader1));
         console.log("ENTRANDO");
-        vm.startPrank(trader2);
+        vm.startPrank(trader1);
         orderBookImpl.addSellBaseToken(price, 15, trader2, nonce, expired); // Orden de venta con más cantidad
         vm.stopPrank();
         console.log("Balance T2_A FIN", tokenA.balanceOf(trader2));
@@ -230,7 +230,7 @@ contract OrderBookLibTest is Test {
         console.log("Balance T1_B FIN", tokenB.balanceOf(trader1));
 
         //vm.prank(trader1);
-        vm.startPrank(trader1);
+        vm.startPrank(trader2);
         orderBookImpl.addBuyBaseToken(price, quantity, trader1, nonce, expired);
         vm.stopPrank();
 
@@ -243,12 +243,12 @@ contract OrderBookLibTest is Test {
     //Asegura que una orden de compra se empareje con múltiples órdenes de venta a diferentes precios.
     function testAddBuyOrderWithMultipleSellOrders() public {
         // Caso 7: Orden de compra con varios matches de órdenes de venta
-        vm.startPrank(trader2);
+        vm.startPrank(trader1);
         orderBookImpl.addSellBaseToken(90, 5, trader2, nonce, expired); // Orden de venta con menor precio
         orderBookImpl.addSellBaseToken(price, 5, trader2, nonce, expired); // Otra orden de venta con precio igual
         vm.stopPrank();
 
-        vm.prank(trader1);
+        vm.prank(trader2);
         orderBookImpl.addBuyBaseToken(price, quantity, trader1, nonce, expired);
 
         // Verificar que todas las órdenes de venta se hayan emparejado
@@ -289,7 +289,7 @@ contract OrderBookLibTest is Test {
 
         console.log("Balance T1_A FIN", tokenA.balanceOf(trader1));
         console.log("Balance T1_B FIN", tokenB.balanceOf(trader1));
-        vm.prank(trader2);
+        vm.prank(trader1);
         orderBookImpl.addSellBaseToken(price, quantity, trader2, nonce, expired);
 
         // Verificar que la orden de venta se haya agregado al libro de órdenes de venta
@@ -299,10 +299,10 @@ contract OrderBookLibTest is Test {
     function testAddSellOrderWithMatchingSellOrder() public {
         // Caso 2: Orden de venta con precio igual a una orden de compra
 
-        vm.prank(trader1);
+        vm.prank(trader2);
         orderBookImpl.addBuyBaseToken(price, quantity, trader1, nonce, expired);
 
-        vm.startPrank(trader2);
+        vm.startPrank(trader1);
         orderBookImpl.addSellBaseToken(price, quantity, trader2, nonce, expired);
         vm.stopPrank();
 
@@ -316,13 +316,13 @@ contract OrderBookLibTest is Test {
     function testAddSellOrderWithMatchingDifferentSellOrder() public {
         // Caso 2: Orden de compra con precio igual varias ordenes de venta
 
-        vm.startPrank(trader1);
+        vm.startPrank(trader2);
         orderBookImpl.addBuyBaseToken(price, 5, trader1, nonce, expired);
         orderBookImpl.addBuyBaseToken(price, 5, trader1, nonce + 1, expired);
         orderBookImpl.addBuyBaseToken(price, 5, trader1, nonce + 2, expired);
         vm.stopPrank();
 
-        vm.startPrank(trader2);
+        vm.startPrank(trader1);
         orderBookImpl.addSellBaseToken(price, 15, trader2, nonce, expired);
         vm.stopPrank();
 
@@ -337,14 +337,14 @@ contract OrderBookLibTest is Test {
     //Matching con precio de venta más bajo: Prueba la coincidencia de órdenes cuando el precio de venta es menor o igual al de compra.
     function testAddSellOrderWithLowerPriceMatchingBuyOrder() public {
         // Insertar una orden de compra con un precio más alto
-        vm.prank(trader1);
+        vm.prank(trader2);
         orderBookImpl.addBuyBaseToken(110, quantity, trader1, nonce, expired); // Orden de compra con un precio de 110
 
         // Agregar una orden de venta con un precio más bajo (match)
         uint256 price = 100;
         uint256 quantity = 10;
 
-        vm.prank(trader2);
+        vm.prank(trader1);
         orderBookImpl.addSellBaseToken(price, quantity, trader2, nonce, expired);
 
         // Verificar que la orden de compra se haya emparejado completamente
@@ -359,13 +359,13 @@ contract OrderBookLibTest is Test {
     //Sin matching con precio de venta más alto: Verifica que no se realice matching si el precio de venta es mayor al de compra.
     function testAddSellOrderWithHigherPriceNoMatching() public {
         // Insertar una orden de compra con un precio más bajo
-        vm.prank(trader1);
+        vm.prank(trader2);
         orderBookImpl.addBuyBaseToken(90, quantity, trader1, nonce, expired); // Orden de compra con precio de 90
 
         // Agregar una orden de venta con un precio más alto (no match)
         uint256 price = 100;
         uint256 quantity = 10;
-        vm.prank(trader2);
+        vm.prank(trader1);
         orderBookImpl.addSellBaseToken(price, quantity, trader2, nonce, expired);
 
         // Verificar que la orden de compra se haya emparejado completamente
@@ -388,7 +388,7 @@ contract OrderBookLibTest is Test {
         console.log("Balance Contract TA INICIAL 1", tokenA.balanceOf(address(orderBookImpl)));
         console.log("Balance Contract TB INICIAL 1", tokenB.balanceOf(address(orderBookImpl)));
 
-        vm.prank(trader1);
+        vm.prank(trader2);
         orderBookImpl.addBuyBaseToken(price, 5, trader1, nonce, expired); // Orden de compra con precio 100 y cantidad 5
 
         console.log("Balance T2_A INICIO", tokenA.balanceOf(trader2));
@@ -403,7 +403,7 @@ contract OrderBookLibTest is Test {
         // Agregar una orden de venta con una cantidad mayor
         //uint256 quantity = 10; // Orden de venta de cantidad 10
 
-        vm.prank(trader2);
+        vm.prank(trader1);
         orderBookImpl.addSellBaseToken(price, 10, trader2, nonce, expired);
 
         // Verificar que la orden de compra se haya ejecutado completamente
@@ -422,7 +422,7 @@ contract OrderBookLibTest is Test {
         assertEq(orderBookImpl.getFirstBuyOrders(), 0, "La orden de compra debe haberse ejecutado completamente");
         assertEq(tokenB.balanceOf(trader1), 500); // Verificar que el balance restante es correcto
         assertEq(tokenA.balanceOf(trader2), 5); // Verificar que el balance restante es correcto
-        assertEq(tokenB.balanceOf(address(orderBookImpl)), 500); // Verificar que el balance restante es correcto
+        assertEq(tokenA.balanceOf(address(orderBookImpl)), 5); // Verificar que el balance restante es correcto
     }
 
     //Límite de órdenes alcanzado: Prueba que el contrato maneje correctamente el límite de órdenes a procesar.
@@ -447,13 +447,13 @@ contract OrderBookLibTest is Test {
     //Cancelación exitosa de una orden de compra: Se verifica que la orden de compra es eliminada correctamente.
     function testCancelBuyOrder() public {
         // Insertar una orden de compra
-        vm.prank(trader1);
-        orderBookImpl.addBuyBaseToken(price, 5, trader1, nonce, expired); // Orden de compra con precio 100 y cantidad 5
+        vm.prank(trader2);
+        orderBookImpl.addBuyBaseToken(price, 5, trader2, nonce, expired); // Orden de compra con precio 100 y cantidad 5
 
-        bytes32 _orderId = keccak256(abi.encodePacked(trader1, "buy", price, nonce));
+        bytes32 _orderId = keccak256(abi.encodePacked(trader2, "buy", price, nonce));
 
         // Cancelar la orden de compra
-        vm.prank(trader1);
+        vm.prank(trader2);
         orderBookImpl.getCancelOrder(_orderId);
 
         // Verificar que la orden haya sido eliminada del árbol de órdenes de compra
@@ -463,13 +463,13 @@ contract OrderBookLibTest is Test {
     //Cancelación exitosa de una orden de venta: Similar al caso anterior pero con órdenes de venta.
     function testCancelSellOrder() public {
         // Insertar una orden de venta
-        vm.prank(trader2);
-        orderBookImpl.addSellBaseToken(price, 10, trader2, nonce, expired);
+        vm.prank(trader1);
+        orderBookImpl.addSellBaseToken(price, 10, trader1, nonce, expired);
 
-        bytes32 _orderId = keccak256(abi.encodePacked(trader2, "sell", price, nonce));
+        bytes32 _orderId = keccak256(abi.encodePacked(trader1, "sell", price, nonce));
 
         // Cancelar la orden de venta
-        vm.prank(trader2);
+        vm.prank(trader1);
         orderBookImpl.getCancelOrder(_orderId);
 
         // Verificar que la orden haya sido eliminada del árbol de órdenes de venta
@@ -490,19 +490,19 @@ contract OrderBookLibTest is Test {
     //Cancelación de una orden entre múltiples órdenes: Verifica que el array de órdenes del trader se reordene correctamente.
     function testCancelOrderAmongMultipleOrders() public {
         // Insertar varias órdenes de compra
-        vm.startPrank(trader1);
-        orderBookImpl.addBuyBaseToken(price, 10, trader1, nonce, expired); // Orden de compra con precio 100 y cantidad 5
-        orderBookImpl.addBuyBaseToken(price, 5, trader1, nonce + 1, expired); // Orden de compra con precio 100 y cantidad 5
+        vm.startPrank(trader2);
+        orderBookImpl.addBuyBaseToken(price, 10, trader2, nonce, expired); // Orden de compra con precio 100 y cantidad 5
+        orderBookImpl.addBuyBaseToken(price, 5, trader2, nonce + 1, expired); // Orden de compra con precio 100 y cantidad 5
         vm.stopPrank();
 
-        bytes32 _orderId1 = keccak256(abi.encodePacked(trader1, "buy", price, nonce));
-        bytes32 _orderId2 = keccak256(abi.encodePacked(trader1, "buy", price, nonce + 1));
+        bytes32 _orderId1 = keccak256(abi.encodePacked(trader2, "buy", price, nonce));
+        bytes32 _orderId2 = keccak256(abi.encodePacked(trader2, "buy", price, nonce + 1));
 
         // Cancelar la primera orden
         //console.logBytes32(orderBookImpl.getFirstOrderBuyById(price));
         assertEq(orderBookImpl.getFirstOrderBuyById(price), _orderId1, "La primera orden debe ser orderId1");
 
-        vm.prank(trader1);
+        vm.prank(trader2);
         orderBookImpl.getCancelOrder(_orderId1);
 
         //console.logBytes32(_orderId2);
@@ -519,15 +519,15 @@ contract OrderBookLibTest is Test {
     //Cancelación de una orden que no pertenece al msg.sender: Asegura que un usuario no puede cancelar una orden que no le pertenece.
     function testCancelOrderNotOwner() public {
         // Insertar una orden de compra para trader1
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", price, nonce));
+        bytes32 orderId = keccak256(abi.encodePacked(trader2, "buy", price, nonce));
 
-        vm.startPrank(trader1);
-        orderBookImpl.addBuyBaseToken(price, 10, trader1, nonce, expired); // Orden de compra con precio 100 y cantidad 5
+        vm.startPrank(trader2);
+        orderBookImpl.addBuyBaseToken(price, 10, trader2, nonce, expired); // Orden de compra con precio 100 y cantidad 5
         vm.stopPrank();
 
         // Intentar cancelar la orden desde otro trader
         //vm.expectRevert("Order not found");
-        vm.prank(trader2);
+        vm.prank(trader1);
         vm.expectRevert(PairLib.PairLib__TraderDoesNotCorrespond.selector);
         orderBookImpl.getCancelOrder(orderId);
 
@@ -539,16 +539,16 @@ contract OrderBookLibTest is Test {
     //Obtener órdenes de un trader con varias órdenes: Verifica que todas las órdenes del trader se devuelven correctamente.
     function testGetTraderOrdersWithMultipleOrders() public {
         // Insertar varias órdenes para trader1
-        bytes32 orderId1 = keccak256(abi.encodePacked(trader1, "buy", price, nonce));
-        bytes32 orderId2 = keccak256(abi.encodePacked(trader1, "buy", price, nonce + 1));
+        bytes32 orderId1 = keccak256(abi.encodePacked(trader2, "buy", price, nonce));
+        bytes32 orderId2 = keccak256(abi.encodePacked(trader2, "buy", price, nonce + 1));
 
-        vm.startPrank(trader1);
-        orderBookImpl.addBuyBaseToken(price, 100, trader1, nonce, expired); // Orden de compra con precio 100 y cantidad 5
-        orderBookImpl.addBuyBaseToken(price, 200, trader1, nonce + 1, expired); // Orden de compra con precio 100 y cantidad 5
+        vm.startPrank(trader2);
+        orderBookImpl.addBuyBaseToken(price, 1, trader2, nonce, expired); // Orden de compra con precio 100 y cantidad 5
+        orderBookImpl.addBuyBaseToken(price, 2, trader2, nonce + 1, expired); // Orden de compra con precio 100 y cantidad 5
         vm.stopPrank();
 
         // Obtener las órdenes
-        bytes32[] memory orders = orderBookImpl.getTraderOrders(trader1);
+        bytes32[] memory orders = orderBookImpl.getTraderOrders(trader2);
 
         // Verificar que se devuelven las órdenes correctas
         assertEq(orders.length, 2, unicode"Debe devolver dos órdenes");
@@ -568,13 +568,13 @@ contract OrderBookLibTest is Test {
     //Obtener órdenes de un trader con solo una orden: Prueba que, si solo hay una orden, esta se devuelva correctamente.
     function testGetTraderOrdersWithSingleOrder() public {
         // Insertar una única orden para trader1
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", price, nonce));
-        vm.startPrank(trader1);
-        orderBookImpl.addBuyBaseToken(price, 100, trader1, nonce, expired); // Orden de compra con precio 100 y cantidad 5
+        bytes32 orderId = keccak256(abi.encodePacked(trader2, "buy", price, nonce));
+        vm.startPrank(trader2);
+        orderBookImpl.addBuyBaseToken(price, 1, trader2, nonce, expired); // Orden de compra con precio 100 y cantidad 5
         vm.stopPrank();
 
         // Obtener las órdenes
-        bytes32[] memory orders = orderBookImpl.getTraderOrders(trader1);
+        bytes32[] memory orders = orderBookImpl.getTraderOrders(trader2);
 
         // Verificar que se devuelve una sola orden
         assertEq(orders.length, 1, unicode"Debe devolver una única orden");
@@ -593,18 +593,18 @@ contract OrderBookLibTest is Test {
     //Verificar la inmutabilidad del array devuelto: Asegura que el array devuelto es una copia y no puede ser modificado directamente.
     function testImmutabilityOfReturnedArray() public {
         // Insertar una orden para trader1
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", price, nonce));
-        vm.startPrank(trader1);
-        orderBookImpl.addBuyBaseToken(price, 100, trader1, nonce, expired); // Orden de compra con precio 100 y cantidad 5
+        bytes32 orderId = keccak256(abi.encodePacked(trader2, "buy", price, nonce));
+        vm.startPrank(trader2);
+        orderBookImpl.addBuyBaseToken(price, 1, trader2, nonce, expired); // Orden de compra con precio 100 y cantidad 5
         vm.stopPrank();
         // Obtener las órdenes
-        bytes32[] memory orders = orderBookImpl.getTraderOrders(trader1);
+        bytes32[] memory orders = orderBookImpl.getTraderOrders(trader2);
 
         // Intentar modificar el array devuelto
-        orders[0] = keccak256(abi.encodePacked(trader1, "sell", price + 100, nonce + 1));
+        orders[0] = keccak256(abi.encodePacked(trader2, "sell", price + 100, nonce + 1));
 
         // Volver a obtener las órdenes del storage
-        bytes32[] memory ordersAfterModification = orderBookImpl.getTraderOrders(trader1);
+        bytes32[] memory ordersAfterModification = orderBookImpl.getTraderOrders(trader2);
 
         // Verificar que la modificación no afectó el almacenamiento original
         assertEq(ordersAfterModification[0], orderId, unicode"El array devuelto no debe modificar el estado original");
@@ -615,14 +615,14 @@ contract OrderBookLibTest is Test {
     //Recuperar una orden de compra existente: Verifica que la función devuelve los detalles correctos de una orden de compra.
     function testGetBuyOrderById() public {
         // Crear una orden de compra para trader1
-        bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", price, nonce));
+        bytes32 orderId = keccak256(abi.encodePacked(trader2, "buy", price, nonce));
 
-        vm.startPrank(trader1);
-        orderBookImpl.addBuyBaseToken(price, quantity, trader1, nonce, expired); // Orden de compra con precio 100 y cantidad 5
+        vm.startPrank(trader2);
+        orderBookImpl.addBuyBaseToken(price, quantity, trader2, nonce, expired); // Orden de compra con precio 100 y cantidad 5
         vm.stopPrank();
 
         // Obtener la orden por su ID
-        OrderBookLib.Order memory result = orderBookImpl.getOrderById(trader1, orderId);
+        OrderBookLib.Order memory result = orderBookImpl.getOrderById(trader2, orderId);
 
         // Verificar los detalles de la orden devuelta
         assertEq(result.price, price, "El precio de la orden debe ser 100");
@@ -632,14 +632,14 @@ contract OrderBookLibTest is Test {
     //Recuperar una orden de venta existente: Asegura que la función devuelve los detalles correctos de una orden de venta.
     function testGetSellOrderById() public {
         // Crear una orden de venta para trader1
-        bytes32 orderId = keccak256(abi.encodePacked(trader2, "sell", price, nonce));
+        bytes32 orderId = keccak256(abi.encodePacked(trader1, "sell", price, nonce));
 
         // Insertar una orden de venta
-        vm.prank(trader2);
-        orderBookImpl.addSellBaseToken(price, 10, trader2, nonce, expired);
+        vm.prank(trader1);
+        orderBookImpl.addSellBaseToken(price, 10, trader1, nonce, expired);
 
         // Obtener la orden por su ID
-        OrderBookLib.Order memory result = orderBookImpl.getOrderById(trader2, orderId);
+        OrderBookLib.Order memory result = orderBookImpl.getOrderById(trader1, orderId);
 
         // Verificar los detalles de la orden devuelta
         assertEq(result.price, price, "El precio de la orden debe ser 100");
@@ -661,7 +661,7 @@ contract OrderBookLibTest is Test {
         // Usar un `orderId` inválido (que no existe)
         bytes32 invalidOrderId = keccak256(abi.encodePacked(trader1, "invalid", price, nonce));
 
-        vm.startPrank(trader1);
+        vm.startPrank(trader2);
         orderBookImpl.addBuyBaseToken(price, quantity, trader1, nonce, expired); // Orden de compra con precio 100 y cantidad 5
         vm.stopPrank();
 
@@ -675,7 +675,7 @@ contract OrderBookLibTest is Test {
         // Intentar obtener una orden para un trader que no tiene órdenes
         bytes32 orderId = keccak256(abi.encodePacked(trader2, "buy", price, quantity));
 
-        vm.startPrank(trader1);
+        vm.startPrank(trader2);
         orderBookImpl.addBuyBaseToken(price, quantity, trader1, nonce, expired); // Orden de compra con precio 100 y cantidad 5
         vm.stopPrank();
 

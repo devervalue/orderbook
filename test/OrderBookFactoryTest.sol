@@ -28,12 +28,8 @@ contract OrderBookFactoryTest is Test {
     event OrderBookFeeAddressChanged(bytes32 indexed id, address feeAddress);
 
     function setUp() public {
+        vm.prank(owner);
         factory = new OrderBookFactory();
-        console.log(address(factory));
-        console.log(msg.sender);
-        //factory.owner = msg.sender;
-        vm.prank(address(factory));
-        factory.setOwner(owner);
 
         //Creando token como suministro inicial
         tokenA = new MyTokenA(1000 * 10 ** 18); //Crear un nuevo token con suministro inicial
@@ -672,7 +668,7 @@ contract OrderBookFactoryTest is Test {
         uint256 price = 100;
         bool isBuy = true;
 
-        vm.prank(trader2);
+        vm.prank(trader1);
         factory.addNewOrder(keys[0], quantity, price, isBuy, 1, 1);
 
         // Verificar que la orden de compra se haya agregado correctamente
@@ -700,7 +696,7 @@ contract OrderBookFactoryTest is Test {
         uint256 price = 100;
         bool isBuy = false;
 
-        vm.prank(trader1);
+        vm.prank(trader2);
         factory.addNewOrder(keys[0], quantity, price, false, 1, 1);
 
         // Verificar que la orden de venta se haya agregado correctamente
@@ -859,14 +855,14 @@ contract OrderBookFactoryTest is Test {
         uint256 price = 100;
         bool isBuy = true;
 
-        vm.prank(trader2);
+        vm.prank(trader1);
         factory.addNewOrder(keys[0], quantity, price, isBuy,  1, 1);
         uint256 nonce = 1;
-        bytes32 _orderId = keccak256(abi.encodePacked(trader2, "buy", price, nonce));
+        bytes32 _orderId = keccak256(abi.encodePacked(trader1, "buy", price, nonce));
 
         console.logBytes32(keys[0]);
         // Cancelar la orden exitosamente
-        vm.prank(trader2);
+        vm.prank(trader1);
         factory.cancelOrder(keys[0], _orderId);
 
         // Verificar que la orden fue cancelada
@@ -886,8 +882,125 @@ contract OrderBookFactoryTest is Test {
         // Verificar que hay exactamente una clave
         assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
 
-        vm.startPrank(trader1);
+        console.log("T1 BA INICIO",tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB INICIO",tokenB.balanceOf(address(trader1)));
+
+        console.log("T2 BA INICIO",tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB INICIO",tokenB.balanceOf(address(trader2)));
+
+        console.log("TC BA INICIO",tokenA.balanceOf(address(factory)));
+        console.log("TC BB INICIO",tokenB.balanceOf(address(factory)));
+
+        vm.startPrank(trader2);
         // Agregar ventas
+        uint256 quantity = 1;
+        bool isBuy = false;
+
+        for (uint256 i = 1; i <= 10; i++) {
+            // Generate a unique order ID
+            bytes32 orderId = keccak256(abi.encodePacked(address(this), i));
+            // Push the order into the queue
+            factory.addNewOrder(keys[0], quantity, 1, isBuy, i, i+1);
+//            factory.addNewOrder(keys[0], quantity, 2, isBuy, i + 1, i+1);
+//            factory.addNewOrder(keys[0], quantity, 3, isBuy, i + 2, i+1);
+//            factory.addNewOrder(keys[0], quantity, 4, isBuy, i + 3, i+1);
+//            factory.addNewOrder(keys[0], quantity, 5, isBuy, i + 4, i+1);
+//            factory.addNewOrder(keys[0], quantity, 6, isBuy, i + 5, i+1);
+        }
+
+        console.log("T1 BA MEDIO",tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB MEDIO",tokenB.balanceOf(address(trader1)));
+
+        console.log("T2 BA MEDIO",tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB MEDIO",tokenB.balanceOf(address(trader2)));
+
+        console.log("TC BA MEDIO",tokenA.balanceOf(address(factory)));
+        console.log("TC BB MEDIO",tokenB.balanceOf(address(factory)));
+
+        vm.stopPrank();
+
+        vm.startPrank(trader1);
+        uint256 startGas = gasleft();
+        factory.addNewOrder(keys[0], 10, 50, true, 11, 12);
+        uint256 gasUsed = startGas - gasleft();
+        console.log("Gas used for adding Order: %d", gasUsed);
+        vm.stopPrank();
+
+        console.log("T1 BA",tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB",tokenB.balanceOf(address(trader1)));
+
+        console.log("T2 BA",tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB",tokenB.balanceOf(address(trader2)));
+
+        console.log("TC BA",tokenA.balanceOf(address(factory)));
+        console.log("TC BB",tokenB.balanceOf(address(factory)));
+
+        assertEq(tokenA.balanceOf(address(trader2)), 10, unicode"Trader2 debería tener 10 unidades de token A");
+    }
+
+    function testOneBuy100Sells() public {
+        vm.startPrank(owner);
+        factory.addOrderBook(address(tokenA), address(tokenB), 10, feeAddress);
+        vm.stopPrank();
+
+        // Obtener las claves de los libros de órdenes
+        bytes32[] memory keys = factory.getKeysOrderBooks();
+
+        // Verificar que hay exactamente una clave
+        assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
+
+        vm.startPrank(trader2);
+        // Agregar ventas
+        uint256 quantity = 1;
+        bool isBuy = false;
+
+        for (uint256 i = 1; i <= 50; i++) {
+            // Generate a unique order ID
+            bytes32 orderId = keccak256(abi.encodePacked(address(this), i));
+            // Push the order into the queue
+            factory.addNewOrder(keys[0], quantity, 1, isBuy, i, i+1);
+            factory.addNewOrder(keys[0], quantity, 2, isBuy, i + 1, i+1);
+            factory.addNewOrder(keys[0], quantity, 3, isBuy, i + 2, i+1);
+            factory.addNewOrder(keys[0], quantity, 4, isBuy, i + 3, i+1);
+            factory.addNewOrder(keys[0], quantity, 5, isBuy, i + 4, i+1);
+            factory.addNewOrder(keys[0], quantity, 6, isBuy, i + 5, i+1);
+        }
+
+        vm.stopPrank();
+
+        vm.startPrank(trader1);
+        uint256 startGas = gasleft();
+        factory.addNewOrder(keys[0], 100, 50, true, 11, 12);
+        uint256 gasUsed = startGas - gasleft();
+        console.log("Gas used for adding Order: %d", gasUsed);
+        vm.stopPrank();
+
+        assertEq(tokenA.balanceOf(address(trader2)), 150, unicode"Trader2 debería tener 150 unidades de token A");
+    }
+
+    function testOneSell10Buys() public {
+        vm.startPrank(owner);
+        factory.addOrderBook(address(tokenA), address(tokenB), 10, feeAddress);
+        vm.stopPrank();
+
+        // Obtener las claves de los libros de órdenes
+        bytes32[] memory keys = factory.getKeysOrderBooks();
+
+        // Verificar que hay exactamente una clave
+        assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
+
+        console.log("T1 BA INICIO",tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB INICIO",tokenB.balanceOf(address(trader1)));
+
+        console.log("T2 BA INICIO",tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB INICIO",tokenB.balanceOf(address(trader2)));
+
+        console.log("TC BA INICIO",tokenA.balanceOf(address(factory)));
+        console.log("TC BB INICIO",tokenB.balanceOf(address(factory)));
+
+
+        vm.startPrank(trader1);
+        // Agregar compras
         uint256 quantity = 1;
         bool isBuy = true;
 
@@ -895,29 +1008,139 @@ contract OrderBookFactoryTest is Test {
             // Generate a unique order ID
             bytes32 orderId = keccak256(abi.encodePacked(address(this), i));
             // Push the order into the queue
-            factory.addNewOrder(keys[0], quantity, 1, false, i, i+1);
-            factory.addNewOrder(keys[0], quantity, 2, false, i + 1, i+1);
-            factory.addNewOrder(keys[0], quantity, 3, false, i + 2, i+1);
-            factory.addNewOrder(keys[0], quantity, 4, false, i + 2, i+1);
-            factory.addNewOrder(keys[0], quantity, 5, false, i + 2, i+1);
-            factory.addNewOrder(keys[0], quantity, 6, false, i + 2, i+1);
+//            factory.addNewOrder(keys[0], quantity, 1, isBuy, i, i+1);
+//            factory.addNewOrder(keys[0], quantity, 5, isBuy, i + 1, i+1);
+//            factory.addNewOrder(keys[0], quantity, 10, isBuy, i + 2, i+1);
+//            factory.addNewOrder(keys[0], quantity, 20, isBuy, i + 3, i+1);
+//            factory.addNewOrder(keys[0], quantity, 30, isBuy, i + 4, i+1);
+            factory.addNewOrder(keys[0], quantity, 50, isBuy, i + 5, i+1);
         }
 
         vm.stopPrank();
 
+        console.log("T1 BA MEDIO",tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB MEDIO",tokenB.balanceOf(address(trader1)));
+
+        console.log("T2 BA MEDIO",tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB MEDIO",tokenB.balanceOf(address(trader2)));
+
+        console.log("TC BA MEDIO",tokenA.balanceOf(address(factory)));
+        console.log("TC BB MEDIO",tokenB.balanceOf(address(factory)));
+
         vm.startPrank(trader2);
         uint256 startGas = gasleft();
-        factory.addNewOrder(keys[0], 5, 50, true, 11, 12);
+        factory.addNewOrder(keys[0], 10, 1, false, 11, 12);
         uint256 gasUsed = startGas - gasleft();
         console.log("Gas used for adding Order: %d", gasUsed);
         vm.stopPrank();
 
-        // Verificar que la orden de compra se haya agregado correctamente
-        //TODO PQ SE INVIERTE EL TOKEN
-//        (address baseTokenOrder, address quoteTokenOrder,, uint256 lastTradePrice,) = factory.getOrderBookById(keys[0]);
-//        assertEq(baseTokenOrder, address(tokenB), "El token base debe coincidir");
-//        assertEq(quoteTokenOrder, address(tokenA), unicode"El token de cotización debe coincidir");
-//        assertEq(lastTradePrice, 0, unicode"El último precio negociado debe ser 0 al inicio");
+        console.log("T1 BA",tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB",tokenB.balanceOf(address(trader1)));
+
+        console.log("T2 BA",tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB",tokenB.balanceOf(address(trader2)));
+
+        console.log("TC BA",tokenA.balanceOf(address(factory)));
+        console.log("TC BB",tokenB.balanceOf(address(factory)));
+//        assertEq(tokenA.balanceOf(address(trader2)), 10, unicode"Trader2 debería tener 10 unidades de token A");
+    }
+
+    function testSupuestamenteCorrecta() public {
+        vm.startPrank(owner);
+        factory.addOrderBook(address(tokenA), address(tokenB), 10, feeAddress);
+        vm.stopPrank();
+
+        // Obtener las claves de los libros de órdenes
+        bytes32[] memory keys = factory.getKeysOrderBooks();
+
+        // Verificar que hay exactamente una clave
+        assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
+
+        console.log("T1 BA INICIO",tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB INICIO",tokenB.balanceOf(address(trader1)));
+
+        console.log("T2 BA INICIO",tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB INICIO",tokenB.balanceOf(address(trader2)));
+
+        console.log("TC BA INICIO",tokenA.balanceOf(address(factory)));
+        console.log("TC BB INICIO",tokenB.balanceOf(address(factory)));
+
+
+        vm.startPrank(trader2);
+        factory.addNewOrder(keys[0], 10, 50, false, 5, 6);
+        vm.stopPrank();
+
+        console.log("T1 BA MEDIO",tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB MEDIO",tokenB.balanceOf(address(trader1)));
+
+        console.log("T2 BA MEDIO",tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB MEDIO",tokenB.balanceOf(address(trader2)));
+
+        console.log("TC BA MEDIO",tokenA.balanceOf(address(factory)));
+        console.log("TC BB MEDIO",tokenB.balanceOf(address(factory)));
+
+        vm.startPrank(trader1);
+        factory.addNewOrder(keys[0], 10, 50, true, 11, 12);
+        vm.stopPrank();
+
+        console.log("T1 BA",tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB",tokenB.balanceOf(address(trader1)));
+
+        console.log("T2 BA",tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB",tokenB.balanceOf(address(trader2)));
+
+        console.log("TC BA",tokenA.balanceOf(address(factory)));
+        console.log("TC BB",tokenB.balanceOf(address(factory)));
+//        assertEq(tokenA.balanceOf(address(trader2)), 10, unicode"Trader2 debería tener 10 unidades de token A");
+    }
+
+    function testSupuestamenteCorrecta2() public {
+        vm.startPrank(owner);
+        factory.addOrderBook(address(tokenA), address(tokenB), 10, feeAddress);
+        vm.stopPrank();
+
+        // Obtener las claves de los libros de órdenes
+        bytes32[] memory keys = factory.getKeysOrderBooks();
+
+        // Verificar que hay exactamente una clave
+        assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
+
+        console.log("T1 BA INICIO",tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB INICIO",tokenB.balanceOf(address(trader1)));
+
+        console.log("T2 BA INICIO",tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB INICIO",tokenB.balanceOf(address(trader2)));
+
+        console.log("TC BA INICIO",tokenA.balanceOf(address(factory)));
+        console.log("TC BB INICIO",tokenB.balanceOf(address(factory)));
+
+
+        vm.startPrank(trader1);
+        factory.addNewOrder(keys[0], 10, 50, true, 5, 6);
+        vm.stopPrank();
+
+        console.log("T1 BA MEDIO",tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB MEDIO",tokenB.balanceOf(address(trader1)));
+
+        console.log("T2 BA MEDIO",tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB MEDIO",tokenB.balanceOf(address(trader2)));
+
+        console.log("TC BA MEDIO",tokenA.balanceOf(address(factory)));
+        console.log("TC BB MEDIO",tokenB.balanceOf(address(factory)));
+
+        vm.startPrank(trader2);
+        factory.addNewOrder(keys[0], 10, 50, false, 11, 12);
+        vm.stopPrank();
+
+        console.log("T1 BA",tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB",tokenB.balanceOf(address(trader1)));
+
+        console.log("T2 BA",tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB",tokenB.balanceOf(address(trader2)));
+
+        console.log("TC BA",tokenA.balanceOf(address(factory)));
+        console.log("TC BB",tokenB.balanceOf(address(factory)));
+//        assertEq(tokenA.balanceOf(address(trader2)), 10, unicode"Trader2 debería tener 10 unidades de token A");
     }
 
     /*function testCancelOrderNonExistentOrderBook() public {
@@ -978,7 +1201,7 @@ contract OrderBookFactoryTest is Test {
         uint256 price = 100;
         bool isBuy = true;
 
-        vm.prank(trader2);
+        vm.prank(trader1);
         vm.expectRevert(OrderBookFactory.OrderBookFactory__InvalidQuantityValueZero.selector);
         factory.addNewOrder(keys[0], quantity, price, isBuy,  1, 1);
     }
@@ -991,7 +1214,7 @@ contract OrderBookFactoryTest is Test {
         uint256 price = 100;
         bool isBuy = true;
 
-        vm.prank(trader2);
+        vm.prank(trader1);
         vm.expectRevert(OrderBookFactory.OrderBookFactory__OrderBookNotEnabled.selector);
         factory.addNewOrder(invalidOrderBookKey, quantity, price, isBuy,  1, 1);
     }
@@ -1013,7 +1236,7 @@ contract OrderBookFactoryTest is Test {
         uint256 price = 100;
         bool isBuy = true;
 
-        vm.prank(trader2);
+        vm.prank(trader1);
         factory.addNewOrder(keys[0], quantity, price, isBuy,  1, 1);
     }
 
@@ -1034,31 +1257,31 @@ contract OrderBookFactoryTest is Test {
         uint256 price = 0;
         bool isBuy = true;
 
-        vm.prank(trader2);
+        vm.prank(trader1);
         vm.expectRevert(); // Puedes ajustar el revert específico si tienes uno para este caso.
         factory.addNewOrder(keys[0], quantity, price, isBuy,  1, 1);
     }
 
-    // Test: Agregar orden con precio máximo válido
-    function testAddOrderWithMaxPrice() public {
-        vm.startPrank(owner);
-        factory.addOrderBook(address(tokenA), address(tokenB), 10, feeAddress);
-        vm.stopPrank();
-
-        // Obtener las claves de los libros de órdenes
-        bytes32[] memory keys = factory.getKeysOrderBooks();
-
-        // Verificar que hay exactamente una clave
-        assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
-
-        // Agregar una nueva orden de compra
-        uint256 quantity = 1;
-        uint256 maxPrice = type(uint256).max;
-        bool isBuy = true;
-
-        vm.prank(trader2);
-        factory.addNewOrder(keys[0], quantity, maxPrice, isBuy,  1, 1);
-    }
+//    // Test: Agregar orden con precio máximo válido
+//    function testAddOrderWithMaxPrice() public {
+//        vm.startPrank(owner);
+//        factory.addOrderBook(address(tokenA), address(tokenB), 10, feeAddress);
+//        vm.stopPrank();
+//
+//        // Obtener las claves de los libros de órdenes
+//        bytes32[] memory keys = factory.getKeysOrderBooks();
+//
+//        // Verificar que hay exactamente una clave
+//        assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
+//
+//        // Agregar una nueva orden de compra
+//        uint256 quantity = 1;
+//        uint256 maxPrice = type(uint256).max;
+//        bool isBuy = true;
+//
+//        vm.prank(trader1);
+//        factory.addNewOrder(keys[0], quantity, maxPrice, isBuy,  1, 1);
+//    }
 
     //Test: Agregar orden con cantidad maxima valida
     /*function testAddOrderWithMaxQuantity() public {

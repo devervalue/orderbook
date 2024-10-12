@@ -64,9 +64,9 @@ library PairLib {
 
         //Agregar al arbol
         if (newOrder.isBuy) {
-            pair.buyOrders.saveOrder(newOrder.price, newOrder.quantity, newOrder.orderId, pair.baseToken, newOrder.quantity);
+            pair.buyOrders.saveOrder(newOrder.price, newOrder.quantity, newOrder.orderId, pair.quoteToken, newOrder.quantity * newOrder.price);
         } else {
-            pair.sellOrders.saveOrder(newOrder.price, newOrder.quantity, newOrder.orderId, pair.quoteToken, newOrder.quantity * newOrder.price);
+            pair.sellOrders.saveOrder(newOrder.price, newOrder.quantity, newOrder.orderId, pair.baseToken, newOrder.quantity);
         }
 
         OrderBookLib.Order storage _newOrder = pair.orders[newOrder.orderId];
@@ -128,6 +128,8 @@ library PairLib {
     {
         uint256 matchingPrice = 0;
         bytes32 matchingOrderId = bytes32(uint256(0));
+        uint256 buyPrice = 1;
+        uint256 sellPrice = 1;
 
         if (newOrder.isBuy) {
             matchingPrice = pair.sellOrders.getLowestPrice();
@@ -142,9 +144,15 @@ library PairLib {
 
             uint256 matchingOrderQty = matchingOrder.availableQuantity;
 
+            if (newOrder.isBuy) {
+                sellPrice = matchingOrder.price;
+            } else {
+                buyPrice = matchingOrder.price;
+            }
+
             if (newOrder.quantity >= matchingOrderQty) {
                 fillOrder(
-                    pair, matchingOrder, buyToken, sellToken, matchingOrderQty, matchingOrderQty * matchingOrder.price
+                    pair, matchingOrder, buyToken, sellToken, matchingOrderQty * buyPrice, matchingOrderQty * sellPrice
                 );
                 //Actualizo la orden de compra disminuyendo la cantidad que ya tengo
                 newOrder.quantity -= matchingOrderQty;
@@ -154,7 +162,7 @@ library PairLib {
                 emit OrderExecuted(matchingOrder.orderId, pair.baseToken, pair.quoteToken, matchingOrder.traderAddress);
             } else {
                 partialFillOrder(
-                    pair, matchingOrder, buyToken, sellToken, newOrder.quantity, newOrder.quantity * matchingOrder.price
+                    pair, matchingOrder, buyToken, sellToken, newOrder.quantity * buyPrice, newOrder.quantity * sellPrice
                 );
 
                 //Actualizar la OC restando la cantidad de la OE
@@ -181,8 +189,8 @@ library PairLib {
         internal
     {
         //Obtengo los tokens
-        IERC20 buyToken = IERC20(pair.quoteToken);
-        IERC20 sellToken = IERC20(pair.baseToken);
+        IERC20 buyToken = IERC20(pair.baseToken);
+        IERC20 sellToken = IERC20(pair.quoteToken);
 
         //¿Arbol de ventas tiene nodos?
         uint256 currentNode = pair.sellOrders.getLowestPrice();
@@ -230,8 +238,8 @@ library PairLib {
         internal
     {
         //Obtengo los tokens
-        IERC20 buyToken = IERC20(pair.baseToken);
-        IERC20 sellToken = IERC20(pair.quoteToken);
+        IERC20 buyToken = IERC20(pair.quoteToken);
+        IERC20 sellToken = IERC20(pair.baseToken);
 
 
         //¿Arbol de compras tiene nodos?
@@ -258,7 +266,7 @@ library PairLib {
                 return;
             } else {
                 //SI
-                //Precio de venta <= precio del nodo obtenido
+                //Precio de compra <= precio del nodo obtenido
                 if (_price <= currentNode) {
                     //SI
                     //Aplico el match de ordenes de compra
