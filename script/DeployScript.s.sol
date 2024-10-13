@@ -23,6 +23,6 @@ contract DeployScript is Script {
 
 
         // Opción: Mostrar la dirección del contrato desplegado
-        //console.log("Contrato desplegado en:", address(contract1));
+        console.log("Contrato desplegado en:", address(contract1));
     }
 }
