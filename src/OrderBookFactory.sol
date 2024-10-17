@@ -207,10 +207,13 @@ contract OrderBookFactory {
         if (!orderBookExists(idOrderBook)) revert OrderBookFactory__OrderBookIdOutOfRange();
         if (quantity == 0) revert OrderBookFactory__InvalidQuantityValueZero();
         PairLib.Pair storage order = ordersBook[idOrderBook];
+        console.log(order.baseToken);
         if (isBuy) {
+            console.log("buy");
             order.addBuyOrder(price, quantity, nonce, _expired);
         } else {
-            order.addSellOrder(price, quantity, nonce, _expired);
+            console.log("sell");
+        order.addSellOrder(price, quantity, nonce, _expired);
         }
     }
 

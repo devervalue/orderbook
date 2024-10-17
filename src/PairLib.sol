@@ -64,7 +64,7 @@ library PairLib {
 
         //Agregar al arbol
         if (newOrder.isBuy) {
-            pair.buyOrders.saveOrder(newOrder.price, newOrder.quantity, newOrder.orderId, pair.quoteToken, newOrder.quantity * newOrder.price);
+            pair.buyOrders.saveOrder(newOrder.price, newOrder.quantity, newOrder.orderId, pair.quoteToken, newOrder.quantity * newOrder.price / (10 ** 18));
         } else {
             pair.sellOrders.saveOrder(newOrder.price, newOrder.quantity, newOrder.orderId, pair.baseToken, newOrder.quantity);
         }
@@ -96,7 +96,7 @@ library PairLib {
         pair.lastTradePrice = matchedOrder.price;
         sellToken.safeTransferFrom(msg.sender, matchedOrder.traderAddress, sellTokenAmount); //Multiplico la cantidad de tokens de venta por el precio de venta
         //Transfiero la cantidad de tokens de OV al comprador
-        buyToken.transferFrom(address(this), msg.sender, buyTokenAmount); //Transfiero la cantidad que tiene la venta
+        buyToken.safeTransfer(msg.sender, buyTokenAmount); //Transfiero la cantidad que tiene la venta
         //Elimino la orden
         if (matchedOrder.isBuy) {
             pair.buyOrders.remove(matchedOrder);
@@ -118,7 +118,7 @@ library PairLib {
         pair.lastTradePrice = matchedOrder.price;
         sellToken.safeTransferFrom(msg.sender, matchedOrder.traderAddress, sellTokenAmount); //Multiplico la cantidad de tokens de venta por el precio de compra
         //Transfiero la cantidad de tokens de OC al vendedor
-        buyToken.safeTransferFrom(address(this), msg.sender, buyTokenAmount);
+        buyToken.safeTransfer( msg.sender, buyTokenAmount);
     }
 
     //Match orden de compra
@@ -128,8 +128,6 @@ library PairLib {
     {
         uint256 matchingPrice = 0;
         bytes32 matchingOrderId = bytes32(uint256(0));
-        uint256 buyPrice = 1;
-        uint256 sellPrice = 1;
 
         if (newOrder.isBuy) {
             matchingPrice = pair.sellOrders.getLowestPrice();
@@ -144,15 +142,11 @@ library PairLib {
 
             uint256 matchingOrderQty = matchingOrder.availableQuantity;
 
-            if (newOrder.isBuy) {
-                sellPrice = matchingOrder.price;
-            } else {
-                buyPrice = matchingOrder.price;
-            }
-
             if (newOrder.quantity >= matchingOrderQty) {
+                uint256 buyTokenAmount = newOrder.isBuy? matchingOrderQty : matchingOrderQty * matchingOrder.price / (10 ** 18);
+                uint256 sellTokenAmount = newOrder.isBuy? matchingOrderQty * matchingOrder.price / (10 ** 18) : matchingOrderQty;
                 fillOrder(
-                    pair, matchingOrder, buyToken, sellToken, matchingOrderQty * buyPrice, matchingOrderQty * sellPrice
+                    pair, matchingOrder, buyToken, sellToken, buyTokenAmount, sellTokenAmount
                 );
                 //Actualizo la orden de compra disminuyendo la cantidad que ya tengo
                 newOrder.quantity -= matchingOrderQty;
@@ -161,8 +155,12 @@ library PairLib {
                 // Emito ejecucion de orden completada
                 emit OrderExecuted(matchingOrder.orderId, pair.baseToken, pair.quoteToken, matchingOrder.traderAddress);
             } else {
+
+                uint256 buyTokenAmount = newOrder.isBuy? newOrder.quantity : newOrder.quantity * matchingOrder.price / (10 ** 18);
+                uint256 sellTokenAmount = newOrder.isBuy? newOrder.quantity * matchingOrder.price / (10 ** 18) : newOrder.quantity;
+
                 partialFillOrder(
-                    pair, matchingOrder, buyToken, sellToken, newOrder.quantity * buyPrice, newOrder.quantity * sellPrice
+                    pair, matchingOrder, buyToken, sellToken, buyTokenAmount, sellTokenAmount
                 );
 
                 //Actualizar la OC restando la cantidad de la OE

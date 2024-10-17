@@ -900,7 +900,7 @@ contract OrderBookFactoryTest is Test {
             // Generate a unique order ID
             bytes32 orderId = keccak256(abi.encodePacked(address(this), i));
             // Push the order into the queue
-            factory.addNewOrder(keys[0], quantity, 1, isBuy, i, i+1);
+            factory.addNewOrder(keys[0], quantity, 1 * 10 ** 18, isBuy, i, i+1);
 //            factory.addNewOrder(keys[0], quantity, 2, isBuy, i + 1, i+1);
 //            factory.addNewOrder(keys[0], quantity, 3, isBuy, i + 2, i+1);
 //            factory.addNewOrder(keys[0], quantity, 4, isBuy, i + 3, i+1);
@@ -921,7 +921,7 @@ contract OrderBookFactoryTest is Test {
 
         vm.startPrank(trader1);
         uint256 startGas = gasleft();
-        factory.addNewOrder(keys[0], 10, 50, true, 11, 12);
+        factory.addNewOrder(keys[0], 10, 50 * 10 ** 18, true, 11, 12);
         uint256 gasUsed = startGas - gasleft();
         console.log("Gas used for adding Order: %d", gasUsed);
         vm.stopPrank();
@@ -958,19 +958,19 @@ contract OrderBookFactoryTest is Test {
             // Generate a unique order ID
             bytes32 orderId = keccak256(abi.encodePacked(address(this), i));
             // Push the order into the queue
-            factory.addNewOrder(keys[0], quantity, 1, isBuy, i, i+1);
-            factory.addNewOrder(keys[0], quantity, 2, isBuy, i + 1, i+1);
-            factory.addNewOrder(keys[0], quantity, 3, isBuy, i + 2, i+1);
-            factory.addNewOrder(keys[0], quantity, 4, isBuy, i + 3, i+1);
-            factory.addNewOrder(keys[0], quantity, 5, isBuy, i + 4, i+1);
-            factory.addNewOrder(keys[0], quantity, 6, isBuy, i + 5, i+1);
+            factory.addNewOrder(keys[0], quantity, 2 * 10 ** 18, isBuy, i + 1, i+1);
+            factory.addNewOrder(keys[0], quantity, 1 * 10 ** 18, isBuy, i, i+1);
+            factory.addNewOrder(keys[0], quantity, 3 * 10 ** 18, isBuy, i + 2, i+1);
+            factory.addNewOrder(keys[0], quantity, 4 * 10 ** 18, isBuy, i + 3, i+1);
+            factory.addNewOrder(keys[0], quantity, 5 * 10 ** 18, isBuy, i + 4, i+1);
+            factory.addNewOrder(keys[0], quantity, 6 * 10 ** 18, isBuy, i + 5, i+1);
         }
 
         vm.stopPrank();
 
         vm.startPrank(trader1);
         uint256 startGas = gasleft();
-        factory.addNewOrder(keys[0], 100, 50, true, 11, 12);
+        factory.addNewOrder(keys[0], 100, 50 * 10 ** 18, true, 11, 12);
         uint256 gasUsed = startGas - gasleft();
         console.log("Gas used for adding Order: %d", gasUsed);
         vm.stopPrank();
