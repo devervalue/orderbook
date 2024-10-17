@@ -152,6 +152,8 @@ library PairLib {
                 newOrder.quantity -= matchingOrderQty;
                 //La cola tiene mas ordenes ?
                 matchingOrderId = pair.sellOrders.getNextOrderId(matchingPrice);
+                removeFromTraderOrders(pair, matchingOrder.orderId, matchingOrder.traderAddress);
+
                 // Emito ejecucion de orden completada
                 emit OrderExecuted(matchingOrder.orderId, pair.baseToken, pair.quoteToken, matchingOrder.traderAddress);
             } else {
@@ -292,15 +294,28 @@ library PairLib {
         }
         delete pair.orders[_orderId];
 
+        removeFromTraderOrders(pair, _orderId, msg.sender);
+
+    }
+
+    function removeFromTraderOrders(Pair storage pair, bytes32 _orderId, address traderAddress) internal {
         // Reemplazar el elemento a eliminar con el último elemento del array
-        TraderOrders storage to = pair.traderOrders[msg.sender];
+        console.logBytes32(_orderId);
+        TraderOrders storage to = pair.traderOrders[traderAddress];
+        console.logAddress(traderAddress);
 
         uint256 deleteIndex = to.index[_orderId];
+        console.log("DEL", deleteIndex);
         uint256 lastIndex = to.orderIds.length - 1;
+        console.log("LAST", lastIndex);
 
-        if (deleteIndex != lastIndex){
+
+    if (deleteIndex != lastIndex){
             to.orderIds[deleteIndex] = to.orderIds[lastIndex];
         }
+
+        // actualizar el index de la orden movida
+        to.index[to.orderIds[lastIndex]] = deleteIndex;
 
         // Remover el último elemento
         to.orderIds.pop();
