@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+import "./OrderBookLib.sol";
 import "./RedBlackTree.sol";
 import {PairLib} from "./PairLib.sol";
 
@@ -12,6 +13,7 @@ import {PairLib} from "./PairLib.sol";
  */
 contract OrderBookFactory {
     using PairLib for PairLib.Pair;
+    using OrderBookLib for OrderBookLib.Order;
 
     error OrderBookFactory__InvalidTokenAddress();
     error OrderBookFactory__InvalidOwnerAddress();
@@ -221,5 +223,19 @@ contract OrderBookFactory {
         if (!orderBookExists(idOrderBook)) revert OrderBookFactory__OrderBookIdOutOfRange();
         PairLib.Pair storage order = ordersBook[idOrderBook];
         order.cancelOrder(idOrder);
+    }
+
+    function getTraderOrdersForOrderBook(bytes32 orderbookId, address trader) public view returns (bytes32[] memory) {
+        if (!orderBookExists(orderbookId)) revert OrderBookFactory__OrderBookIdOutOfRange();
+
+        PairLib.Pair storage orderBook = ordersBook[orderbookId];
+        return orderBook.getTraderOrders(trader);
+    }
+
+    function getOrderDetailForOrderBook(bytes32 orderbookId, bytes32 orderId) public view returns (OrderBookLib.Order memory) {
+        if (!orderBookExists(orderbookId)) revert OrderBookFactory__OrderBookIdOutOfRange();
+
+        PairLib.Pair storage orderBook = ordersBook[orderbookId];
+        return orderBook.getOrderDetail(orderId);
     }
 }
