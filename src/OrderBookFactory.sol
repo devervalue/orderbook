@@ -14,6 +14,7 @@ import {PairLib} from "./PairLib.sol";
 contract OrderBookFactory {
     using PairLib for PairLib.Pair;
     using OrderBookLib for OrderBookLib.Order;
+    using OrderBookLib for OrderBookLib.Price;
 
     error OrderBookFactory__InvalidTokenAddress();
     error OrderBookFactory__InvalidOwnerAddress();
@@ -237,5 +238,21 @@ contract OrderBookFactory {
 
         PairLib.Pair storage orderBook = ordersBook[orderbookId];
         return orderBook.getOrderDetail(orderId);
+    }
+
+    function getTop3BuyPrices(bytes32 orderbookId) public view returns (uint256[3] memory){
+        PairLib.Pair storage orderBook = ordersBook[orderbookId];
+        return orderBook.getTop3BuyPrices();
+    }
+
+    function getTop3SellPrices(bytes32 orderbookId) public view returns (uint256[3] memory){
+        PairLib.Pair storage orderBook = ordersBook[orderbookId];
+        return orderBook.getTop3SellPrices();
+    }
+
+    function getPrice(bytes32 orderbookId, uint256 price, bool isBuy) public view returns (uint256, uint256){
+        PairLib.Pair storage orderBook = ordersBook[orderbookId];
+        OrderBookLib.Price storage p = orderBook.getPrice(price, isBuy);
+        return (p.countTotalOrders, p.countValueOrders);
     }
 }

@@ -10,6 +10,7 @@ library PairLib {
     using SafeERC20 for IERC20;
     using OrderBookLib for OrderBookLib.Order;
     using OrderBookLib for OrderBookLib.Book;
+    using OrderBookLib for OrderBookLib.Price;
 
     error PairLib__TraderDoesNotCorrespond();
     error PairLib__KeyDoesNotExist();
@@ -357,5 +358,21 @@ library PairLib {
 
     function getNextSellOrderId(Pair storage pair, uint256 price) internal view returns (bytes32){
         return pair.sellOrders.getNextOrderId(price);
+    }
+
+    function getTop3BuyPrices(Pair storage pair) internal view returns (uint256[3] memory){
+        return pair.buyOrders.getTop3BuyPrices();
+    }
+
+    function getTop3SellPrices(Pair storage pair) internal view returns (uint256[3] memory){
+        return pair.sellOrders.getTop3BuyPrices();
+    }
+
+    function getPrice(Pair storage p, uint256 price, bool isBuy) internal view returns (OrderBookLib.Price storage){
+        if (isBuy){
+            return p.buyOrders.getPrice(price);
+        }else {
+            return p.sellOrders.getPrice(price);
+        }
     }
 }

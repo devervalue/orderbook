@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "./RedBlackTree.sol";
+import "./OrderBookLib.sol";
 import "./OrderQueue.sol";
-import "forge-std/console.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./RedBlackTree.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "forge-std/console.sol";
 
 library OrderBookLib {
     using RedBlackTree for RedBlackTree.Tree;
@@ -79,5 +80,25 @@ library OrderBookLib {
 
     function getHighestPrice(Book storage b) internal view returns (uint256){
         return b.tree.last();
+    }
+
+    function getTop3BuyPrices(Book storage b) internal view returns (uint256[3] memory){
+        uint256 last = b.tree.last();
+        uint256 last2 = last == 0? 0: b.tree.prev(last);
+        uint256 last3 = last2 == 0? 0: b.tree.prev(last2);
+
+        return [last, last2, last3];
+    }
+
+    function getTop3SellPrices(Book storage b) internal view returns (uint256[3] memory){
+        uint256 first = b.tree.first();
+        uint256 first2 = first == 0? 0: b.tree.next(first);
+        uint256 first3 = first2 == 0? 0: b.tree.next(first2);
+
+        return [first, first2, first3];
+    }
+
+    function getPrice(Book storage b, uint256 price) internal view returns (Price storage){
+        return b.prices[price];
     }
 }
