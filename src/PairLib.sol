@@ -172,9 +172,9 @@ library PairLib {
                 newOrder.quantity = 0;
 
                 if (matchingOrder.isBuy) {
-                    pair.buyOrders.update(matchingOrder);
+                    pair.buyOrders.update(matchingOrder, newOrder.quantity);
                 } else {
-                    pair.sellOrders.update(matchingOrder);
+                    pair.sellOrders.update(matchingOrder, newOrder.quantity);
                 }
 
                 //Emite el evento de orden entrante ejecutada
