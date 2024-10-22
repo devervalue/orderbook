@@ -171,6 +171,12 @@ library PairLib {
                 matchingOrder.status = 2; // Partial Fille TODO Pasar a constante
                 newOrder.quantity = 0;
 
+                if (matchingOrder.isBuy) {
+                    pair.buyOrders.update(matchingOrder);
+                } else {
+                    pair.sellOrders.update(matchingOrder);
+                }
+
                 //Emite el evento de orden entrante ejecutada
                 emit OrderExecuted(newOrder.orderId, pair.baseToken, pair.quoteToken, msg.sender);
 

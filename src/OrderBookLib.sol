@@ -59,6 +59,11 @@ library OrderBookLib {
         }
     }
 
+    function update(Book storage b, Order calldata order) public {
+        Price storage price = b.prices[order.price];
+        price.countValueOrders = price.countValueOrders - order.quantity + order.availableQuantity;
+    }
+
     function saveOrder(Book storage b, uint256 _price, uint256 _quantity, bytes32 _orderId, address tokenAddress, uint256 transferQty)
         internal
     {
