@@ -216,7 +216,7 @@ contract OrderBookFactory {
             order.addBuyOrder(price, quantity, nonce, _expired);
         } else {
             console.log("sell");
-        order.addSellOrder(price, quantity, nonce, _expired);
+            order.addSellOrder(price, quantity, nonce, _expired);
         }
     }
 
@@ -233,24 +233,28 @@ contract OrderBookFactory {
         return orderBook.getTraderOrders(trader);
     }
 
-    function getOrderDetailForOrderBook(bytes32 orderbookId, bytes32 orderId) public view returns (OrderBookLib.Order memory) {
+    function getOrderDetailForOrderBook(bytes32 orderbookId, bytes32 orderId)
+        public
+        view
+        returns (OrderBookLib.Order memory)
+    {
         if (!orderBookExists(orderbookId)) revert OrderBookFactory__OrderBookIdOutOfRange();
 
         PairLib.Pair storage orderBook = ordersBook[orderbookId];
         return orderBook.getOrderDetail(orderId);
     }
 
-    function getTop3BuyPrices(bytes32 orderbookId) public view returns (uint256[3] memory){
+    function getTop3BuyPrices(bytes32 orderbookId) public view returns (uint256[3] memory) {
         PairLib.Pair storage orderBook = ordersBook[orderbookId];
         return orderBook.getTop3BuyPrices();
     }
 
-    function getTop3SellPrices(bytes32 orderbookId) public view returns (uint256[3] memory){
+    function getTop3SellPrices(bytes32 orderbookId) public view returns (uint256[3] memory) {
         PairLib.Pair storage orderBook = ordersBook[orderbookId];
         return orderBook.getTop3SellPrices();
     }
 
-    function getPrice(bytes32 orderbookId, uint256 price, bool isBuy) public view returns (uint256, uint256){
+    function getPrice(bytes32 orderbookId, uint256 price, bool isBuy) public view returns (uint256, uint256) {
         PairLib.Pair storage orderBook = ordersBook[orderbookId];
         OrderBookLib.Price storage p = orderBook.getPrice(price, isBuy);
         return (p.countTotalOrders, p.countValueOrders);

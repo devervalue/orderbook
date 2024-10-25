@@ -35,8 +35,8 @@ library OrderBookLib {
     }
 
     struct Book {
-    RedBlackTree.Tree tree;
-    mapping(uint256 => Price) prices; // Mapping of keys to their corresponding nodes
+        RedBlackTree.Tree tree;
+        mapping(uint256 => Price) prices; // Mapping of keys to their corresponding nodes
     }
 
     function insert(Book storage b, bytes32 key, uint256 value, uint256 _quantity) internal {
@@ -51,7 +51,7 @@ library OrderBookLib {
     function remove(Book storage b, Order calldata order) public {
         Price storage price = b.prices[order.price];
         price.countTotalOrders = price.countTotalOrders - 1;
-        price.countValueOrders = price.countValueOrders - order.quantity;
+        price.countValueOrders = price.countValueOrders - order.availableQuantity;
         price.q.removeOrder(order.orderId);
 
         if (price.q.isEmpty()) {
@@ -64,46 +64,51 @@ library OrderBookLib {
         price.countValueOrders = price.countValueOrders - quantity;
     }
 
-    function saveOrder(Book storage b, uint256 _price, uint256 _quantity, bytes32 _orderId, address tokenAddress, uint256 transferQty)
-        internal
-    {
+    function saveOrder(
+        Book storage b,
+        uint256 _price,
+        uint256 _quantity,
+        bytes32 _orderId,
+        address tokenAddress,
+        uint256 transferQty
+    ) internal {
         //Transfiero los tokens al contrato
         IERC20 token = IERC20(tokenAddress);
         token.safeTransferFrom(msg.sender, address(this), transferQty); //Transfiero la cantidad indicada
 
         //Agregar al arbol
-        insert(b,_orderId, _price, _quantity);
+        insert(b, _orderId, _price, _quantity);
     }
 
     function getNextOrderId(Book storage b, uint256 price) internal view returns (bytes32) {
         return b.prices[price].q.first;
     }
 
-    function getLowestPrice(Book storage b) internal view returns (uint256){
+    function getLowestPrice(Book storage b) internal view returns (uint256) {
         return b.tree.first();
     }
 
-    function getHighestPrice(Book storage b) internal view returns (uint256){
+    function getHighestPrice(Book storage b) internal view returns (uint256) {
         return b.tree.last();
     }
 
-    function getTop3BuyPrices(Book storage b) internal view returns (uint256[3] memory){
+    function getTop3BuyPrices(Book storage b) internal view returns (uint256[3] memory) {
         uint256 last = b.tree.last();
-        uint256 last2 = last == 0? 0: b.tree.prev(last);
-        uint256 last3 = last2 == 0? 0: b.tree.prev(last2);
+        uint256 last2 = last == 0 ? 0 : b.tree.prev(last);
+        uint256 last3 = last2 == 0 ? 0 : b.tree.prev(last2);
 
         return [last, last2, last3];
     }
 
-    function getTop3SellPrices(Book storage b) internal view returns (uint256[3] memory){
+    function getTop3SellPrices(Book storage b) internal view returns (uint256[3] memory) {
         uint256 first = b.tree.first();
-        uint256 first2 = first == 0? 0: b.tree.next(first);
-        uint256 first3 = first2 == 0? 0: b.tree.next(first2);
+        uint256 first2 = first == 0 ? 0 : b.tree.next(first);
+        uint256 first3 = first2 == 0 ? 0 : b.tree.next(first2);
 
         return [first, first2, first3];
     }
 
-    function getPrice(Book storage b, uint256 price) internal view returns (Price storage){
+    function getPrice(Book storage b, uint256 price) internal view returns (Price storage) {
         return b.prices[price];
     }
 }

@@ -5,7 +5,6 @@ import {Script} from "forge-std/Script.sol";
 import {OrderBookFactory} from "../src/OrderBookFactory.sol";
 import "forge-std/console.sol";
 
-
 contract DeployScript is Script {
     function run() external {
         // Configurar el remitente (sender) desde una variable de entorno
@@ -20,7 +19,6 @@ contract DeployScript is Script {
 
         // Detener el broadcast para que Foundry deje de capturar
         vm.stopBroadcast();
-
 
         // Opción: Mostrar la dirección del contrato desplegado
         console.log("Contrato desplegado en:", address(contract1));

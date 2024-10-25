@@ -3,7 +3,6 @@ pragma solidity ^0.8.26;
 
 import "forge-std/console.sol";
 
-
 library OrderQueue {
     /* Errors */
     // TODO: Consider using custom error strings instead of error types to save gas

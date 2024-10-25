@@ -13,7 +13,7 @@ contract CreateOrderBooks is Script {
     OrderBook[] public orderBooks;
 
     // Dirección del contrato OrderBookFactory ya desplegado
-    address factoryAddress = 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9;
+    address factoryAddress = 0x4c58aCc17E6Cf8f7Ecf5427F9d851FB8AfB69b16;
 
     struct OrderBook {
         address tokenA;
@@ -29,10 +29,10 @@ contract CreateOrderBooks is Script {
     function run() public {
         // Crear una nueva instancia de OrderBook y agregarla al array
         OrderBook memory newOrderBook = OrderBook({
-            tokenA: 0x8464135c8F25Da09e49BC8782676a84730C318bC,
-            tokenB: 0x663F3ad617193148711d28f5334eE4Ed07016602,
-            fee: 125,
-            feeAddress: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+            tokenA: 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f, // WBTC
+            tokenB: 0x45D9831d8751B2325f3DBf48db748723726e1C8c, // EVA
+            fee: 0,
+            feeAddress: 0x83B6B0F85ba9E5aE56b7A5d73C0fDD12F857087a
         });
 
         // Agregar el nuevo OrderBook al array

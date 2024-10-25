@@ -57,7 +57,6 @@ library PairLib {
     }
 
     function saveOrder(Pair storage pair, OrderBookLib.Order memory newOrder) private {
-
         if (keyExists(pair, newOrder.orderId)) revert PairLib__KeyAlreadyExists();
 
         pair.traderOrders[msg.sender].orderIds.push(newOrder.orderId);
@@ -65,9 +64,17 @@ library PairLib {
 
         //Agregar al arbol
         if (newOrder.isBuy) {
-            pair.buyOrders.saveOrder(newOrder.price, newOrder.quantity, newOrder.orderId, pair.quoteToken, newOrder.quantity * newOrder.price / (10 ** 18));
+            pair.buyOrders.saveOrder(
+                newOrder.price,
+                newOrder.quantity,
+                newOrder.orderId,
+                pair.quoteToken,
+                newOrder.quantity * newOrder.price / (10 ** 18)
+            );
         } else {
-            pair.sellOrders.saveOrder(newOrder.price, newOrder.quantity, newOrder.orderId, pair.baseToken, newOrder.quantity);
+            pair.sellOrders.saveOrder(
+                newOrder.price, newOrder.quantity, newOrder.orderId, pair.baseToken, newOrder.quantity
+            );
         }
 
         OrderBookLib.Order storage _newOrder = pair.orders[newOrder.orderId];
@@ -119,14 +126,17 @@ library PairLib {
         pair.lastTradePrice = matchedOrder.price;
         sellToken.safeTransferFrom(msg.sender, matchedOrder.traderAddress, sellTokenAmount); //Multiplico la cantidad de tokens de venta por el precio de compra
         //Transfiero la cantidad de tokens de OC al vendedor
-        buyToken.safeTransfer( msg.sender, buyTokenAmount);
+        buyToken.safeTransfer(msg.sender, buyTokenAmount);
     }
 
     //Match orden de compra
-    function matchOrder(Pair storage pair, uint256 orderCount, IERC20 buyToken, IERC20 sellToken, OrderBookLib.Order memory newOrder)
-        private
-        returns (uint256 _remainingQuantity, uint256 _orderCount)
-    {
+    function matchOrder(
+        Pair storage pair,
+        uint256 orderCount,
+        IERC20 buyToken,
+        IERC20 sellToken,
+        OrderBookLib.Order memory newOrder
+    ) private returns (uint256 _remainingQuantity, uint256 _orderCount) {
         uint256 matchingPrice = 0;
         bytes32 matchingOrderId = bytes32(uint256(0));
 
@@ -144,11 +154,11 @@ library PairLib {
             uint256 matchingOrderQty = matchingOrder.availableQuantity;
 
             if (newOrder.quantity >= matchingOrderQty) {
-                uint256 buyTokenAmount = newOrder.isBuy? matchingOrderQty : matchingOrderQty * matchingOrder.price / (10 ** 18);
-                uint256 sellTokenAmount = newOrder.isBuy? matchingOrderQty * matchingOrder.price / (10 ** 18) : matchingOrderQty;
-                fillOrder(
-                    pair, matchingOrder, buyToken, sellToken, buyTokenAmount, sellTokenAmount
-                );
+                uint256 buyTokenAmount =
+                    newOrder.isBuy ? matchingOrderQty : matchingOrderQty * matchingOrder.price / (10 ** 18);
+                uint256 sellTokenAmount =
+                    newOrder.isBuy ? matchingOrderQty * matchingOrder.price / (10 ** 18) : matchingOrderQty;
+                fillOrder(pair, matchingOrder, buyToken, sellToken, buyTokenAmount, sellTokenAmount);
                 //Actualizo la orden de compra disminuyendo la cantidad que ya tengo
                 newOrder.quantity -= matchingOrderQty;
                 //La cola tiene mas ordenes ?
@@ -158,13 +168,12 @@ library PairLib {
                 // Emito ejecucion de orden completada
                 emit OrderExecuted(matchingOrder.orderId, pair.baseToken, pair.quoteToken, matchingOrder.traderAddress);
             } else {
+                uint256 buyTokenAmount =
+                    newOrder.isBuy ? newOrder.quantity : newOrder.quantity * matchingOrder.price / (10 ** 18);
+                uint256 sellTokenAmount =
+                    newOrder.isBuy ? newOrder.quantity * matchingOrder.price / (10 ** 18) : newOrder.quantity;
 
-                uint256 buyTokenAmount = newOrder.isBuy? newOrder.quantity : newOrder.quantity * matchingOrder.price / (10 ** 18);
-                uint256 sellTokenAmount = newOrder.isBuy? newOrder.quantity * matchingOrder.price / (10 ** 18) : newOrder.quantity;
-
-                partialFillOrder(
-                    pair, matchingOrder, buyToken, sellToken, buyTokenAmount, sellTokenAmount
-                );
+                partialFillOrder(pair, matchingOrder, buyToken, sellToken, buyTokenAmount, sellTokenAmount);
 
                 //Actualizar la OC restando la cantidad de la OE
                 matchingOrder.availableQuantity = matchingOrderQty - newOrder.quantity;
@@ -218,7 +227,7 @@ library PairLib {
         uint256 orderCount = 0;
         do {
             console.log("CurrentNode: %d orderCount: %d", currentNode, orderCount);
-        if (currentNode == 0 || orderCount >= 1500) {
+            if (currentNode == 0 || orderCount >= 1500) {
                 //NO
                 saveOrder(pair, newOrder);
                 return;
@@ -248,7 +257,6 @@ library PairLib {
         IERC20 buyToken = IERC20(pair.quoteToken);
         IERC20 sellToken = IERC20(pair.baseToken);
 
-
         //¿Arbol de compras tiene nodos?
         uint256 currentNode = pair.buyOrders.getHighestPrice();
         bytes32 _orderId = keccak256(abi.encodePacked(msg.sender, "sell", _price, nonce));
@@ -266,7 +274,7 @@ library PairLib {
             status: 1
         });
 
-    do {
+        do {
             if (currentNode == 0 || orderCount >= 1500) {
                 //NO
                 saveOrder(pair, newOrder);
@@ -296,13 +304,19 @@ library PairLib {
 
         if (removedOrder.isBuy) {
             pair.buyOrders.remove(removedOrder);
+            IERC20 token = IERC20(pair.quoteToken);
+            token.safeTransfer(
+                removedOrder.traderAddress, removedOrder.availableQuantity * removedOrder.price / (10 ** 18)
+            );
         } else {
             pair.sellOrders.remove(removedOrder);
+            //Transfiero los del contrato al dueño original
+            IERC20 token = IERC20(pair.baseToken);
+            token.safeTransfer(removedOrder.traderAddress, removedOrder.availableQuantity); //Transfiero la cantidad indicada
         }
         delete pair.orders[_orderId];
 
         removeFromTraderOrders(pair, _orderId, msg.sender);
-
     }
 
     function removeFromTraderOrders(Pair storage pair, bytes32 _orderId, address traderAddress) internal {
@@ -316,8 +330,7 @@ library PairLib {
         uint256 lastIndex = to.orderIds.length - 1;
         console.log("LAST", lastIndex);
 
-
-    if (deleteIndex != lastIndex){
+        if (deleteIndex != lastIndex) {
             to.orderIds[deleteIndex] = to.orderIds[lastIndex];
         }
 
@@ -342,42 +355,42 @@ library PairLib {
         return pair.orders[key].orderId != bytes32(0);
     }
 
-    function getLowestBuyPrice(Pair storage pair) internal view returns (uint256){
+    function getLowestBuyPrice(Pair storage pair) internal view returns (uint256) {
         return pair.buyOrders.getLowestPrice();
     }
 
-    function getLowestSellPrice(Pair storage pair) internal view returns (uint256){
+    function getLowestSellPrice(Pair storage pair) internal view returns (uint256) {
         return pair.sellOrders.getLowestPrice();
     }
 
-    function getHighestBuyPrice(Pair storage pair) internal view returns (uint256){
+    function getHighestBuyPrice(Pair storage pair) internal view returns (uint256) {
         return pair.buyOrders.getHighestPrice();
     }
 
-    function getHighestSellPrice(Pair storage pair) internal view returns (uint256){
+    function getHighestSellPrice(Pair storage pair) internal view returns (uint256) {
         return pair.sellOrders.getHighestPrice();
     }
 
-    function getNextBuyOrderId(Pair storage pair, uint256 price) internal view returns (bytes32){
+    function getNextBuyOrderId(Pair storage pair, uint256 price) internal view returns (bytes32) {
         return pair.buyOrders.getNextOrderId(price);
     }
 
-    function getNextSellOrderId(Pair storage pair, uint256 price) internal view returns (bytes32){
+    function getNextSellOrderId(Pair storage pair, uint256 price) internal view returns (bytes32) {
         return pair.sellOrders.getNextOrderId(price);
     }
 
-    function getTop3BuyPrices(Pair storage pair) internal view returns (uint256[3] memory){
+    function getTop3BuyPrices(Pair storage pair) internal view returns (uint256[3] memory) {
         return pair.buyOrders.getTop3BuyPrices();
     }
 
-    function getTop3SellPrices(Pair storage pair) internal view returns (uint256[3] memory){
+    function getTop3SellPrices(Pair storage pair) internal view returns (uint256[3] memory) {
         return pair.sellOrders.getTop3BuyPrices();
     }
 
-    function getPrice(Pair storage p, uint256 price, bool isBuy) internal view returns (OrderBookLib.Price storage){
-        if (isBuy){
+    function getPrice(Pair storage p, uint256 price, bool isBuy) internal view returns (OrderBookLib.Price storage) {
+        if (isBuy) {
             return p.buyOrders.getPrice(price);
-        }else {
+        } else {
             return p.sellOrders.getPrice(price);
         }
     }

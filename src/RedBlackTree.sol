@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
-import "forge-std/console.sol";
 
+import "forge-std/console.sol";
 
 /**
  * @title Red-Black Tree Implementation for Solidity
@@ -308,7 +308,7 @@ library RedBlackTree {
     function remove(Tree storage self, uint256 value) internal {
         // Ensure the value and key exist
         if (value == EMPTY) revert RedBlackTree__ValueCannotBeZero();
-        if (!exists(self,value)) revert RedBlackTree__NodeDoesNotExist();
+        if (!exists(self, value)) revert RedBlackTree__NodeDoesNotExist();
         //Eliminación de la Clave
         // Reference to the node to be removed
         Node storage nValue = self.nodes[value];

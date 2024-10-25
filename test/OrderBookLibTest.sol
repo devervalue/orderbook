@@ -74,10 +74,10 @@ contract OrderBookLibTest is Test {
         tokenB.approve(address(orderBookImpl), 1000 * 10 ** 18); // Aprobar 1000 tokens
         vm.stopPrank();
 
-//        vm.startPrank(address(orderBookImpl)); // Cambiar el contexto a trader1
-//        tokenB.approve(address(orderBookImpl), 1000 * 10 ** 18); // Aprobar 1000 tokens
-//        tokenA.approve(address(orderBookImpl), 1000 * 10 ** 18); // Aprobar 1000 tokens
-//        vm.stopPrank();
+        //        vm.startPrank(address(orderBookImpl)); // Cambiar el contexto a trader1
+        //        tokenB.approve(address(orderBookImpl), 1000 * 10 ** 18); // Aprobar 1000 tokens
+        //        tokenA.approve(address(orderBookImpl), 1000 * 10 ** 18); // Aprobar 1000 tokens
+        //        vm.stopPrank();
     }
 
     //-------------------- ADD BUY ORDER ------------------------------
@@ -204,7 +204,9 @@ contract OrderBookLibTest is Test {
         // Verificar que la orden de compra se empareje parcialmente
         assertEq(orderBookImpl.getFirstSellOrders(), 0, "La orden de venta debe haberse emparejado");
         assertEq(
-            orderBookImpl.getFirstBuyOrders(), 100 * 10 ** 18, "La cantidad restante de la orden de compra debe estar almacenada"
+            orderBookImpl.getFirstBuyOrders(),
+            100 * 10 ** 18,
+            "La cantidad restante de la orden de compra debe estar almacenada"
         );
         assertEq(tokenB.balanceOf(trader1), 500); // Verificar que el balance restante es correcto
         assertEq(tokenA.balanceOf(trader2), 5); // Verificar que el balance restante es correcto
@@ -417,7 +419,11 @@ contract OrderBookLibTest is Test {
         console.log("Balance Contract TA FIN", tokenA.balanceOf(address(orderBookImpl)));
         console.log("Balance Contract TB FIN", tokenB.balanceOf(address(orderBookImpl)));
 
-        assertEq(orderBookImpl.getFirstSellOrders(), 100 * 10 ** 18, "La orden de venta debe haberse emparejado completamente");
+        assertEq(
+            orderBookImpl.getFirstSellOrders(),
+            100 * 10 ** 18,
+            "La orden de venta debe haberse emparejado completamente"
+        );
         assertEq(orderBookImpl.getFirstBuyOrders(), 0, "La orden de compra debe haberse ejecutado completamente");
         assertEq(tokenB.balanceOf(trader1), 500); // Verificar que el balance restante es correcto
         assertEq(tokenA.balanceOf(trader2), 5); // Verificar que el balance restante es correcto
@@ -446,6 +452,7 @@ contract OrderBookLibTest is Test {
     //Cancelación exitosa de una orden de compra: Se verifica que la orden de compra es eliminada correctamente.
     function testCancelBuyOrder() public {
         // Insertar una orden de compra
+        uint256 initial_balance = tokenB.balanceOf(trader2);
         vm.prank(trader2);
         orderBookImpl.addBuyBaseToken(price, 5, trader2, nonce, expired); // Orden de compra con precio 100 y cantidad 5
 
@@ -454,14 +461,17 @@ contract OrderBookLibTest is Test {
         // Cancelar la orden de compra
         vm.prank(trader2);
         orderBookImpl.getCancelOrder(_orderId);
+        uint256 final_balance = tokenB.balanceOf(trader2);
 
         // Verificar que la orden haya sido eliminada del árbol de órdenes de compra
         assertEq(orderBookImpl.getFirstBuyOrders(), 0, "La orden de compra debe haber sido eliminada");
+        assertEq(final_balance, initial_balance, "El balance inicial y final deberia ser igual");
     }
 
     //Cancelación exitosa de una orden de venta: Similar al caso anterior pero con órdenes de venta.
     function testCancelSellOrder() public {
         // Insertar una orden de venta
+        uint256 initial_balance = tokenA.balanceOf(trader1);
         vm.prank(trader1);
         orderBookImpl.addSellBaseToken(price, 10, trader1, nonce, expired);
 
@@ -470,10 +480,12 @@ contract OrderBookLibTest is Test {
         // Cancelar la orden de venta
         vm.prank(trader1);
         orderBookImpl.getCancelOrder(_orderId);
+        uint256 final_balance = tokenA.balanceOf(trader1);
 
         // Verificar que la orden haya sido eliminada del árbol de órdenes de venta
         //assertEq(book.sellOrders[100].length, 0, "La orden de venta debe haber sido eliminada");
         assertEq(orderBookImpl.getFirstSellOrders(), 0, "La orden de venta debe haber sido eliminada");
+        assertEq(final_balance, initial_balance, "El balance inicial y final deberia ser igual");
     }
 
     //Intento de cancelación de una orden inexistente: Asegura que no ocurre ninguna acción cuando se intenta cancelar una orden inexistente.
@@ -694,7 +706,6 @@ contract OrderBookLibTest is Test {
         vm.prank(trader2);
         orderBookImpl.addBuyBaseToken(10 * 10 ** 18, 50, trader2, nonce, expired);
 
-
         // Verificar que la orden de compra se haya emparejado y eliminado
         assertEq(orderBookImpl.getFirstSellOrders(), 0, "La orden de venta debe haberse emparejado completamente");
         assertEq(orderBookImpl.getFirstBuyOrders(), 0, "La orden de compra debe haberse ejecutado completamente");
@@ -712,7 +723,6 @@ contract OrderBookLibTest is Test {
         vm.startPrank(trader1);
         orderBookImpl.addSellBaseToken(10 * 10 ** 18, 50, trader1, nonce, expired);
         vm.stopPrank();
-
 
         // Verificar que la orden de compra se haya emparejado y eliminado
         assertEq(orderBookImpl.getFirstSellOrders(), 0, "La orden de venta debe haberse emparejado completamente");
@@ -732,7 +742,6 @@ contract OrderBookLibTest is Test {
         vm.prank(trader2);
         orderBookImpl.addBuyBaseToken(0.1 * 10 ** 18, 50, trader2, nonce, expired);
 
-
         // Verificar que la orden de compra se haya emparejado y eliminado
         assertEq(orderBookImpl.getFirstSellOrders(), 0, "La orden de venta debe haberse emparejado completamente");
         assertEq(orderBookImpl.getFirstBuyOrders(), 0, "La orden de compra debe haberse ejecutado completamente");
@@ -750,7 +759,6 @@ contract OrderBookLibTest is Test {
         vm.startPrank(trader1);
         orderBookImpl.addSellBaseToken(0.1 * 10 ** 18, 50, trader1, nonce, expired);
         vm.stopPrank();
-
 
         // Verificar que la orden de compra se haya emparejado y eliminado
         assertEq(orderBookImpl.getFirstSellOrders(), 0, "La orden de venta debe haberse emparejado completamente");

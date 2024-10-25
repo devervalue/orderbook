@@ -856,7 +856,7 @@ contract OrderBookFactoryTest is Test {
         bool isBuy = true;
 
         vm.prank(trader1);
-        factory.addNewOrder(keys[0], quantity, price, isBuy,  1, 1);
+        factory.addNewOrder(keys[0], quantity, price, isBuy, 1, 1);
         uint256 nonce = 1;
         bytes32 _orderId = keccak256(abi.encodePacked(trader1, "buy", price, nonce));
 
@@ -882,14 +882,14 @@ contract OrderBookFactoryTest is Test {
         // Verificar que hay exactamente una clave
         assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
 
-        console.log("T1 BA INICIO",tokenA.balanceOf(address(trader1)));
-        console.log("T1 BB INICIO",tokenB.balanceOf(address(trader1)));
+        console.log("T1 BA INICIO", tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB INICIO", tokenB.balanceOf(address(trader1)));
 
-        console.log("T2 BA INICIO",tokenA.balanceOf(address(trader2)));
-        console.log("T2 BB INICIO",tokenB.balanceOf(address(trader2)));
+        console.log("T2 BA INICIO", tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB INICIO", tokenB.balanceOf(address(trader2)));
 
-        console.log("TC BA INICIO",tokenA.balanceOf(address(factory)));
-        console.log("TC BB INICIO",tokenB.balanceOf(address(factory)));
+        console.log("TC BA INICIO", tokenA.balanceOf(address(factory)));
+        console.log("TC BB INICIO", tokenB.balanceOf(address(factory)));
 
         vm.startPrank(trader2);
         // Agregar ventas
@@ -900,22 +900,22 @@ contract OrderBookFactoryTest is Test {
             // Generate a unique order ID
             bytes32 orderId = keccak256(abi.encodePacked(address(this), i));
             // Push the order into the queue
-            factory.addNewOrder(keys[0], quantity, 1 * 10 ** 18, isBuy, i, i+1);
-//            factory.addNewOrder(keys[0], quantity, 2, isBuy, i + 1, i+1);
-//            factory.addNewOrder(keys[0], quantity, 3, isBuy, i + 2, i+1);
-//            factory.addNewOrder(keys[0], quantity, 4, isBuy, i + 3, i+1);
-//            factory.addNewOrder(keys[0], quantity, 5, isBuy, i + 4, i+1);
-//            factory.addNewOrder(keys[0], quantity, 6, isBuy, i + 5, i+1);
+            factory.addNewOrder(keys[0], quantity, 1 * 10 ** 18, isBuy, i, i + 1);
+            //            factory.addNewOrder(keys[0], quantity, 2, isBuy, i + 1, i+1);
+            //            factory.addNewOrder(keys[0], quantity, 3, isBuy, i + 2, i+1);
+            //            factory.addNewOrder(keys[0], quantity, 4, isBuy, i + 3, i+1);
+            //            factory.addNewOrder(keys[0], quantity, 5, isBuy, i + 4, i+1);
+            //            factory.addNewOrder(keys[0], quantity, 6, isBuy, i + 5, i+1);
         }
 
-        console.log("T1 BA MEDIO",tokenA.balanceOf(address(trader1)));
-        console.log("T1 BB MEDIO",tokenB.balanceOf(address(trader1)));
+        console.log("T1 BA MEDIO", tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB MEDIO", tokenB.balanceOf(address(trader1)));
 
-        console.log("T2 BA MEDIO",tokenA.balanceOf(address(trader2)));
-        console.log("T2 BB MEDIO",tokenB.balanceOf(address(trader2)));
+        console.log("T2 BA MEDIO", tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB MEDIO", tokenB.balanceOf(address(trader2)));
 
-        console.log("TC BA MEDIO",tokenA.balanceOf(address(factory)));
-        console.log("TC BB MEDIO",tokenB.balanceOf(address(factory)));
+        console.log("TC BA MEDIO", tokenA.balanceOf(address(factory)));
+        console.log("TC BB MEDIO", tokenB.balanceOf(address(factory)));
 
         vm.stopPrank();
 
@@ -926,14 +926,14 @@ contract OrderBookFactoryTest is Test {
         console.log("Gas used for adding Order: %d", gasUsed);
         vm.stopPrank();
 
-        console.log("T1 BA",tokenA.balanceOf(address(trader1)));
-        console.log("T1 BB",tokenB.balanceOf(address(trader1)));
+        console.log("T1 BA", tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB", tokenB.balanceOf(address(trader1)));
 
-        console.log("T2 BA",tokenA.balanceOf(address(trader2)));
-        console.log("T2 BB",tokenB.balanceOf(address(trader2)));
+        console.log("T2 BA", tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB", tokenB.balanceOf(address(trader2)));
 
-        console.log("TC BA",tokenA.balanceOf(address(factory)));
-        console.log("TC BB",tokenB.balanceOf(address(factory)));
+        console.log("TC BA", tokenA.balanceOf(address(factory)));
+        console.log("TC BB", tokenB.balanceOf(address(factory)));
 
         assertEq(tokenA.balanceOf(address(trader2)), 10, unicode"Trader2 debería tener 10 unidades de token A");
     }
@@ -958,12 +958,12 @@ contract OrderBookFactoryTest is Test {
             // Generate a unique order ID
             bytes32 orderId = keccak256(abi.encodePacked(address(this), i));
             // Push the order into the queue
-            factory.addNewOrder(keys[0], quantity, 2 * 10 ** 18, isBuy, i + 1, i+1);
-            factory.addNewOrder(keys[0], quantity, 1 * 10 ** 18, isBuy, i, i+1);
-            factory.addNewOrder(keys[0], quantity, 3 * 10 ** 18, isBuy, i + 2, i+1);
-            factory.addNewOrder(keys[0], quantity, 4 * 10 ** 18, isBuy, i + 3, i+1);
-            factory.addNewOrder(keys[0], quantity, 5 * 10 ** 18, isBuy, i + 4, i+1);
-            factory.addNewOrder(keys[0], quantity, 6 * 10 ** 18, isBuy, i + 5, i+1);
+            factory.addNewOrder(keys[0], quantity, 2 * 10 ** 18, isBuy, i + 1, i + 1);
+            factory.addNewOrder(keys[0], quantity, 1 * 10 ** 18, isBuy, i, i + 1);
+            factory.addNewOrder(keys[0], quantity, 3 * 10 ** 18, isBuy, i + 2, i + 1);
+            factory.addNewOrder(keys[0], quantity, 4 * 10 ** 18, isBuy, i + 3, i + 1);
+            factory.addNewOrder(keys[0], quantity, 5 * 10 ** 18, isBuy, i + 4, i + 1);
+            factory.addNewOrder(keys[0], quantity, 6 * 10 ** 18, isBuy, i + 5, i + 1);
         }
 
         vm.stopPrank();
@@ -989,15 +989,14 @@ contract OrderBookFactoryTest is Test {
         // Verificar que hay exactamente una clave
         assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
 
-        console.log("T1 BA INICIO",tokenA.balanceOf(address(trader1)));
-        console.log("T1 BB INICIO",tokenB.balanceOf(address(trader1)));
+        console.log("T1 BA INICIO", tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB INICIO", tokenB.balanceOf(address(trader1)));
 
-        console.log("T2 BA INICIO",tokenA.balanceOf(address(trader2)));
-        console.log("T2 BB INICIO",tokenB.balanceOf(address(trader2)));
+        console.log("T2 BA INICIO", tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB INICIO", tokenB.balanceOf(address(trader2)));
 
-        console.log("TC BA INICIO",tokenA.balanceOf(address(factory)));
-        console.log("TC BB INICIO",tokenB.balanceOf(address(factory)));
-
+        console.log("TC BA INICIO", tokenA.balanceOf(address(factory)));
+        console.log("TC BB INICIO", tokenB.balanceOf(address(factory)));
 
         vm.startPrank(trader1);
         // Agregar compras
@@ -1008,24 +1007,24 @@ contract OrderBookFactoryTest is Test {
             // Generate a unique order ID
             bytes32 orderId = keccak256(abi.encodePacked(address(this), i));
             // Push the order into the queue
-//            factory.addNewOrder(keys[0], quantity, 1, isBuy, i, i+1);
-//            factory.addNewOrder(keys[0], quantity, 5, isBuy, i + 1, i+1);
-//            factory.addNewOrder(keys[0], quantity, 10, isBuy, i + 2, i+1);
-//            factory.addNewOrder(keys[0], quantity, 20, isBuy, i + 3, i+1);
-//            factory.addNewOrder(keys[0], quantity, 30, isBuy, i + 4, i+1);
-            factory.addNewOrder(keys[0], quantity, 50, isBuy, i + 5, i+1);
+            //            factory.addNewOrder(keys[0], quantity, 1, isBuy, i, i+1);
+            //            factory.addNewOrder(keys[0], quantity, 5, isBuy, i + 1, i+1);
+            //            factory.addNewOrder(keys[0], quantity, 10, isBuy, i + 2, i+1);
+            //            factory.addNewOrder(keys[0], quantity, 20, isBuy, i + 3, i+1);
+            //            factory.addNewOrder(keys[0], quantity, 30, isBuy, i + 4, i+1);
+            factory.addNewOrder(keys[0], quantity, 50, isBuy, i + 5, i + 1);
         }
 
         vm.stopPrank();
 
-        console.log("T1 BA MEDIO",tokenA.balanceOf(address(trader1)));
-        console.log("T1 BB MEDIO",tokenB.balanceOf(address(trader1)));
+        console.log("T1 BA MEDIO", tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB MEDIO", tokenB.balanceOf(address(trader1)));
 
-        console.log("T2 BA MEDIO",tokenA.balanceOf(address(trader2)));
-        console.log("T2 BB MEDIO",tokenB.balanceOf(address(trader2)));
+        console.log("T2 BA MEDIO", tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB MEDIO", tokenB.balanceOf(address(trader2)));
 
-        console.log("TC BA MEDIO",tokenA.balanceOf(address(factory)));
-        console.log("TC BB MEDIO",tokenB.balanceOf(address(factory)));
+        console.log("TC BA MEDIO", tokenA.balanceOf(address(factory)));
+        console.log("TC BB MEDIO", tokenB.balanceOf(address(factory)));
 
         vm.startPrank(trader2);
         uint256 startGas = gasleft();
@@ -1034,15 +1033,15 @@ contract OrderBookFactoryTest is Test {
         console.log("Gas used for adding Order: %d", gasUsed);
         vm.stopPrank();
 
-        console.log("T1 BA",tokenA.balanceOf(address(trader1)));
-        console.log("T1 BB",tokenB.balanceOf(address(trader1)));
+        console.log("T1 BA", tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB", tokenB.balanceOf(address(trader1)));
 
-        console.log("T2 BA",tokenA.balanceOf(address(trader2)));
-        console.log("T2 BB",tokenB.balanceOf(address(trader2)));
+        console.log("T2 BA", tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB", tokenB.balanceOf(address(trader2)));
 
-        console.log("TC BA",tokenA.balanceOf(address(factory)));
-        console.log("TC BB",tokenB.balanceOf(address(factory)));
-//        assertEq(tokenA.balanceOf(address(trader2)), 10, unicode"Trader2 debería tener 10 unidades de token A");
+        console.log("TC BA", tokenA.balanceOf(address(factory)));
+        console.log("TC BB", tokenB.balanceOf(address(factory)));
+        //        assertEq(tokenA.balanceOf(address(trader2)), 10, unicode"Trader2 debería tener 10 unidades de token A");
     }
 
     function testSupuestamenteCorrecta() public {
@@ -1056,42 +1055,41 @@ contract OrderBookFactoryTest is Test {
         // Verificar que hay exactamente una clave
         assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
 
-        console.log("T1 BA INICIO",tokenA.balanceOf(address(trader1)));
-        console.log("T1 BB INICIO",tokenB.balanceOf(address(trader1)));
+        console.log("T1 BA INICIO", tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB INICIO", tokenB.balanceOf(address(trader1)));
 
-        console.log("T2 BA INICIO",tokenA.balanceOf(address(trader2)));
-        console.log("T2 BB INICIO",tokenB.balanceOf(address(trader2)));
+        console.log("T2 BA INICIO", tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB INICIO", tokenB.balanceOf(address(trader2)));
 
-        console.log("TC BA INICIO",tokenA.balanceOf(address(factory)));
-        console.log("TC BB INICIO",tokenB.balanceOf(address(factory)));
-
+        console.log("TC BA INICIO", tokenA.balanceOf(address(factory)));
+        console.log("TC BB INICIO", tokenB.balanceOf(address(factory)));
 
         vm.startPrank(trader2);
         factory.addNewOrder(keys[0], 10, 50, false, 5, 6);
         vm.stopPrank();
 
-        console.log("T1 BA MEDIO",tokenA.balanceOf(address(trader1)));
-        console.log("T1 BB MEDIO",tokenB.balanceOf(address(trader1)));
+        console.log("T1 BA MEDIO", tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB MEDIO", tokenB.balanceOf(address(trader1)));
 
-        console.log("T2 BA MEDIO",tokenA.balanceOf(address(trader2)));
-        console.log("T2 BB MEDIO",tokenB.balanceOf(address(trader2)));
+        console.log("T2 BA MEDIO", tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB MEDIO", tokenB.balanceOf(address(trader2)));
 
-        console.log("TC BA MEDIO",tokenA.balanceOf(address(factory)));
-        console.log("TC BB MEDIO",tokenB.balanceOf(address(factory)));
+        console.log("TC BA MEDIO", tokenA.balanceOf(address(factory)));
+        console.log("TC BB MEDIO", tokenB.balanceOf(address(factory)));
 
         vm.startPrank(trader1);
         factory.addNewOrder(keys[0], 10, 50, true, 11, 12);
         vm.stopPrank();
 
-        console.log("T1 BA",tokenA.balanceOf(address(trader1)));
-        console.log("T1 BB",tokenB.balanceOf(address(trader1)));
+        console.log("T1 BA", tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB", tokenB.balanceOf(address(trader1)));
 
-        console.log("T2 BA",tokenA.balanceOf(address(trader2)));
-        console.log("T2 BB",tokenB.balanceOf(address(trader2)));
+        console.log("T2 BA", tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB", tokenB.balanceOf(address(trader2)));
 
-        console.log("TC BA",tokenA.balanceOf(address(factory)));
-        console.log("TC BB",tokenB.balanceOf(address(factory)));
-//        assertEq(tokenA.balanceOf(address(trader2)), 10, unicode"Trader2 debería tener 10 unidades de token A");
+        console.log("TC BA", tokenA.balanceOf(address(factory)));
+        console.log("TC BB", tokenB.balanceOf(address(factory)));
+        //        assertEq(tokenA.balanceOf(address(trader2)), 10, unicode"Trader2 debería tener 10 unidades de token A");
     }
 
     function testSupuestamenteCorrecta2() public {
@@ -1105,42 +1103,41 @@ contract OrderBookFactoryTest is Test {
         // Verificar que hay exactamente una clave
         assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
 
-        console.log("T1 BA INICIO",tokenA.balanceOf(address(trader1)));
-        console.log("T1 BB INICIO",tokenB.balanceOf(address(trader1)));
+        console.log("T1 BA INICIO", tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB INICIO", tokenB.balanceOf(address(trader1)));
 
-        console.log("T2 BA INICIO",tokenA.balanceOf(address(trader2)));
-        console.log("T2 BB INICIO",tokenB.balanceOf(address(trader2)));
+        console.log("T2 BA INICIO", tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB INICIO", tokenB.balanceOf(address(trader2)));
 
-        console.log("TC BA INICIO",tokenA.balanceOf(address(factory)));
-        console.log("TC BB INICIO",tokenB.balanceOf(address(factory)));
-
+        console.log("TC BA INICIO", tokenA.balanceOf(address(factory)));
+        console.log("TC BB INICIO", tokenB.balanceOf(address(factory)));
 
         vm.startPrank(trader1);
         factory.addNewOrder(keys[0], 10, 50, true, 5, 6);
         vm.stopPrank();
 
-        console.log("T1 BA MEDIO",tokenA.balanceOf(address(trader1)));
-        console.log("T1 BB MEDIO",tokenB.balanceOf(address(trader1)));
+        console.log("T1 BA MEDIO", tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB MEDIO", tokenB.balanceOf(address(trader1)));
 
-        console.log("T2 BA MEDIO",tokenA.balanceOf(address(trader2)));
-        console.log("T2 BB MEDIO",tokenB.balanceOf(address(trader2)));
+        console.log("T2 BA MEDIO", tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB MEDIO", tokenB.balanceOf(address(trader2)));
 
-        console.log("TC BA MEDIO",tokenA.balanceOf(address(factory)));
-        console.log("TC BB MEDIO",tokenB.balanceOf(address(factory)));
+        console.log("TC BA MEDIO", tokenA.balanceOf(address(factory)));
+        console.log("TC BB MEDIO", tokenB.balanceOf(address(factory)));
 
         vm.startPrank(trader2);
         factory.addNewOrder(keys[0], 10, 50, false, 11, 12);
         vm.stopPrank();
 
-        console.log("T1 BA",tokenA.balanceOf(address(trader1)));
-        console.log("T1 BB",tokenB.balanceOf(address(trader1)));
+        console.log("T1 BA", tokenA.balanceOf(address(trader1)));
+        console.log("T1 BB", tokenB.balanceOf(address(trader1)));
 
-        console.log("T2 BA",tokenA.balanceOf(address(trader2)));
-        console.log("T2 BB",tokenB.balanceOf(address(trader2)));
+        console.log("T2 BA", tokenA.balanceOf(address(trader2)));
+        console.log("T2 BB", tokenB.balanceOf(address(trader2)));
 
-        console.log("TC BA",tokenA.balanceOf(address(factory)));
-        console.log("TC BB",tokenB.balanceOf(address(factory)));
-//        assertEq(tokenA.balanceOf(address(trader2)), 10, unicode"Trader2 debería tener 10 unidades de token A");
+        console.log("TC BA", tokenA.balanceOf(address(factory)));
+        console.log("TC BB", tokenB.balanceOf(address(factory)));
+        //        assertEq(tokenA.balanceOf(address(trader2)), 10, unicode"Trader2 debería tener 10 unidades de token A");
     }
 
     /*function testCancelOrderNonExistentOrderBook() public {
@@ -1203,7 +1200,7 @@ contract OrderBookFactoryTest is Test {
 
         vm.prank(trader1);
         vm.expectRevert(OrderBookFactory.OrderBookFactory__InvalidQuantityValueZero.selector);
-        factory.addNewOrder(keys[0], quantity, price, isBuy,  1, 1);
+        factory.addNewOrder(keys[0], quantity, price, isBuy, 1, 1);
     }
 
     // Test: Revertir cuando el id del libro de órdenes no existe
@@ -1216,7 +1213,7 @@ contract OrderBookFactoryTest is Test {
 
         vm.prank(trader1);
         vm.expectRevert(OrderBookFactory.OrderBookFactory__OrderBookNotEnabled.selector);
-        factory.addNewOrder(invalidOrderBookKey, quantity, price, isBuy,  1, 1);
+        factory.addNewOrder(invalidOrderBookKey, quantity, price, isBuy, 1, 1);
     }
 
     // Test: Agregar orden con cantidad mínima válida
@@ -1237,7 +1234,7 @@ contract OrderBookFactoryTest is Test {
         bool isBuy = true;
 
         vm.prank(trader1);
-        factory.addNewOrder(keys[0], quantity, price, isBuy,  1, 1);
+        factory.addNewOrder(keys[0], quantity, price, isBuy, 1, 1);
     }
 
     // Test: Revertir cuando el precio es 0 (si el precio 0 es inválido)
@@ -1259,29 +1256,29 @@ contract OrderBookFactoryTest is Test {
 
         vm.prank(trader1);
         vm.expectRevert(); // Puedes ajustar el revert específico si tienes uno para este caso.
-        factory.addNewOrder(keys[0], quantity, price, isBuy,  1, 1);
+        factory.addNewOrder(keys[0], quantity, price, isBuy, 1, 1);
     }
 
-//    // Test: Agregar orden con precio máximo válido
-//    function testAddOrderWithMaxPrice() public {
-//        vm.startPrank(owner);
-//        factory.addOrderBook(address(tokenA), address(tokenB), 10, feeAddress);
-//        vm.stopPrank();
-//
-//        // Obtener las claves de los libros de órdenes
-//        bytes32[] memory keys = factory.getKeysOrderBooks();
-//
-//        // Verificar que hay exactamente una clave
-//        assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
-//
-//        // Agregar una nueva orden de compra
-//        uint256 quantity = 1;
-//        uint256 maxPrice = type(uint256).max;
-//        bool isBuy = true;
-//
-//        vm.prank(trader1);
-//        factory.addNewOrder(keys[0], quantity, maxPrice, isBuy,  1, 1);
-//    }
+    //    // Test: Agregar orden con precio máximo válido
+    //    function testAddOrderWithMaxPrice() public {
+    //        vm.startPrank(owner);
+    //        factory.addOrderBook(address(tokenA), address(tokenB), 10, feeAddress);
+    //        vm.stopPrank();
+    //
+    //        // Obtener las claves de los libros de órdenes
+    //        bytes32[] memory keys = factory.getKeysOrderBooks();
+    //
+    //        // Verificar que hay exactamente una clave
+    //        assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
+    //
+    //        // Agregar una nueva orden de compra
+    //        uint256 quantity = 1;
+    //        uint256 maxPrice = type(uint256).max;
+    //        bool isBuy = true;
+    //
+    //        vm.prank(trader1);
+    //        factory.addNewOrder(keys[0], quantity, maxPrice, isBuy,  1, 1);
+    //    }
 
     //Test: Agregar orden con cantidad maxima valida
     /*function testAddOrderWithMaxQuantity() public {
@@ -1312,6 +1309,4 @@ contract OrderBookFactoryTest is Test {
         factory.addNewOrder(orderBookKey, validQuantity, validPrice, true, 0, validExpiry);
         // Añadir verificaciones si es necesario
     }*/
-
-
 }
