@@ -178,13 +178,15 @@ library PairLib {
                 //Actualizar la OC restando la cantidad de la OE
                 matchingOrder.availableQuantity = matchingOrderQty - newOrder.quantity;
                 matchingOrder.status = 2; // Partial Fille TODO Pasar a constante
-                newOrder.quantity = 0;
 
                 if (matchingOrder.isBuy) {
                     pair.buyOrders.update(matchingOrder, newOrder.quantity);
                 } else {
                     pair.sellOrders.update(matchingOrder, newOrder.quantity);
                 }
+
+                newOrder.quantity = 0;
+
 
                 //Emite el evento de orden entrante ejecutada
                 emit OrderExecuted(newOrder.orderId, pair.baseToken, pair.quoteToken, msg.sender);
