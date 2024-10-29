@@ -13,7 +13,7 @@ contract CreateOrderBooks is Script {
     OrderBook[] public orderBooks;
 
     // Dirección del contrato OrderBookFactory ya desplegado
-    address factoryAddress = 0x6520aEc08472e0Ab755f38e1d55892FcFf5631af;
+    address factoryAddress = 0xE682Fff7B829A85fc25F8A4CE064dD3A5df4cAc4;
 
     struct OrderBook {
         address tokenA;
