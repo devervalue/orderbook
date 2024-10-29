@@ -29,6 +29,7 @@ library OrderBookLib {
         uint256 availableQuantity;
         uint256 expiresAt;
         uint256 createdAt;
+        uint256 fee; // Fee rate at the time of order creation
         address traderAddress;
         bool isBuy;
         uint8 status; //created 1 / partially filled 2 / filled 3 / cancelada 4

@@ -115,6 +115,7 @@ contract OrderBookFactory {
         orderBook.lastTradePrice = 0;
         orderBook.status = true;
         orderBook.owner = owner;
+        // TODO Validate the fee is less than maximum allowed
         orderBook.fee = fee;
         orderBook.feeAddress = feeAddress;
 
@@ -173,7 +174,7 @@ contract OrderBookFactory {
     function setOrderBookFee(bytes32 idOrderBook, uint256 fee) external onlyOwner {
         if (!orderBookExists(idOrderBook)) revert OrderBookFactory__OrderBookIdOutOfRange();
         //if (fee > 100) revert MainOrderBook__InvalidFeeAmount(); // Asumiendo un límite del 100% para la tarifa
-        ordersBook[idOrderBook].fee = fee;
+        ordersBook[idOrderBook].changePairFee(fee);
 
         emit OrderBookFeeChanged(idOrderBook, fee);
     }
@@ -198,6 +199,8 @@ contract OrderBookFactory {
     function getOwner() external view returns (address) {
         return owner;
     }
+
+    // TODO add a way to get the current fee for an orderbook
 
     function addNewOrder(
         bytes32 idOrderBook,

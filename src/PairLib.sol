@@ -16,6 +16,9 @@ library PairLib {
     error PairLib__KeyDoesNotExist();
     error PairLib__KeyAlreadyExists();
 
+    uint256 constant MAX_FEE = 200; // 2% max fee (in basis points)
+
+
     struct TraderOrders {
         bytes32[] orderIds;
         mapping(bytes32 => uint256) index;
@@ -55,6 +58,12 @@ library PairLib {
     function abs(int256 x) private pure returns (int256) {
         return x >= 0 ? x : -x;
     }
+
+    function changePairFee(Pair storage pair, uint256 newFee) internal {
+        require(newFee <= MAX_FEE, "Fee exceeds maximum allowed");
+        pair.fee = newFee;
+    }
+
 
     function saveOrder(Pair storage pair, OrderBookLib.Order memory newOrder) private {
         if (keyExists(pair, newOrder.orderId)) revert PairLib__KeyAlreadyExists();
@@ -102,9 +111,19 @@ library PairLib {
         //SI
         //Transfiero la cantidad de tokens de OE al vendedor
         pair.lastTradePrice = matchedOrder.price;
-        sellToken.safeTransferFrom(msg.sender, matchedOrder.traderAddress, sellTokenAmount); //Multiplico la cantidad de tokens de venta por el precio de venta
-        //Transfiero la cantidad de tokens de OV al comprador
-        buyToken.safeTransfer(msg.sender, buyTokenAmount); //Transfiero la cantidad que tiene la venta
+        // Calculate fee (on the buy token amount, which is what the taker receives)
+        uint256 fee = (buyTokenAmount * pair.fee) / 10000; // fee is in basis points
+        uint256 buyTokenAmountAfterFee = buyTokenAmount - fee;
+        // Transfer sell tokens from taker to maker (full amount)
+        sellToken.safeTransferFrom(msg.sender, matchedOrder.traderAddress, sellTokenAmount);
+        // Transfer buy tokens from maker to taker (minus fee)
+        buyToken.safeTransfer(msg.sender, buyTokenAmountAfterFee);
+
+        // Transfer fee to fee address if set, otherwise it stays in the contract
+        if (pair.feeAddress != address(0)) {
+            buyToken.safeTransfer(pair.feeAddress, fee);
+        }
+
         //Elimino la orden
         if (matchedOrder.isBuy) {
             pair.buyOrders.remove(matchedOrder);
@@ -124,9 +143,19 @@ library PairLib {
         //NO
         //Transfiero la cantidad de tokens de OE al comprador
         pair.lastTradePrice = matchedOrder.price;
-        sellToken.safeTransferFrom(msg.sender, matchedOrder.traderAddress, sellTokenAmount); //Multiplico la cantidad de tokens de venta por el precio de compra
-        //Transfiero la cantidad de tokens de OC al vendedor
-        buyToken.safeTransfer(msg.sender, buyTokenAmount);
+        // Calculate fee (on the buy token amount, which is what the taker receives)
+        uint256 fee = (buyTokenAmount * pair.fee) / 10000; // fee is in basis points
+        uint256 buyTokenAmountAfterFee = buyTokenAmount - fee;
+        // Transfer sell tokens from taker to maker (full amount)
+        sellToken.safeTransferFrom(msg.sender, matchedOrder.traderAddress, sellTokenAmount);
+
+        // Transfer buy tokens from maker to taker (minus fee)
+        buyToken.safeTransfer(msg.sender, buyTokenAmountAfterFee);
+
+        // Transfer fee to fee address if set, otherwise it stays in the contract
+        if (pair.feeAddress != address(0)) {
+            buyToken.safeTransfer(pair.feeAddress, fee);
+        }
     }
 
     //Match orden de compra
@@ -223,7 +252,8 @@ library PairLib {
             isBuy: true,
             createdAt: nonce,
             traderAddress: msg.sender,
-            status: 1
+            status: 1,
+            fee: pair.fee // Store the current fee with the order
         });
 
         uint256 orderCount = 0;
@@ -273,7 +303,8 @@ library PairLib {
             isBuy: false,
             createdAt: nonce,
             traderAddress: msg.sender,
-            status: 1
+            status: 1,
+            fee: pair.fee // Store the current fee with the order
         });
 
         do {
