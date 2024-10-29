@@ -79,7 +79,8 @@ contract OrderBookImpl {
             isBuy: orderDetail.isBuy,
             createdAt: orderDetail.createdAt,
             traderAddress: orderDetail.traderAddress,
-            status: orderDetail.status
+            status: orderDetail.status,
+            fee: orderDetail.fee
         });
     }
 }
