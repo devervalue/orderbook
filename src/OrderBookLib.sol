@@ -3,13 +3,13 @@ pragma solidity ^0.8.0;
 
 import "./OrderBookLib.sol";
 import "./QueueLib.sol";
-import "./RedBlackTree.sol";
+import "./RedBlackTreeLib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "forge-std/console.sol";
 
 library OrderBookLib {
-    using RedBlackTree for RedBlackTree.Tree;
+    using RedBlackTreeLib for RedBlackTreeLib.Tree;
     using QueueLib for QueueLib.Queue;
     using QueueLib for QueueLib.Item;
     using SafeERC20 for IERC20;
@@ -36,7 +36,7 @@ library OrderBookLib {
     }
 
     struct Book {
-        RedBlackTree.Tree tree;
+        RedBlackTreeLib.Tree tree;
         mapping(uint256 => Price) prices; // Mapping of keys to their corresponding nodes
     }
 

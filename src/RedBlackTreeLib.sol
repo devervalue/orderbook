@@ -32,14 +32,14 @@ import "forge-std/console.sol";
  * @dev This contract implements a red-black tree, which is a self-balancing binary search tree.
  *      It is designed to be used for managing order books or any other sorted data structures efficiently.
  */
-library RedBlackTree {
+library RedBlackTreeLib {
     /* Errors */
 
-    error RedBlackTree__StartingValueCannotBeZero();
-    error RedBlackTree__ValuesDoesNotExist();
-    error RedBlackTree__NodeDoesNotExist();
-    error RedBlackTree__ValueToInsertCannotBeZero();
-    error RedBlackTree__ValueCannotBeZero();
+    error RBT__StartingValueCannotBeZero();
+    error RBT__ValuesDoesNotExist();
+    error RBT__NodeDoesNotExist();
+    error RBT__ValueToInsertCannotBeZero();
+    error RBT__ValueCannotBeZero();
 
     /**
      *  @notice Represents an empty value in the tree; it is used to denote nodes that do not exist or are empty.
@@ -86,13 +86,13 @@ library RedBlackTree {
      * @return _value The value of the leftmost node in the tree. If the tree is
      *         empty, it returns `0`.
      */
-    function first(Tree storage self) public view returns (uint256 _value) {
+    function first(Tree storage self) internal view returns (uint256 _value) {
         _value = self.root;
         if (_value == EMPTY) return 0;
         Node storage currentNode = self.nodes[_value];
         while (currentNode.left != EMPTY) {
             _value = currentNode.left;
-            currentNode = self.nodes[_value]; // Avoid repeated access to `self.nodes[_value]`
+            currentNode = self.nodes[_value];
         }
     }
 
@@ -149,7 +149,7 @@ library RedBlackTree {
      *         it returns `EMPTY`.
      */
     function next(Tree storage self, uint256 value) internal view returns (uint256 _cursor) {
-        if (value == EMPTY) revert RedBlackTree__StartingValueCannotBeZero();
+        if (value == EMPTY) revert RBT__StartingValueCannotBeZero();
         Node storage currentNode = self.nodes[value];
         if (currentNode.right != EMPTY) {
             _cursor = treeMinimum(self, currentNode.right);
@@ -184,17 +184,15 @@ library RedBlackTree {
      *         it returns `EMPTY`.
      */
     function prev(Tree storage self, uint256 value) internal view returns (uint256 _cursor) {
-        if (value == EMPTY) revert RedBlackTree__StartingValueCannotBeZero();
+        if (value == EMPTY) revert RBT__StartingValueCannotBeZero();
         Node storage currentNode = self.nodes[value];
         if (currentNode.left != EMPTY) {
             _cursor = treeMaximum(self, currentNode.left);
         } else {
             _cursor = currentNode.parent;
-            Node storage cursorNode = self.nodes[_cursor];
-            while (_cursor != EMPTY && value == cursorNode.left) {
+            while (_cursor != EMPTY && value == self.nodes[_cursor].left) {
                 value = _cursor;
-                _cursor = cursorNode.parent;
-                cursorNode = self.nodes[_cursor];
+                _cursor = self.nodes[_cursor].parent;
             }
         }
     }
@@ -226,10 +224,7 @@ library RedBlackTree {
         if (value == EMPTY) return false;
         if (value == self.root) return true;
 
-        Node storage node = self.nodes[value]; // Access node only once
-        if (node.parent != EMPTY) return true;
-
-        return false;
+        return self.nodes[value].parent != EMPTY;
     }
 
     /**
@@ -257,8 +252,7 @@ library RedBlackTree {
      *
      */
     function getNode(Tree storage self, uint256 value) internal view returns (Node storage) {
-        if (!exists(self, value)) revert RedBlackTree__ValuesDoesNotExist();
-        //Node storage gn = self.nodes[value];
+        if (!exists(self, value)) revert RBT__ValuesDoesNotExist();
         return self.nodes[value];
     }
 
@@ -280,19 +274,18 @@ library RedBlackTree {
      * @param value The value of the node to be inserted into the tree.
      */
     function insert(Tree storage self, uint256 value) internal {
-        if (value == EMPTY) revert RedBlackTree__ValueToInsertCannotBeZero();
+        if (value == EMPTY) revert RBT__ValueToInsertCannotBeZero();
         if (exists(self, value)) return;
 
-        uint256 cursor; //Sigue al nodo que precede al nuevo nodo
-        uint256 probe = self.root; //Nodo Actual
+        uint256 cursor;
+        uint256 probe = self.root;
 
         while (probe != EMPTY) {
             cursor = probe;
-            Node storage currentNode = self.nodes[probe];
             if (value < probe) {
-                probe = currentNode.left;
+                probe = self.nodes[probe].left;
             } else if (value > probe) {
-                probe = currentNode.right;
+                probe = self.nodes[probe].right;
             }
         }
 
@@ -331,29 +324,23 @@ library RedBlackTree {
      */
     function remove(Tree storage self, uint256 value) internal {
         // Ensure the value and key exist
-        if (value == EMPTY) revert RedBlackTree__ValueCannotBeZero();
-        if (!exists(self, value)) revert RedBlackTree__NodeDoesNotExist();
-        //Eliminación de la Clave
+        if (value == EMPTY) revert RBT__ValueCannotBeZero();
+        if (!exists(self, value)) revert RBT__NodeDoesNotExist();
         // Reference to the node to be removed
         Node storage nValue = self.nodes[value];
 
-        uint256 probe; //El hijo del nodo sucesor o el hijo del nodo eliminado que se conecta al padre del nodo sucesor
-        uint256 cursor; //Nodo reemplazante
+        uint256 probe;
+        uint256 cursor;
 
-        //Manejo de la Eliminación del Nodo: Si el nodo queda sin claves
         // Node has no keys left, handle its removal
 
         // Determine replacement node
-        //Si el nodo tiene un solo hijo
         if (nValue.left == EMPTY || nValue.right == EMPTY) {
             cursor = value;
         } else {
-            //Si el nodo tiene dos hijos, se encuentra el nodo más pequeño
             cursor = nValue.right;
-            Node storage currentNode = self.nodes[cursor];
-            while (currentNode.left != EMPTY) {
-                cursor = currentNode.left;
-                currentNode = self.nodes[cursor];
+            while (self.nodes[cursor].left != EMPTY) {
+                cursor = self.nodes[cursor].left;
             }
         }
 
@@ -375,7 +362,7 @@ library RedBlackTree {
         }
 
         // Determine if fixup is needed
-        bool doFixup = !self.nodes[cursor].red;
+        bool cursorWasRed = self.nodes[cursor].red;
 
         // Handle case where cursor is not the value node
         if (cursor != value) {
@@ -389,7 +376,7 @@ library RedBlackTree {
         }
 
         // Fix Red-Black tree properties
-        if (doFixup) {
+        if (!cursorWasRed) {
             removeFixup(self, probe);
         }
 

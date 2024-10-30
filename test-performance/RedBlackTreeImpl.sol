@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "../src/RedBlackTree.sol";
+import "../src/RedBlackTreeLib.sol";
 
 contract RedBlackTreeImpl {
-    using RedBlackTree for RedBlackTree.Tree;
+    using RedBlackTreeLib for RedBlackTree.Tree;
 
     RedBlackTree.Tree private tree;
 

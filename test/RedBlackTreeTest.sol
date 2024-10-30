@@ -7,9 +7,9 @@ import "../src/RedBlackTreeLib.sol";
 import "forge-std/console.sol";
 
 contract RedBlackTreeTest is Test {
-    using RedBlackTreeLib for RedBlackTree.Tree;
+    using RedBlackTreeLib for RedBlackTreeLib.Tree;
 
-    RedBlackTree.Tree private tree;
+    RedBlackTreeLib.Tree private tree;
 
     uint256 constant EMPTY = 0;
 
@@ -330,7 +330,7 @@ contract RedBlackTreeTest is Test {
     function testGetNodeOnValidNode() public {
         tree.insert(10);
 
-        RedBlackTree.Node storage node = tree.getNode(10);
+        RedBlackTreeLib.Node storage node = tree.getNode(10);
         //TODO VERIFICAR ESTOS CAMPOS
         //assertEq(node.countTotalOrders, 1, "Should have 1 total order in the node");
         //assertEq(node.countValueOrders, 1, "Should have value of 1 in the node");
@@ -344,8 +344,8 @@ contract RedBlackTreeTest is Test {
         tree.insert(10);
         tree.insert(20);
 
-        RedBlackTree.Node storage node1 = tree.getNode(10);
-        RedBlackTree.Node storage node2 = tree.getNode(20);
+        RedBlackTreeLib.Node storage node1 = tree.getNode(10);
+        RedBlackTreeLib.Node storage node2 = tree.getNode(20);
         //TODO VERIFICAR ESTOS CAMPOS
         //assertEq(node1.countTotalOrders, 1, "Node 10 should have 1 total order");
         //assertEq(node2.countTotalOrders, 1, "Node 20 should have 1 total order");
@@ -377,7 +377,7 @@ contract RedBlackTreeTest is Test {
         tree.insert(10);
         tree.insert(10);
 
-        RedBlackTree.Node storage node = tree.getNode(10);
+        RedBlackTreeLib.Node storage node = tree.getNode(10);
         //TODO VERIFICAR ESTOS CAMPOS
         assertEq(node.right, 0, "Node 10 should have Node 0 as right child");
         //assertEq(node.countTotalOrders, 2, "Node should have 2 total orders");
@@ -390,9 +390,9 @@ contract RedBlackTreeTest is Test {
         tree.insert(20);
         tree.insert(5);
 
-        RedBlackTree.Node storage nodeRoot = tree.getNode(10);
-        RedBlackTree.Node storage nodeLeft = tree.getNode(5);
-        RedBlackTree.Node storage nodeRight = tree.getNode(20);
+        RedBlackTreeLib.Node storage nodeRoot = tree.getNode(10);
+        RedBlackTreeLib.Node storage nodeLeft = tree.getNode(5);
+        RedBlackTreeLib.Node storage nodeRight = tree.getNode(20);
 
         assertEq(nodeRoot.left, 5, "Root node should have Node 5 as left child");
         assertEq(nodeRoot.right, 20, "Root node should have Node 20 as right child");
@@ -409,7 +409,7 @@ contract RedBlackTreeTest is Test {
         //uint256 root = tree.root();
         //assertEq(root, 10, "Root should be the first inserted node");
 
-        RedBlackTree.Node storage node = tree.getNode(10);
+        RedBlackTreeLib.Node storage node = tree.getNode(10);
         assertEq(node.parent, EMPTY, "Root node should have no parent");
         assertEq(node.left, EMPTY, "Root node should have no left child");
         assertEq(node.right, EMPTY, "Root node should have no right child");
@@ -425,8 +425,8 @@ contract RedBlackTreeTest is Test {
         //uint256 root = tree.root();
         //assertEq(root, 10, "Root should remain as 10");
 
-        RedBlackTree.Node storage node1 = tree.getNode(10);
-        RedBlackTree.Node storage node2 = tree.getNode(20);
+        RedBlackTreeLib.Node storage node1 = tree.getNode(10);
+        RedBlackTreeLib.Node storage node2 = tree.getNode(20);
 
         assertEq(node1.right, 20, "Node 10 should have Node 20 as the right child");
         assertEq(node2.parent, 10, "Node 20 should have Node 10 as its parent");
@@ -437,7 +437,7 @@ contract RedBlackTreeTest is Test {
     //Verifica que no se puede insertar un nodo con el mismo valor y clave.
     function testInsertDuplicateKey() public {
         tree.insert(10);
-        //vm.expectRevert(RedBlackTree.RedBlackTree__ValueAndKeyPairExists.selector);
+        //vm.expectRevert(RedBlackTreeLib.RedBlackTreeLib__ValueAndKeyPairExists.selector);
         tree.insert(10); // Intentar insertar con la misma clave y valor
     }
 
@@ -447,9 +447,9 @@ contract RedBlackTreeTest is Test {
         tree.insert(20);
         tree.insert(5);
 
-        RedBlackTree.Node storage node1 = tree.getNode(10);
-        RedBlackTree.Node storage node2 = tree.getNode(20);
-        RedBlackTree.Node storage node3 = tree.getNode(5);
+        RedBlackTreeLib.Node storage node1 = tree.getNode(10);
+        RedBlackTreeLib.Node storage node2 = tree.getNode(20);
+        RedBlackTreeLib.Node storage node3 = tree.getNode(5);
 
         assertEq(node1.left, 5, "Node 10 should have Node 5 as the left child");
         assertEq(node1.right, 20, "Node 10 should have Node 20 as the right child");
@@ -477,11 +477,11 @@ contract RedBlackTreeTest is Test {
         tree.insert(15);
         tree.insert(25);
 
-        RedBlackTree.Node storage node1 = tree.getNode(10);
-        RedBlackTree.Node storage node2 = tree.getNode(20);
-        RedBlackTree.Node storage node3 = tree.getNode(5);
-        RedBlackTree.Node storage node4 = tree.getNode(15);
-        RedBlackTree.Node storage node5 = tree.getNode(25);
+        RedBlackTreeLib.Node storage node1 = tree.getNode(10);
+        RedBlackTreeLib.Node storage node2 = tree.getNode(20);
+        RedBlackTreeLib.Node storage node3 = tree.getNode(5);
+        RedBlackTreeLib.Node storage node4 = tree.getNode(15);
+        RedBlackTreeLib.Node storage node5 = tree.getNode(25);
 
         // Verifica la estructura del árbol
         assertEq(node1.left, 5, "Node 10 should have Node 5 as left child");
@@ -497,9 +497,9 @@ contract RedBlackTreeTest is Test {
         tree.insert(20);
         tree.insert(5);
 
-        RedBlackTree.Node storage node1 = tree.getNode(10);
-        RedBlackTree.Node storage node2 = tree.getNode(20);
-        RedBlackTree.Node storage node3 = tree.getNode(5);
+        RedBlackTreeLib.Node storage node1 = tree.getNode(10);
+        RedBlackTreeLib.Node storage node2 = tree.getNode(20);
+        RedBlackTreeLib.Node storage node3 = tree.getNode(5);
 
         assertEq(node1.red, false, "Root node should be black after fixup");
         assertEq(node2.red, true, "Node 20 should be red");
@@ -511,7 +511,7 @@ contract RedBlackTreeTest is Test {
     //Inserta y luego elimina un nodo único, verificando que el árbol está vacío.
     function testRemoveSingleNode() public {
         tree.insert(10);
-        RedBlackTree.Node storage node = tree.getNode(10);
+        RedBlackTreeLib.Node storage node = tree.getNode(10);
         assertEq(node.parent, EMPTY, "Root node should have no parent");
         assertEq(node.left, EMPTY, "Root node should have no left child");
         assertEq(node.right, EMPTY, "Root node should have no right child");
@@ -560,7 +560,7 @@ contract RedBlackTreeTest is Test {
         tree.insert(5);
 
         // Verificar que el nodo 10 tiene un hijo izquierdo
-        RedBlackTree.Node storage node = tree.getNode(10);
+        RedBlackTreeLib.Node storage node = tree.getNode(10);
         assertEq(node.left, 5, "Node 10 should have 5 as left child");
 
         // Remover el nodo con un hijo (10)
@@ -579,7 +579,7 @@ contract RedBlackTreeTest is Test {
         tree.insert(20);
 
         // Verificar que el nodo 10 tiene hijos
-        RedBlackTree.Node storage node = tree.getNode(10);
+        RedBlackTreeLib.Node storage node = tree.getNode(10);
         assertEq(node.left, 5, "Node 10 should have 5 as left child");
         assertEq(node.right, 20, "Node 10 should have 20 as right child");
 
@@ -600,7 +600,7 @@ contract RedBlackTreeTest is Test {
         tree.insert(20);
 
         // Verificar que hay dos órdenes en el nodo 10
-        RedBlackTree.Node storage node = tree.getNode(10);
+        RedBlackTreeLib.Node storage node = tree.getNode(10);
         //assertEq(node.countTotalOrders, 2, "Node should have 2 orders");
         //assertEq(node.countValueOrders, 300, "Node should have total value orders of 300");
 
@@ -633,7 +633,7 @@ contract RedBlackTreeTest is Test {
         // Verificar que el árbol sigue siendo un árbol Red-Black válido
         uint256 root = tree.root;
         assertEq(root, 20, "Root should be 20 after removing 10");
-        RedBlackTree.Node storage node = tree.getNode(root);
+        RedBlackTreeLib.Node storage node = tree.getNode(root);
         assertEq(node.red, false, "Root node should be black after removal");
         assertEq(node.left, 5, "New root should have 5 as left child");
         assertEq(node.right, 0, "New root should have 0 as right child");
@@ -652,7 +652,7 @@ contract RedBlackTreeTest is Test {
         // Verificar que el árbol sigue siendo un árbol Red-Black válido
         uint256 root = tree.root;
         assertEq(root, 20, "Root should be 20 after removing 10");
-        RedBlackTree.Node storage node = tree.getNode(root);
+        RedBlackTreeLib.Node storage node = tree.getNode(root);
         assertEq(node.red, false, "Root node should be black after removal");
         assertEq(node.left, 5, "New root should have 5 as left child");
         assertEq(node.right, 25, "New root should have 25 as right child");

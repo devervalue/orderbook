@@ -3,14 +3,14 @@ pragma solidity ^0.8.26;
 
 import "../src/QueueLib.sol";
 import "forge-std/console.sol";
-import "../src/RedBlackTree.sol";
+import "../src/RedBlackTreeLib.sol";
 import "../src/PairLib.sol";
 
 contract OrderBookImpl {
     using PairLib for PairLib.Pair;
     using OrderBookLib for OrderBookLib.Order;
     using OrderBookLib for OrderBookLib.Book;
-    using RedBlackTree for RedBlackTree.Tree;
+    using RedBlackTreeLib for RedBlackTreeLib.Tree;
 
     PairLib.Pair private pair;
 
