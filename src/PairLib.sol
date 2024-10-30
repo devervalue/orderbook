@@ -18,7 +18,6 @@ library PairLib {
 
     uint256 constant MAX_FEE = 200; // 2% max fee (in basis points)
 
-
     struct TraderOrders {
         bytes32[] orderIds;
         mapping(bytes32 => uint256) index;
@@ -63,7 +62,6 @@ library PairLib {
         require(newFee <= MAX_FEE, "Fee exceeds maximum allowed");
         pair.fee = newFee;
     }
-
 
     function saveOrder(Pair storage pair, OrderBookLib.Order memory newOrder) private {
         if (keyExists(pair, newOrder.orderId)) revert PairLib__KeyAlreadyExists();
@@ -215,7 +213,6 @@ library PairLib {
                 }
 
                 newOrder.quantity = 0;
-
 
                 //Emite el evento de orden entrante ejecutada
                 emit OrderExecuted(newOrder.orderId, pair.baseToken, pair.quoteToken, msg.sender);
