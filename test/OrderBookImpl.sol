@@ -31,13 +31,13 @@ contract OrderBookImpl {
     function addBuyBaseToken(uint256 _price, uint256 _quantity, address _trader, uint256 nonce, uint256 _expired)
         public
     {
-        pair.addBuyOrder(_price, _quantity, nonce, _expired);
+        pair.addBuyOrder(_price, _quantity, nonce);
     }
 
     function addSellBaseToken(uint256 _price, uint256 _quantity, address _trader, uint256 nonce, uint256 _expired)
         public
     {
-        pair.addSellOrder(_price, _quantity, nonce, _expired);
+        pair.addSellOrder(_price, _quantity, nonce);
     }
 
     function getFirstBuyOrders() public returns (uint256) {

@@ -12,10 +12,6 @@ library OrderBookLib {
     using QueueLib for QueueLib.Queue;
     using QueueLib for QueueLib.Item;
 
-    /// @dev Constants for order status
-    uint256 private constant ORDER_CREATED = 1;
-    uint256 private constant ORDER_PARTIALLY_FILLED = 2;
-
     /// @dev Struct to represent a price point in the order book
     struct PricePoint {
         uint256 orderCount; // Total number of orders at this price point

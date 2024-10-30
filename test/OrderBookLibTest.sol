@@ -494,7 +494,7 @@ contract OrderBookLibTest is Test {
         bytes32 _orderId = keccak256(abi.encodePacked(trader1, "buy", price, nonce));
 
         // Intentar cancelar la orden inexistente
-        vm.expectRevert(PairLib.PairLib__KeyDoesNotExist.selector);
+        vm.expectRevert(PairLib.PL__OrderIdDoesNotExist.selector);
         orderBookImpl.getCancelOrder(_orderId);
     }
 
@@ -539,7 +539,7 @@ contract OrderBookLibTest is Test {
         // Intentar cancelar la orden desde otro trader
         //vm.expectRevert("Order not found");
         vm.prank(trader1);
-        vm.expectRevert(PairLib.PairLib__TraderDoesNotCorrespond.selector);
+        vm.expectRevert(PairLib.PL__OrderDoesNotBelongToCurrentTrader.selector);
         orderBookImpl.getCancelOrder(orderId);
 
         // Verificar que la orden no fue cancelada
@@ -663,7 +663,7 @@ contract OrderBookLibTest is Test {
         bytes32 orderId = keccak256(abi.encodePacked(trader1, "buy", price, nonce));
 
         // Intentar obtener la orden inexistente
-        vm.expectRevert(PairLib.PairLib__KeyDoesNotExist.selector);
+        vm.expectRevert(PairLib.PL__OrderIdDoesNotExist.selector);
         orderBookImpl.getOrderById(trader1, orderId);
     }
 

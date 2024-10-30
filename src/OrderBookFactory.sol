@@ -216,10 +216,10 @@ contract OrderBookFactory {
         console.log(order.baseToken);
         if (isBuy) {
             console.log("buy");
-            order.addBuyOrder(price, quantity, nonce, _expired);
+            order.addBuyOrder(price, quantity, nonce);
         } else {
             console.log("sell");
-            order.addSellOrder(price, quantity, nonce, _expired);
+            order.addSellOrder(price, quantity, nonce);
         }
     }
 
