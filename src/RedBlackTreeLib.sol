@@ -647,8 +647,6 @@ library RedBlackTreeLib {
         // Cache parent of node b
         uint256 bParent = self.nodes[b].parent;
         Node storage nodeA = self.nodes[a]; // Cache node a
-        Node storage nodeB = self.nodes[b]; // Cache node b
-
         // Set the parent of node a
         nodeA.parent = bParent;
 

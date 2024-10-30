@@ -1,88 +1,69 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "./OrderBookLib.sol";
 import "./QueueLib.sol";
 import "./RedBlackTreeLib.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "forge-std/console.sol";
 
 library OrderBookLib {
     using RedBlackTreeLib for RedBlackTreeLib.Tree;
     using QueueLib for QueueLib.Queue;
     using QueueLib for QueueLib.Item;
-    using SafeERC20 for IERC20;
 
-    struct Price {
-        uint256 countTotalOrders; // Total Orders of the Node
-        uint256 countValueOrders; // Sum of the value of the orders
+    uint256 private constant ORDER_CREATED = 1;
+    uint256 private constant ORDER_PARTIALLY_FILLED = 2;
+
+    struct PricePoint {
+        uint256 orderCount; // Total Orders of the Node
+        uint256 orderValue; // Sum of the value of the orders
         QueueLib.Queue q;
     }
 
     struct Order {
         // TODO: Reorder variables to pack them more efficiently and reduce storage slots
         // uint256 and bytes32 variables should be grouped together
-        bytes32 orderId;
+        bytes32 id;
         uint256 price;
         uint256 quantity;
         uint256 availableQuantity;
-        uint256 expiresAt;
         uint256 createdAt;
-        uint256 fee; // Fee rate at the time of order creation
         address traderAddress;
         bool isBuy;
-        uint8 status; //created 1 / partially filled 2 / filled 3 / cancelada 4
+        uint8 status; //    ORDER_CREATED 1 / ORDER_PARTIALLY_FILLED 2
     }
 
     struct Book {
         RedBlackTreeLib.Tree tree;
-        mapping(uint256 => Price) prices; // Mapping of keys to their corresponding nodes
+        mapping(uint256 => PricePoint) prices; // Mapping of available prices to their corresponding orders and stats
     }
 
-    function insert(Book storage b, bytes32 key, uint256 value, uint256 _quantity) internal {
-        b.tree.insert(value);
+    function insert(Book storage b, bytes32 _orderId, uint256 _price, uint256 _quantity) internal {
+        b.tree.insert(_price);
 
-        Price storage price = b.prices[value];
-        price.q.push(key);
-        price.countTotalOrders = price.countTotalOrders + 1;
-        price.countValueOrders = price.countValueOrders + _quantity;
+        PricePoint storage pricePoint = b.prices[_price];
+        pricePoint.q.push(_orderId);
+        pricePoint.orderCount = pricePoint.orderCount + 1;
+        pricePoint.orderValue = pricePoint.orderValue + _quantity;
     }
 
-    function remove(Book storage b, Order calldata order) public {
-        Price storage price = b.prices[order.price];
-        price.countTotalOrders = price.countTotalOrders - 1;
-        price.countValueOrders = price.countValueOrders - order.availableQuantity;
-        price.q.remove(order.orderId);
+    function remove(Book storage b, Order memory _order) internal {
+        PricePoint storage price = b.prices[_order.price];
+        price.orderCount = price.orderCount - 1;
+        price.orderValue = price.orderValue - _order.availableQuantity;
+        price.q.remove(_order.id);
 
         if (price.q.isEmpty()) {
-            b.tree.remove(order.price);
+            b.tree.remove(_order.price);
         }
     }
 
-    function update(Book storage b, Order calldata order, uint256 quantity) public {
-        Price storage price = b.prices[order.price];
-        price.countValueOrders = price.countValueOrders - quantity;
+    function update(Book storage b, uint256 _pricePoint, uint256 _quantity) internal {
+        PricePoint storage price = b.prices[_pricePoint];
+        price.orderValue = price.orderValue - _quantity;
     }
 
-    function saveOrder(
-        Book storage b,
-        uint256 _price,
-        uint256 _quantity,
-        bytes32 _orderId,
-        address tokenAddress,
-        uint256 transferQty
-    ) internal {
-        //Transfiero los tokens al contrato
-        IERC20 token = IERC20(tokenAddress);
-        token.safeTransferFrom(msg.sender, address(this), transferQty); //Transfiero la cantidad indicada
-
-        //Agregar al arbol
-        insert(b, _orderId, _price, _quantity);
-    }
-
-    function getNextOrderId(Book storage b, uint256 price) internal view returns (bytes32) {
-        return b.prices[price].q.first;
+    function getNextOrderIdAtPrice(Book storage b, uint256 _price) internal view returns (bytes32) {
+        return b.prices[_price].q.first;
     }
 
     function getLowestPrice(Book storage b) internal view returns (uint256) {
@@ -109,7 +90,7 @@ library OrderBookLib {
         return [first, first2, first3];
     }
 
-    function getPrice(Book storage b, uint256 price) internal view returns (Price storage) {
-        return b.prices[price];
+    function getPricePointData(Book storage b, uint256 _pricePoint) internal view returns (PricePoint storage) {
+        return b.prices[_pricePoint];
     }
 }

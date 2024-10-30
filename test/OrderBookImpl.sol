@@ -14,7 +14,7 @@ contract OrderBookImpl {
 
     PairLib.Pair private pair;
 
-    constructor(address tokenA, address tokenB) public {
+    constructor(address tokenA, address tokenB) {
         pair.baseToken = tokenA;
         pair.quoteToken = tokenB;
         pair.lastTradePrice = 0;
@@ -71,16 +71,14 @@ contract OrderBookImpl {
     function getOrderById(address _trader, bytes32 _orderId) public returns (OrderBookLib.Order memory _order) {
         OrderBookLib.Order storage orderDetail = pair.getOrderDetail(_orderId);
         _order = OrderBookLib.Order({
-            orderId: orderDetail.orderId,
+            id: orderDetail.id,
             price: orderDetail.price,
             quantity: orderDetail.quantity,
             availableQuantity: orderDetail.availableQuantity,
-            expiresAt: orderDetail.expiresAt,
             isBuy: orderDetail.isBuy,
             createdAt: orderDetail.createdAt,
             traderAddress: orderDetail.traderAddress,
-            status: orderDetail.status,
-            fee: orderDetail.fee
+            status: orderDetail.status
         });
     }
 }
