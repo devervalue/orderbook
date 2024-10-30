@@ -4,8 +4,8 @@ pragma solidity ^0.8.26;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 import "./OrderQueueImpl.sol";
-import "../src/OrderQueue.sol";
-import "../src/OrderQueue.sol";
+import "../src/QueueLib.sol";
+import "../src/QueueLib.sol";
 
 /// @title QueueHelper
 /// @notice Abstract contract providing helper variables for queue testing
@@ -75,7 +75,7 @@ contract EmptyQueueTest is Test, QueueHelper {
     function testPop() public {
         // Now, test pop
         uint256 startGas = gasleft();
-        vm.expectRevert(OrderQueue.OrderQueue__CantRemoveFromAnEmptyQueue.selector);
+        vm.expectRevert(QueueLib.OrderQueue__CantRemoveFromAnEmptyQueue.selector);
         queue.pop();
         uint256 gasUsed = startGas - gasleft();
         console.log("Gas used for trying to pop an order from queue with one element: %d", gasUsed);
@@ -91,7 +91,7 @@ contract EmptyQueueTest is Test, QueueHelper {
 
         // Now, test removeOrder
         uint256 startGas = gasleft();
-        vm.expectRevert(OrderQueue.OrderQueue__CantRemoveFromAnEmptyQueue.selector);
+        vm.expectRevert(QueueLib.OrderQueue__CantRemoveFromAnEmptyQueue.selector);
         queue.removeOrder(orderId);
         uint256 gasUsed = startGas - gasleft();
         console.log("Gas used for trying to remove an order from queue with one element: %d", gasUsed);

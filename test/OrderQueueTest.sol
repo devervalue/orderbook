@@ -2,13 +2,13 @@
 pragma solidity ^0.8.26;
 
 import "forge-std/Test.sol";
-import "../src/OrderQueue.sol";
+import "../src/QueueLib.sol";
 import "forge-std/console.sol";
 
 contract OrderQueueTest is Test {
-    using OrderQueue for OrderQueue.Queue;
+    using QueueLib for QueueLib.Queue;
 
-    OrderQueue.Queue private queue;
+    QueueLib.Queue private queue;
 
     address private trader1 = address(1);
     address private trader2 = address(2);
@@ -24,24 +24,24 @@ contract OrderQueueTest is Test {
 
     //-------------------- ORDER EXISTS ------------------------------
 
-    //Existencia de Órdenes (orderExists):Verificar que una orden añadida esté en la cola.
+    //Existencia de Órdenes (itemExists):Verificar que una orden añadida esté en la cola.
     function testOrderExistsAfterAddingQueue() public {
         queue.push(orderId1);
-        bool exists = queue.orderExists(orderId1);
+        bool exists = queue.itemExists(orderId1);
         assertTrue(exists, "Order should exist after being added");
     }
 
-    //Existencia de Órdenes (orderExists):Verificar que una orden que no ha sido añadida no exista en la cola.
+    //Existencia de Órdenes (itemExists):Verificar que una orden que no ha sido añadida no exista en la cola.
     function testOrderDoesNotExistIfNotAddedQueue() public view {
-        bool exists = queue.orderExists(orderId1);
+        bool exists = queue.itemExists(orderId1);
         assertFalse(exists, "Order should not exist if it has not been added");
     }
 
-    //Existencia de Órdenes (orderExists): Verificar que devuelve false después de la eliminación, indicando que la orden ya no existe.
+    //Existencia de Órdenes (itemExists): Verificar que devuelve false después de la eliminación, indicando que la orden ya no existe.
     function testOrderExistsAfterRemovingOrderQueue() public {
         queue.push(orderId1);
-        queue.removeOrder(orderId1); // Elimina la orden
-        bool exists = queue.orderExists(orderId1);
+        queue.remove(orderId1); // Elimina la orden
+        bool exists = queue.itemExists(orderId1);
         assertFalse(exists, "Order should not exist after being removed");
     }
 
@@ -63,7 +63,7 @@ contract OrderQueueTest is Test {
     //IsEmpty: Verificar que la cola está vacía después de eliminar todos los elementos
     function testIsEmptyAfterRemovingAllElementsQueue() public {
         queue.push(orderId1);
-        queue.removeOrder(queue.first); // Elimina el único elemento
+        queue.remove(queue.first); // Elimina el único elemento
         bool empty = queue.isEmpty();
         assertTrue(empty, "Queue should be empty after removing all elements");
     }
@@ -73,7 +73,7 @@ contract OrderQueueTest is Test {
         queue.push(orderId1);
         queue.push(orderId2);
         queue.push(orderId3);
-        queue.removeOrder(orderId2); // Elimina el elemento en medio
+        queue.remove(orderId2); // Elimina el elemento en medio
         bool empty = queue.isEmpty();
         assertFalse(empty, "Queue should not be empty after removing an element in the middle");
     }
@@ -82,7 +82,7 @@ contract OrderQueueTest is Test {
     function testIsEmptyAfterRemovingFirstElementQueue() public {
         queue.push(orderId1);
         queue.push(orderId2);
-        queue.removeOrder(orderId1); // Elimina la primera orden
+        queue.remove(orderId1); // Elimina la primera orden
         bool empty = queue.isEmpty();
         assertFalse(empty, "Queue should not be empty after removing the first element");
         assertEq(queue.first, orderId2);
@@ -92,7 +92,7 @@ contract OrderQueueTest is Test {
     function testIsEmptyAfterRemovingLastElementQueue() public {
         queue.push(orderId1);
         queue.push(orderId2);
-        queue.removeOrder(orderId2); // Elimina la última orden
+        queue.remove(orderId2); // Elimina la última orden
         bool empty = queue.isEmpty();
         assertFalse(empty, "Queue should not be empty after removing the last element");
         assertEq(queue.last, orderId1);
@@ -103,7 +103,7 @@ contract OrderQueueTest is Test {
     function testPushEmptyQueue() public {
         queue.push(orderId1);
         assertFalse(queue.isEmpty());
-        assertTrue(queue.orderExists(orderId1));
+        assertTrue(queue.itemExists(orderId1));
         assertEq(queue.first, orderId1);
         assertEq(queue.last, orderId1);
     }
@@ -113,8 +113,8 @@ contract OrderQueueTest is Test {
         queue.push(orderId1);
         queue.push(orderId2);
         assertFalse(queue.isEmpty());
-        assertTrue(queue.orderExists(orderId1));
-        assertTrue(queue.orderExists(orderId2));
+        assertTrue(queue.itemExists(orderId1));
+        assertTrue(queue.itemExists(orderId2));
         assertEq(queue.first, orderId1);
         assertEq(queue.last, orderId2);
     }
@@ -128,10 +128,10 @@ contract OrderQueueTest is Test {
         assertEq(queue.first, orderId1);
         assertEq(queue.last, orderId3);
 
-        assertEq(queue.orders[orderId1].next, orderId2);
-        assertEq(queue.orders[orderId2].next, orderId3);
-        assertEq(queue.orders[orderId2].prev, orderId1);
-        assertEq(queue.orders[orderId3].prev, orderId2);
+        assertEq(queue.items[orderId1].next, orderId2);
+        assertEq(queue.items[orderId2].next, orderId3);
+        assertEq(queue.items[orderId2].prev, orderId1);
+        assertEq(queue.items[orderId3].prev, orderId2);
     }
 
     //Agregar Ordenes (push): Verificar el Estado de la Cola Antes y Después de la Inserción
@@ -144,51 +144,51 @@ contract OrderQueueTest is Test {
 
         assertEq(queue.first, orderId1, "First order ID should be updated");
         assertEq(queue.last, orderId2, "Last order ID should be updated");
-        assertEq(queue.orders[orderId1].next, orderId2, "Next pointer of the first node should point to the second");
-        assertEq(queue.orders[orderId2].prev, orderId1, "Prev pointer of the second node should point to the first");
+        assertEq(queue.items[orderId1].next, orderId2, "Next pointer of the first node should point to the second");
+        assertEq(queue.items[orderId2].prev, orderId1, "Prev pointer of the second node should point to the first");
     }
 
     //-------------------- REMOVE ORDER ------------------------------
-    //Eliminación de Órdenes Específicas (removeOrder): Eliminar una orden en medio de la cola y verificar que se actualicen correctamente los punteros next y prev de los nodos adyacentes.
+    //Eliminación de Órdenes Específicas (remove): Eliminar una orden en medio de la cola y verificar que se actualicen correctamente los punteros next y prev de los nodos adyacentes.
     function testRemoveOrderMiddleQueue() public {
         queue.push(orderId1);
         queue.push(orderId2);
         queue.push(orderId3);
 
-        queue.removeOrder(orderId2);
-        assertFalse(queue.orderExists(orderId2));
-        assertEq(queue.orders[orderId1].next, orderId3);
-        assertEq(queue.orders[orderId3].prev, orderId1);
+        queue.remove(orderId2);
+        assertFalse(queue.itemExists(orderId2));
+        assertEq(queue.items[orderId1].next, orderId3);
+        assertEq(queue.items[orderId3].prev, orderId1);
     }
 
-    //Eliminación de Órdenes Específicas (removeOrder): Eliminar la primera orden y verificar el cambio en el puntero first.
+    //Eliminación de Órdenes Específicas (remove): Eliminar la primera orden y verificar el cambio en el puntero first.
     function testRemoveOrderFirstQueue() public {
         queue.push(orderId1);
         queue.push(orderId2);
 
-        queue.removeOrder(orderId1);
-        assertFalse(queue.orderExists(orderId1));
+        queue.remove(orderId1);
+        assertFalse(queue.itemExists(orderId1));
         assertEq(queue.first, orderId2);
     }
 
-    //Eliminación de Órdenes Específicas (removeOrder): Eliminar la última orden y verificar el cambio en el puntero last.
+    //Eliminación de Órdenes Específicas (remove): Eliminar la última orden y verificar el cambio en el puntero last.
     function testRemoveOrderLastQueue() public {
         queue.push(orderId1);
         queue.push(orderId2);
         queue.push(orderId3);
 
-        queue.removeOrder(orderId3);
-        assertFalse(queue.orderExists(orderId3));
+        queue.remove(orderId3);
+        assertFalse(queue.itemExists(orderId3));
         assertEq(queue.last, orderId2);
     }
 
-    //Eliminación de Órdenes Específicas (removeOrder): Intentar eliminar una orden de una cola vacía y esperar el error OrderQueue__CantRemoveFromAnEmptyQueue.
+    //Eliminación de Órdenes Específicas (remove): Intentar eliminar una orden de una cola vacía y esperar el error OrderQueue__CantRemoveFromAnEmptyQueue.
     function testRemoveOrderFromEmptyRevertsQueue() public {
-        vm.expectRevert(OrderQueue.OrderQueue__CantRemoveFromAnEmptyQueue.selector);
-        queue.removeOrder(orderId1);
+        vm.expectRevert(QueueLib.QL__EmptyQueue.selector);
+        queue.remove(orderId1);
     }
 
-    //Eliminación de Órdenes Específicas (removeOrder): Eliminar multiples ordenes en una cola con múltiples elementos y verificar que se actualicen correctamente los punteros first y last.
+    //Eliminación de Órdenes Específicas (remove): Eliminar multiples ordenes en una cola con múltiples elementos y verificar que se actualicen correctamente los punteros first y last.
     function testRemoveOrderMultipleRemovalsQueue() public {
         queue.push(orderId1);
         queue.push(orderId2);
@@ -197,42 +197,42 @@ contract OrderQueueTest is Test {
         //Validar status
         assertEq(queue.first, orderId1, "First should be orderid1");
         assertEq(queue.last, orderId3, "Last should orderid3");
-        assertEq(queue.orders[orderId1].next, orderId2, "Next pointer of the first node should point to the second");
-        assertEq(queue.orders[orderId2].next, orderId3, "Next pointer of the second node should point to the third");
-        assertEq(queue.orders[orderId2].prev, orderId1, "Prev pointer of the second node should point to the first");
-        assertEq(queue.orders[orderId3].prev, orderId2, "Prev pointer of the third node should point to the second");
+        assertEq(queue.items[orderId1].next, orderId2, "Next pointer of the first node should point to the second");
+        assertEq(queue.items[orderId2].next, orderId3, "Next pointer of the second node should point to the third");
+        assertEq(queue.items[orderId2].prev, orderId1, "Prev pointer of the second node should point to the first");
+        assertEq(queue.items[orderId3].prev, orderId2, "Prev pointer of the third node should point to the second");
 
-        queue.removeOrder(orderId2);
+        queue.remove(orderId2);
 
         //Valido status
         assertEq(queue.first, orderId1, "First should be orderid1 after removing second order");
         assertEq(queue.last, orderId3, "Last should orderid3 after removing second order");
-        assertFalse(queue.orderExists(orderId2));
+        assertFalse(queue.itemExists(orderId2));
         assertEq(
-            queue.orders[orderId1].next,
+            queue.items[orderId1].next,
             orderId3,
             "Next pointer of the first node should point to the second after removing second order"
         );
         assertEq(
-            queue.orders[orderId3].prev,
+            queue.items[orderId3].prev,
             orderId1,
             "Prev pointer of the second node should point to the first after removing second order"
         );
 
-        queue.removeOrder(orderId3);
+        queue.remove(orderId3);
 
         //Valido status
         assertEq(queue.first, orderId1, "First should be orderid1 after removing third order");
         assertEq(queue.last, orderId1, "Last should orderid1 after removing third order");
-        assertFalse(queue.orderExists(orderId3));
+        assertFalse(queue.itemExists(orderId3));
         assertEq(
-            queue.orders[orderId1].next,
+            queue.items[orderId1].next,
             0,
             "Next pointer of the first node should point to the second after removing third order"
         );
 
-        queue.removeOrder(orderId1);
-        assertFalse(queue.orderExists(orderId1));
+        queue.remove(orderId1);
+        assertFalse(queue.itemExists(orderId1));
         assertEq(queue.first, 0, "First should be 0 after removing all orders");
         assertEq(queue.first, 0, "Last should be 0 after removing all orders");
     }

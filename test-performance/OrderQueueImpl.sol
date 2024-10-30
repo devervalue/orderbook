@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.26;
 
-import "../src/OrderQueue.sol";
+import "../src/QueueLib.sol";
 import "forge-std/console.sol";
 
 /**
@@ -10,8 +10,8 @@ import "forge-std/console.sol";
  * @notice This contract provides an interface to interact with an order queue.
  */
 contract OrderQueueImpl {
-    using OrderQueue for OrderQueue.Queue;
-    using OrderQueue for OrderQueue.OrderBookNode;
+    using QueueLib for OrderQueue.Queue;
+    using QueueLib for OrderQueue.OrderBookNode;
 
     /// @dev The internal queue structure
     OrderQueue.Queue private queue;

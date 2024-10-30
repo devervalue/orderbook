@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./OrderBookLib.sol";
-import "./OrderQueue.sol";
+import "./QueueLib.sol";
 import "./RedBlackTree.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -10,14 +10,14 @@ import "forge-std/console.sol";
 
 library OrderBookLib {
     using RedBlackTree for RedBlackTree.Tree;
-    using OrderQueue for OrderQueue.Queue;
-    using OrderQueue for OrderQueue.OrderBookNode;
+    using QueueLib for QueueLib.Queue;
+    using QueueLib for QueueLib.Item;
     using SafeERC20 for IERC20;
 
     struct Price {
         uint256 countTotalOrders; // Total Orders of the Node
         uint256 countValueOrders; // Sum of the value of the orders
-        OrderQueue.Queue q;
+        QueueLib.Queue q;
     }
 
     struct Order {
@@ -53,7 +53,7 @@ library OrderBookLib {
         Price storage price = b.prices[order.price];
         price.countTotalOrders = price.countTotalOrders - 1;
         price.countValueOrders = price.countValueOrders - order.availableQuantity;
-        price.q.removeOrder(order.orderId);
+        price.q.remove(order.orderId);
 
         if (price.q.isEmpty()) {
             b.tree.remove(order.price);
