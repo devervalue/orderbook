@@ -407,11 +407,11 @@ library PairLib {
     }
 
     function getTop3BuyPrices(Pair storage pair) internal view returns (uint256[3] memory) {
-        return pair.buyOrders.get3HighestPrices();
+        return pair.buyOrders.get3Prices(true);
     }
 
     function getTop3SellPrices(Pair storage pair) internal view returns (uint256[3] memory) {
-        return pair.sellOrders.get3HighestPrices();
+        return pair.sellOrders.get3Prices(false);
     }
 
     function getPrice(Pair storage p, uint256 price, bool isBuy)

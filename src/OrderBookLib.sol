@@ -27,9 +27,9 @@ library OrderBookLib {
         uint256 quantity;
         uint256 availableQuantity;
         uint256 createdAt;
+        uint256 status; //    ORDER_CREATED 1 / ORDER_PARTIALLY_FILLED 2
         address traderAddress;
         bool isBuy;
-        uint8 status; //    ORDER_CREATED 1 / ORDER_PARTIALLY_FILLED 2
     }
 
     struct Book {
@@ -74,20 +74,16 @@ library OrderBookLib {
         return b.tree.last();
     }
 
-    function get3HighestPrices(Book storage b) internal view returns (uint256[3] memory) {
-        uint256 last = b.tree.last();
-        uint256 last2 = last == 0 ? 0 : b.tree.prev(last);
-        uint256 last3 = last2 == 0 ? 0 : b.tree.prev(last2);
+    function get3Prices(Book storage b, bool highest) internal view returns (uint256[3] memory) {
+        uint256[3] memory prices;
+        uint256 price = highest ? b.tree.last() : b.tree.first();
 
-        return [last, last2, last3];
-    }
+        for (uint256 i = 0; i < 3 && price != 0; i++) {
+            prices[i] = price;
+            price = highest ? b.tree.prev(price) : b.tree.next(price);
+        }
 
-    function get3LowestPrices(Book storage b) internal view returns (uint256[3] memory) {
-        uint256 first = b.tree.first();
-        uint256 first2 = first == 0 ? 0 : b.tree.next(first);
-        uint256 first3 = first2 == 0 ? 0 : b.tree.next(first2);
-
-        return [first, first2, first3];
+        return prices;
     }
 
     function getPricePointData(Book storage b, uint256 _pricePoint) internal view returns (PricePoint storage) {
