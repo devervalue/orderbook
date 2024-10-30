@@ -64,6 +64,69 @@ library RedBlackTreeLib {
         mapping(uint256 => Node) nodes; // Mapping of keys to their corresponding nodes
     }
 
+    // Utility functions
+
+    /**
+     * @dev Checks if a node with a given value exists in the Red-Black tree.
+     *
+     * This function determines whether a node with the specified value is present
+     * in the tree by checking the following:
+     *
+     * 1. If the provided `value` is `EMPTY` (commonly `0`), it returns `false`
+     *    indicating the node cannot exist.
+     * 2. If the `value` matches the root of the tree, it returns `true` as the root
+     *    node is always considered to exist.
+     * 3. Otherwise, it checks if the node has a parent that is not `EMPTY`. If the
+     *    node has a valid parent, it implies the node is present in the tree.
+     *
+     * To optimize gas usage, the function stores the node reference in a local
+     * variable to avoid repeated storage access.
+     *
+     * @param self A reference to the `Tree` struct in storage, which contains the
+     *        nodes and root of the Red-Black tree.
+     * @param value The value of the node to check for existence.
+     *
+     * @return _exists A boolean indicating whether the node with the specified
+     *         value exists in the tree.
+     */
+    function exists(Tree storage self, uint256 value) internal view returns (bool _exists) {
+        if (value == EMPTY) return false;
+        if (value == self.root) return true;
+
+        return self.nodes[value].parent != EMPTY;
+    }
+
+    /**
+     * @dev Retrieves various attributes of a node in the Red-Black tree.
+     *
+     * This function is used to access the key properties of a node identified by its `value`
+     * in the Red-Black tree. It ensures that the node exists before accessing its properties.
+     *
+     * Steps performed:
+     *
+     * 1. Validates that the node with the specified `value` exists in the tree using `require`.
+     *    If the node does not exist, the function reverts with an error.
+     * 2. Accesses the node's properties including its parent, left and right children,
+     *    whether it's red, the number of keys, and a custom count.
+     * 3. Returns the following attributes of the node:
+     *    - `_parent`: The value of the parent node.
+     *    - `_left`: The value of the left child node.
+     *    - `_right`: The value of the right child node.
+     *    - `_red`: A boolean indicating whether the node is red.
+     *    - `countTotalOrders`: The number orders in node.
+     *    - `countValueOrders`: The sum of value in total orders.
+     *
+     * @param self A reference to the `Tree` struct in storage containing all nodes and the root.
+     * @param value The value of the node whose attributes are to be retrieved.
+     *
+     */
+    function getNode(Tree storage self, uint256 value) internal view returns (Node storage) {
+        if (!exists(self, value)) revert RBT__ValuesDoesNotExist();
+        return self.nodes[value];
+    }
+
+    // Tree traversal
+
     /**
      * @dev Retrieves the value of the leftmost node in the Red-Black tree.
      *
@@ -197,64 +260,7 @@ library RedBlackTreeLib {
         }
     }
 
-    /**
-     * @dev Checks if a node with a given value exists in the Red-Black tree.
-     *
-     * This function determines whether a node with the specified value is present
-     * in the tree by checking the following:
-     *
-     * 1. If the provided `value` is `EMPTY` (commonly `0`), it returns `false`
-     *    indicating the node cannot exist.
-     * 2. If the `value` matches the root of the tree, it returns `true` as the root
-     *    node is always considered to exist.
-     * 3. Otherwise, it checks if the node has a parent that is not `EMPTY`. If the
-     *    node has a valid parent, it implies the node is present in the tree.
-     *
-     * To optimize gas usage, the function stores the node reference in a local
-     * variable to avoid repeated storage access.
-     *
-     * @param self A reference to the `Tree` struct in storage, which contains the
-     *        nodes and root of the Red-Black tree.
-     * @param value The value of the node to check for existence.
-     *
-     * @return _exists A boolean indicating whether the node with the specified
-     *         value exists in the tree.
-     */
-    function exists(Tree storage self, uint256 value) internal view returns (bool _exists) {
-        if (value == EMPTY) return false;
-        if (value == self.root) return true;
-
-        return self.nodes[value].parent != EMPTY;
-    }
-
-    /**
-     * @dev Retrieves various attributes of a node in the Red-Black tree.
-     *
-     * This function is used to access the key properties of a node identified by its `value`
-     * in the Red-Black tree. It ensures that the node exists before accessing its properties.
-     *
-     * Steps performed:
-     *
-     * 1. Validates that the node with the specified `value` exists in the tree using `require`.
-     *    If the node does not exist, the function reverts with an error.
-     * 2. Accesses the node's properties including its parent, left and right children,
-     *    whether it's red, the number of keys, and a custom count.
-     * 3. Returns the following attributes of the node:
-     *    - `_parent`: The value of the parent node.
-     *    - `_left`: The value of the left child node.
-     *    - `_right`: The value of the right child node.
-     *    - `_red`: A boolean indicating whether the node is red.
-     *    - `countTotalOrders`: The number orders in node.
-     *    - `countValueOrders`: The sum of value in total orders.
-     *
-     * @param self A reference to the `Tree` struct in storage containing all nodes and the root.
-     * @param value The value of the node whose attributes are to be retrieved.
-     *
-     */
-    function getNode(Tree storage self, uint256 value) internal view returns (Node storage) {
-        if (!exists(self, value)) revert RBT__ValuesDoesNotExist();
-        return self.nodes[value];
-    }
+    // Tree modification
 
     /**
      * @dev Inserts a new node with the given value and key into the Red-Black tree.
@@ -383,6 +389,8 @@ library RedBlackTreeLib {
         // Delete the old node
         delete self.nodes[cursor];
     }
+
+    // Helper functions
 
     /**
      * @dev Finds the minimum value node in the Red-Black tree starting from a given node.
