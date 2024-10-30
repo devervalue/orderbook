@@ -215,8 +215,10 @@ library RedBlackTreeLib {
         if (value == EMPTY) revert RBT__StartingValueCannotBeZero();
         Node storage currentNode = self.nodes[value];
         if (currentNode.right != EMPTY) {
+            // If the node has a right child, find the minimum value in the right subtree
             _cursor = treeMinimum(self, currentNode.right);
         } else {
+            // If no right child, traverse up the tree until we find a parent that is a left child
             _cursor = currentNode.parent;
             while (_cursor != EMPTY && value == self.nodes[_cursor].right) {
                 value = _cursor;
@@ -250,8 +252,10 @@ library RedBlackTreeLib {
         if (value == EMPTY) revert RBT__StartingValueCannotBeZero();
         Node storage currentNode = self.nodes[value];
         if (currentNode.left != EMPTY) {
+            // If the node has a left child, find the maximum value in the left subtree
             _cursor = treeMaximum(self, currentNode.left);
         } else {
+            // If no left child, traverse up the tree until we find a parent that is a right child
             _cursor = currentNode.parent;
             while (_cursor != EMPTY && value == self.nodes[_cursor].left) {
                 value = _cursor;
@@ -285,7 +289,7 @@ library RedBlackTreeLib {
 
         uint256 cursor;
         uint256 probe = self.root;
-
+        // Find the appropriate position to insert the new node
         while (probe != EMPTY) {
             cursor = probe;
             if (value < probe) {
@@ -294,13 +298,13 @@ library RedBlackTreeLib {
                 probe = self.nodes[probe].right;
             }
         }
-
+        // Find the appropriate position to insert the new node
         Node storage nValue = self.nodes[value];
         nValue.parent = cursor;
         nValue.left = EMPTY;
         nValue.right = EMPTY;
         nValue.red = true;
-
+        // Insert the new node into the tree
         if (cursor == EMPTY) {
             self.root = value;
         } else if (value < cursor) {
@@ -308,6 +312,7 @@ library RedBlackTreeLib {
         } else {
             self.nodes[cursor].right = value;
         }
+        // Rebalance the tree to maintain Red-Black properties
         insertFixup(self, value);
     }
 
@@ -340,23 +345,24 @@ library RedBlackTreeLib {
 
         // Node has no keys left, handle its removal
 
-        // Determine replacement node
+        // Determine the node to be removed (cursor)
         if (nValue.left == EMPTY || nValue.right == EMPTY) {
             cursor = value;
         } else {
+            // Find the in-order successor if the node has two children
             cursor = nValue.right;
             while (self.nodes[cursor].left != EMPTY) {
                 cursor = self.nodes[cursor].left;
             }
         }
 
-        // Set probe to the child of cursor
+        // Set probe to the child of cursor (or EMPTY if no child)
         probe = self.nodes[cursor].left != EMPTY ? self.nodes[cursor].left : self.nodes[cursor].right;
 
         uint256 cursorParent = self.nodes[cursor].parent;
         self.nodes[probe].parent = cursorParent;
 
-        // Update parent's link
+        // Update parent links
         if (cursorParent != EMPTY) {
             if (cursor == self.nodes[cursorParent].left) {
                 self.nodes[cursorParent].left = probe;
