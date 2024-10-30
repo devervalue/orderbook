@@ -41,7 +41,7 @@ contract EmptyTreeTest is RedBlackTreeHelper {
     ///      expecting a revert with the RedBlackTree__KeyDoesNotExist error
     function testRemove() public {
         uint256 startGas = gasleft();
-        vm.expectRevert(RedBlackTree.RedBlackTree__NodeDoesNotExist.selector);
+        vm.expectRevert(RedBlackTreeLib.RBT__NodeDoesNotExist.selector);
         tree.remove( price);
         uint256 gasUsed = startGas - gasleft();
         console.log("Gas used for removing node on empty tree: %d", gasUsed);

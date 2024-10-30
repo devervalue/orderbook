@@ -3,11 +3,11 @@ pragma solidity ^0.8.26;
 
 import "forge-std/Test.sol";
 import "../src/QueueLib.sol";
-import "../src/RedBlackTree.sol";
+import "../src/RedBlackTreeLib.sol";
 import "forge-std/console.sol";
 
 contract RedBlackTreeTest is Test {
-    using RedBlackTree for RedBlackTree.Tree;
+    using RedBlackTreeLib for RedBlackTree.Tree;
 
     RedBlackTree.Tree private tree;
 
@@ -116,7 +116,7 @@ contract RedBlackTreeTest is Test {
     //Verifica que la función revierte si se intenta obtener el siguiente valor desde un árbol vacío.
     function testNextOnEmptyTree() public {
         // Expecting a revert for trying to get next from an empty tree
-        vm.expectRevert(RedBlackTree.RedBlackTree__StartingValueCannotBeZero.selector);
+        vm.expectRevert(RedBlackTreeLib.RBT__StartingValueCannotBeZero.selector);
         tree.next(EMPTY);
     }
 
@@ -173,7 +173,7 @@ contract RedBlackTreeTest is Test {
     //Verifica que la función revierte si se intenta obtener el nodo previo desde un árbol vacío.
     function testPrevOnEmptyTree() public {
         // Expecting a revert for trying to get previous from an empty tree
-        vm.expectRevert(RedBlackTree.RedBlackTree__StartingValueCannotBeZero.selector);
+        vm.expectRevert(RedBlackTreeLib.RBT__StartingValueCannotBeZero.selector);
         tree.prev(EMPTY);
     }
     //Comprueba que no hay un nodo previo en un árbol con un solo nodo.
@@ -315,14 +315,14 @@ contract RedBlackTreeTest is Test {
 
     //Verifica que la función falla cuando se intenta obtener un nodo de un árbol vacío.
     function testGetNodeOnEmptyTree() public {
-        vm.expectRevert(RedBlackTree.RedBlackTree__ValuesDoesNotExist.selector);
+        vm.expectRevert(RedBlackTreeLib.RBT__ValuesDoesNotExist.selector);
         tree.getNode(10); // Intentar obtener un nodo en un árbol vacío debería fallar
     }
 
     //Verifica que la función falla cuando se intenta acceder a un nodo que no existe.
     function testGetNodeOnNonExistentNode() public {
         tree.insert(10);
-        vm.expectRevert(RedBlackTree.RedBlackTree__ValuesDoesNotExist.selector);
+        vm.expectRevert(RedBlackTreeLib.RBT__ValuesDoesNotExist.selector);
         tree.getNode(20); // Intentar obtener un nodo que no existe debería fallar
     }
 
@@ -355,7 +355,7 @@ contract RedBlackTreeTest is Test {
 
     //Verifica que la función falla cuando se pasa un valor inválido (por ejemplo, EMPTY).
     function testGetNodeOnInvalidValue() public {
-        vm.expectRevert(RedBlackTree.RedBlackTree__ValuesDoesNotExist.selector);
+        vm.expectRevert(RedBlackTreeLib.RBT__ValuesDoesNotExist.selector);
         tree.getNode(EMPTY); // Intentar obtener un nodo con un valor inválido debería fallar
     }
 
@@ -365,7 +365,7 @@ contract RedBlackTreeTest is Test {
 
         tree.remove(10); // Supongamos que tienes una función para eliminar nodos
 
-        vm.expectRevert(RedBlackTree.RedBlackTree__ValuesDoesNotExist.selector);
+        vm.expectRevert(RedBlackTreeLib.RBT__ValuesDoesNotExist.selector);
         tree.getNode(10); // Intentar obtener un nodo eliminado debería fallar
     }
 
@@ -459,7 +459,7 @@ contract RedBlackTreeTest is Test {
 
     //Verifica que intentar insertar un valor igual a 0 produce un error.
     function testInsertZeroValue() public {
-        vm.expectRevert(RedBlackTree.RedBlackTree__ValueToInsertCannotBeZero.selector);
+        vm.expectRevert(RedBlackTreeLib.RBT__ValueToInsertCannotBeZero.selector);
         tree.insert(0); // Insertar un valor igual a 0 debería fallar
     }
 
@@ -523,14 +523,14 @@ contract RedBlackTreeTest is Test {
 
         // Remover el nodo
         tree.remove(10);
-        vm.expectRevert(RedBlackTree.RedBlackTree__ValuesDoesNotExist.selector);
+        vm.expectRevert(RedBlackTreeLib.RBT__ValuesDoesNotExist.selector);
         tree.getNode(10); // Intentar obtener un nodo en un árbol vacío debería fallar
     }
 
     //Intenta eliminar un nodo que no existe, lo cual debería generar un error.
     function testRemoveNonExistentNode() public {
         // Intentar eliminar un nodo que no existe
-        vm.expectRevert(RedBlackTree.RedBlackTree__NodeDoesNotExist.selector);
+        vm.expectRevert(RedBlackTreeLib.RBT__NodeDoesNotExist.selector);
         tree.remove(10);
     }
 
