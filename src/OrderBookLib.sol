@@ -20,8 +20,6 @@ library OrderBookLib {
     }
 
     struct Order {
-        // TODO: Reorder variables to pack them more efficiently and reduce storage slots
-        // uint256 and bytes32 variables should be grouped together
         bytes32 id;
         uint256 price;
         uint256 quantity;
@@ -36,6 +34,8 @@ library OrderBookLib {
         RedBlackTreeLib.Tree tree;
         mapping(uint256 => PricePoint) prices; // Mapping of available prices to their corresponding orders and stats
     }
+
+    // Order management functions
 
     function insert(Book storage b, bytes32 _orderId, uint256 _price, uint256 _quantity) internal {
         b.tree.insert(_price);
@@ -62,9 +62,7 @@ library OrderBookLib {
         price.orderValue = price.orderValue - _quantity;
     }
 
-    function getNextOrderIdAtPrice(Book storage b, uint256 _price) internal view returns (bytes32) {
-        return b.prices[_price].q.first;
-    }
+    // Price-related functions
 
     function getLowestPrice(Book storage b) internal view returns (uint256) {
         return b.tree.first();
@@ -84,6 +82,12 @@ library OrderBookLib {
         }
 
         return prices;
+    }
+
+    // Utility functions
+
+    function getNextOrderIdAtPrice(Book storage b, uint256 _price) internal view returns (bytes32) {
+        return b.prices[_price].q.first;
     }
 
     function getPricePointData(Book storage b, uint256 _pricePoint) internal view returns (PricePoint storage) {
