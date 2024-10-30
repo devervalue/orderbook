@@ -3,7 +3,7 @@
 * This file contains code modified from BokkyPooBahsRedBlackTreeLibrary.sol
 * from BokkyPooBahsRedBlackTreeLibrary (https://github.com/bokkypoobah/BokkyPooBahsRedBlackTreeLibrary)
 * Original work Copyright (c) 2020 BokkyPooBah / Bok Consulting Pty Ltd
-* Modified work Copyright (c) 2024 Diego Leal / Artech Software
+* Modified work Copyright (c) 2024 Diego Leal / Angel García / Artech Software
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
