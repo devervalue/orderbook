@@ -75,6 +75,51 @@ library PairLib {
         emit PairFeeChanged(pair.baseToken, pair.quoteToken, newFee);
     }
 
+    function addBuyOrder(Pair storage pair, uint256 _price, uint256 _quantity, uint256 timestamp) internal {
+        if (!pair.enabled) revert PL__PairDisabled();
+        createOrder(pair, true, _price, _quantity, timestamp);
+    }
+
+    function addSellOrder(Pair storage pair, uint256 _price, uint256 _quantity, uint256 timestamp) internal {
+        if (!pair.enabled) revert PL__PairDisabled();
+        createOrder(pair, false, _price, _quantity, timestamp);
+    }
+
+    function cancelOrder(Pair storage pair, bytes32 _orderId) internal {
+        if (!orderExists(pair, _orderId)) revert PL__OrderIdDoesNotExist();
+        if (pair.orders[_orderId].traderAddress != msg.sender) revert PL__OrderDoesNotBelongToCurrentTrader();
+        OrderBookLib.Order memory removedOrder = pair.orders[_orderId];
+
+        (IERC20 token, uint256 remainingFunds) = removedOrder.isBuy
+            ? (IERC20(pair.quoteToken), removedOrder.availableQuantity * removedOrder.price / PRECISION)
+            : (IERC20(pair.baseToken), removedOrder.availableQuantity);
+
+        token.safeTransfer(removedOrder.traderAddress, remainingFunds); //Transfiero la cantidad indicada
+
+        removeOrder(pair, removedOrder);
+
+        emit OrderCanceled(_orderId, pair.baseToken, pair.quoteToken, msg.sender);
+    }
+
+    function removeFromTraderOrders(Pair storage pair, bytes32 _orderId, address traderAddress) private {
+        // Reemplazar el elemento a eliminar con el último elemento del array
+        TraderOrderRegistry storage to = pair.traderOrderRegistry[traderAddress];
+
+        uint256 deleteIndex = to.index[_orderId];
+        uint256 lastIndex = to.orderIds.length - 1;
+
+        if (deleteIndex != lastIndex) {
+            to.orderIds[deleteIndex] = to.orderIds[lastIndex];
+        }
+
+        // actualizar el index de la orden movida
+        to.index[to.orderIds[lastIndex]] = deleteIndex;
+
+        // Remover el último elemento
+        to.orderIds.pop();
+        delete to.index[_orderId];
+    }
+
     function addOrder(Pair storage pair, OrderBookLib.Order memory newOrder) private {
         if (orderExists(pair, newOrder.id)) revert PL__OrderIdAlreadyExists();
 
@@ -271,51 +316,6 @@ library PairLib {
         }
     }
 
-    function addBuyOrder(Pair storage pair, uint256 _price, uint256 _quantity, uint256 timestamp) internal {
-        if (!pair.enabled) revert PL__PairDisabled();
-        createOrder(pair, true, _price, _quantity, timestamp);
-    }
-
-    function addSellOrder(Pair storage pair, uint256 _price, uint256 _quantity, uint256 timestamp) internal {
-        if (!pair.enabled) revert PL__PairDisabled();
-        createOrder(pair, false, _price, _quantity, timestamp);
-    }
-
-    function cancelOrder(Pair storage pair, bytes32 _orderId) internal {
-        if (!orderExists(pair, _orderId)) revert PL__OrderIdDoesNotExist();
-        if (pair.orders[_orderId].traderAddress != msg.sender) revert PL__OrderDoesNotBelongToCurrentTrader();
-        OrderBookLib.Order memory removedOrder = pair.orders[_orderId];
-
-        (IERC20 token, uint256 remainingFunds) = removedOrder.isBuy
-            ? (IERC20(pair.quoteToken), removedOrder.availableQuantity * removedOrder.price / PRECISION)
-            : (IERC20(pair.baseToken), removedOrder.availableQuantity);
-
-        token.safeTransfer(removedOrder.traderAddress, remainingFunds); //Transfiero la cantidad indicada
-
-        removeOrder(pair, removedOrder);
-
-        emit OrderCanceled(_orderId, pair.baseToken, pair.quoteToken, msg.sender);
-    }
-
-    function removeFromTraderOrders(Pair storage pair, bytes32 _orderId, address traderAddress) private {
-        // Reemplazar el elemento a eliminar con el último elemento del array
-        TraderOrderRegistry storage to = pair.traderOrderRegistry[traderAddress];
-
-        uint256 deleteIndex = to.index[_orderId];
-        uint256 lastIndex = to.orderIds.length - 1;
-
-        if (deleteIndex != lastIndex) {
-            to.orderIds[deleteIndex] = to.orderIds[lastIndex];
-        }
-
-        // actualizar el index de la orden movida
-        to.index[to.orderIds[lastIndex]] = deleteIndex;
-
-        // Remover el último elemento
-        to.orderIds.pop();
-        delete to.index[_orderId];
-    }
-
     function getTraderOrders(Pair storage pair, address _trader) internal view returns (bytes32[] memory) {
         return pair.traderOrderRegistry[_trader].orderIds;
     }
@@ -323,10 +323,6 @@ library PairLib {
     function getOrderDetail(Pair storage pair, bytes32 orderId) internal view returns (OrderBookLib.Order storage) {
         if (!orderExists(pair, orderId)) revert PL__OrderIdDoesNotExist();
         return pair.orders[orderId];
-    }
-
-    function orderExists(Pair storage pair, bytes32 _orderId) private view returns (bool) {
-        return pair.orders[_orderId].id != bytes32(0);
     }
 
     function getLowestBuyPrice(Pair storage pair) internal view returns (uint256) {
@@ -367,5 +363,9 @@ library PairLib {
         returns (OrderBookLib.PricePoint storage)
     {
         return (isBuy ? pair.buyOrders : pair.sellOrders).getPricePointData(price);
+    }
+
+    function orderExists(Pair storage pair, bytes32 _orderId) private view returns (bool) {
+        return pair.orders[_orderId].id != bytes32(0);
     }
 }
