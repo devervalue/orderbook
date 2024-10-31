@@ -114,7 +114,6 @@ contract OrderBookFactory {
         orderBook.quoteToken = quoteToken;
         orderBook.lastTradePrice = 0;
         orderBook.status = true;
-        orderBook.owner = owner;
         // TODO Validate the fee is less than maximum allowed
         orderBook.fee = fee;
         orderBook.feeAddress = feeAddress;

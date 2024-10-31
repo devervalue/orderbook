@@ -32,7 +32,6 @@ library PairLib {
         uint256 fee;
         address baseToken;
         address quoteToken;
-        address owner;
         address feeAddress;
         bool status;
         OrderBookLib.Book buyOrders;
@@ -45,6 +44,11 @@ library PairLib {
      *  @notice Evento que se emite cuando se crea una nueva orden.
      */
     event OrderCreated(bytes32 indexed id, address indexed baseToken, address indexed quoteToken, address trader);
+
+    /**
+    *  @notice Evento que se emite cuando se cancela una orden
+     */
+    event OrderCanceled(bytes32 indexed id, address indexed baseToken, address indexed quoteToken, address trader);
 
     /**
      *  @notice Evento que se emite cuando se ejecutar una orden complete.
@@ -78,16 +82,7 @@ library PairLib {
         token.safeTransferFrom(msg.sender, address(this), transferAmount);
         book.insert(newOrder.id, newOrder.price, newOrder.quantity);
 
-        pair.orders[newOrder.id] = OrderBookLib.Order({
-            id: newOrder.id,
-            traderAddress: msg.sender,
-            isBuy: newOrder.isBuy,
-            price: newOrder.price,
-            quantity: newOrder.quantity,
-            availableQuantity: newOrder.quantity,
-            status: ORDER_CREATED,
-            createdAt: newOrder.createdAt
-        });
+        pair.orders[newOrder.id] = newOrder;
 
         //Emite el evento de orden creada
         emit OrderCreated(newOrder.id, pair.baseToken, pair.quoteToken, msg.sender);
@@ -95,11 +90,7 @@ library PairLib {
 
     function removeOrder(Pair storage pair, OrderBookLib.Order memory order) private {
         //Elimino la orden del book
-        if (order.isBuy) {
-            pair.buyOrders.remove(order);
-        } else {
-            pair.sellOrders.remove(order);
-        }
+        (order.isBuy ? pair.buyOrders : pair.sellOrders).remove(order);
         // Elimino del registro de ordenes del trader
         removeFromTraderOrders(pair, order.id, order.traderAddress);
         // Elimino el detalle
@@ -194,11 +185,7 @@ library PairLib {
         matchedOrder.availableQuantity = matchedOrder.availableQuantity - takerOrder.quantity;
         matchedOrder.status = ORDER_PARTIALLY_FILLED;
 
-        if (matchedOrder.isBuy) {
-            pair.buyOrders.update(matchedOrder.price, takerOrder.quantity);
-        } else {
-            pair.sellOrders.update(matchedOrder.price, takerOrder.quantity);
-        }
+        (matchedOrder.isBuy ? pair.buyOrders : pair.sellOrders).update(matchedOrder.price, takerOrder.quantity);
 
         takerOrder.quantity = 0;
 
@@ -219,7 +206,7 @@ library PairLib {
             : pair.buyOrders.getNextOrderIdAtPrice(pair.buyOrders.getHighestPrice());
 
         do {
-            OrderBookLib.Order storage matchingOrder = getOrderDetail(pair, matchingOrderId);
+            OrderBookLib.Order storage matchingOrder = pair.orders[matchingOrderId];
 
             if (newOrder.quantity >= matchingOrder.availableQuantity) {
                 fillOrder(pair, matchingOrder, newOrder);
@@ -235,86 +222,56 @@ library PairLib {
         return (newOrder.quantity, orderCount);
     }
 
-    //Agregar orden de compra
-    function addBuyOrder(Pair storage pair, uint256 _price, uint256 _quantity, uint256 timestamp) internal {
-        //¿Arbol de ventas tiene nodos?
-        uint256 currentPricePoint = pair.sellOrders.getLowestPrice();
-        bytes32 _orderId = keccak256(abi.encodePacked(msg.sender, "buy", _price, timestamp));
+    function createOrder(Pair storage pair, bool isBuy, uint256 _price, uint256 _quantity, uint256 timestamp) internal {
+        uint256 currentPricePoint = isBuy
+            ? pair.sellOrders.getLowestPrice()
+            : pair.buyOrders.getHighestPrice();
+
+        bytes32 _orderId = keccak256(abi.encodePacked(msg.sender, isBuy ? "buy" : "sell", _price, timestamp));
 
         OrderBookLib.Order memory newOrder = OrderBookLib.Order({
             id: _orderId,
             price: _price,
             quantity: _quantity,
             availableQuantity: _quantity,
-            isBuy: true,
+            isBuy: isBuy,
             createdAt: timestamp,
             traderAddress: msg.sender,
             status: ORDER_CREATED
         });
 
-        uint256 orderCount = 0;
-        do {
-            if (currentPricePoint == 0 || orderCount >= MAX_NUMBER_ORDERS_FILLED) {
-                //NO
-                addOrder(pair, newOrder);
-                return;
-            } else {
-                //SI
-                //Precio de compra >= precio del nodo obtenido
-                if (newOrder.price >= currentPricePoint) {
-                    //SI
-                    //Aplico el match de ordenes de compra
-                    (_quantity, orderCount) = matchOrder(pair, orderCount, newOrder);
-                    newOrder.quantity = _quantity;
-                    currentPricePoint = pair.sellOrders.getLowestPrice();
-                } else {
-                    //NO
-                    addOrder(pair, newOrder);
-                    return;
-                }
+        uint256 orderCount;
+        while (_quantity > 0 && orderCount < MAX_NUMBER_ORDERS_FILLED) {
+            if (currentPricePoint == 0) {
+                break;
             }
-        } while (_quantity > 0);
+
+            bool shouldMatch = isBuy
+                ? newOrder.price >= currentPricePoint
+                : newOrder.price <= currentPricePoint;
+
+            if (shouldMatch) {
+                (_quantity, orderCount) = matchOrder(pair, orderCount, newOrder);
+                newOrder.quantity = _quantity;
+                currentPricePoint = isBuy
+                    ? pair.sellOrders.getLowestPrice()
+                    : pair.buyOrders.getHighestPrice();
+            } else {
+                break;
+            }
+        }
+
+        if (_quantity > 0) {
+            addOrder(pair, newOrder);
+        }
     }
 
-    //Agregar orden de venta
+    function addBuyOrder(Pair storage pair, uint256 _price, uint256 _quantity, uint256 timestamp) internal {
+        createOrder(pair, true, _price, _quantity, timestamp);
+    }
+
     function addSellOrder(Pair storage pair, uint256 _price, uint256 _quantity, uint256 timestamp) internal {
-        //¿Arbol de compras tiene nodos?
-        uint256 currentPricePoint = pair.buyOrders.getHighestPrice();
-        bytes32 _orderId = keccak256(abi.encodePacked(msg.sender, "sell", _price, timestamp));
-        uint256 orderCount = 0;
-
-        OrderBookLib.Order memory newOrder = OrderBookLib.Order({
-            id: _orderId,
-            price: _price,
-            quantity: _quantity,
-            availableQuantity: _quantity,
-            isBuy: false,
-            createdAt: timestamp,
-            traderAddress: msg.sender,
-            status: ORDER_CREATED
-        });
-
-        do {
-            if (currentPricePoint == 0 || orderCount >= MAX_NUMBER_ORDERS_FILLED) {
-                //NO
-                addOrder(pair, newOrder);
-                return;
-            } else {
-                //SI
-                //Precio de compra <= precio del nodo obtenido
-                if (_price <= currentPricePoint) {
-                    //SI
-                    //Aplico el match de ordenes de compra
-                    (_quantity, orderCount) = matchOrder(pair, orderCount, newOrder);
-                    newOrder.quantity = _quantity;
-                    currentPricePoint = pair.buyOrders.getHighestPrice();
-                } else {
-                    //NO
-                    addOrder(pair, newOrder);
-                    return;
-                }
-            }
-        } while (_quantity > 0);
+        createOrder(pair, false, _price, _quantity, timestamp);
     }
 
     function cancelOrder(Pair storage pair, bytes32 _orderId) internal {
@@ -330,7 +287,7 @@ library PairLib {
 
         removeOrder(pair, removedOrder);
 
-        // TODO Emit order Canceled
+        emit OrderCanceled(_orderId, pair.baseToken, pair.quoteToken, msg.sender);
     }
 
     function removeFromTraderOrders(Pair storage pair, bytes32 _orderId, address traderAddress) private {
@@ -397,15 +354,8 @@ library PairLib {
         return pair.sellOrders.get3Prices(false);
     }
 
-    function getPrice(Pair storage p, uint256 price, bool isBuy)
-        internal
-        view
-        returns (OrderBookLib.PricePoint storage)
+    function getPrice(Pair storage pair, uint256 price, bool isBuy) internal view returns (OrderBookLib.PricePoint storage)
     {
-        if (isBuy) {
-            return p.buyOrders.getPricePointData(price);
-        } else {
-            return p.sellOrders.getPricePointData(price);
-        }
+        return (isBuy? pair.buyOrders : pair.sellOrders).getPricePointData(price);
     }
 }

@@ -19,7 +19,6 @@ contract OrderBookImpl {
         pair.quoteToken = tokenB;
         pair.lastTradePrice = 0;
         pair.status = true;
-        pair.owner = address(0x6);
         pair.fee = 0x0;
         pair.feeAddress = address(0x7);
     }
