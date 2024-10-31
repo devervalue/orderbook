@@ -3,7 +3,6 @@ pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "forge-std/console.sol";
 import "./OrderBookLib.sol";
 
@@ -16,7 +15,12 @@ library PairLib {
     error PL__OrderDoesNotBelongToCurrentTrader();
     error PL__OrderIdDoesNotExist();
     error PL__OrderIdAlreadyExists();
+    error PL__FeeExceedsMaximum(uint256 fee, uint256 maxFee);
+    error PL__InvalidPrice(uint256 price);
+    error PL__InvalidQuantity(uint256 quantity);
+    error PL__PairDisabled();
 
+    uint256 private constant PRECISION = 1e18;
     uint256 private constant MAX_FEE = 200; // 2% max fee (in basis points)
     uint256 private constant MAX_NUMBER_ORDERS_FILLED = 1500; // A new order can take this orders at max
     /// @dev Constants for order status
@@ -34,7 +38,7 @@ library PairLib {
         address baseToken;
         address quoteToken;
         address feeAddress;
-        bool status;
+        bool enabled;
         OrderBookLib.Book buyOrders;
         OrderBookLib.Book sellOrders;
         mapping(address => TraderOrderRegistry) traderOrderRegistry;
@@ -47,7 +51,7 @@ library PairLib {
     event OrderCreated(bytes32 indexed id, address indexed baseToken, address indexed quoteToken, address trader);
 
     /**
-    *  @notice Evento que se emite cuando se cancela una orden
+     *  @notice Evento que se emite cuando se cancela una orden
      */
     event OrderCanceled(bytes32 indexed id, address indexed baseToken, address indexed quoteToken, address trader);
 
@@ -63,9 +67,12 @@ library PairLib {
         bytes32 indexed id, address indexed baseToken, address indexed quoteToken, address trader
     );
 
+    event PairFeeChanged(address indexed baseToken, address indexed quoteToken, uint256 newFee);
+
     function changePairFee(Pair storage pair, uint256 newFee) internal {
-        require(newFee <= MAX_FEE, "Fee exceeds maximum allowed");
+        if (newFee > MAX_FEE) revert PL__FeeExceedsMaximum(newFee, MAX_FEE);
         pair.fee = newFee;
+        emit PairFeeChanged(pair.baseToken, pair.quoteToken, newFee);
     }
 
     function addOrder(Pair storage pair, OrderBookLib.Order memory newOrder) private {
@@ -77,7 +84,7 @@ library PairLib {
 
         // Collect funds
         (IERC20 token, uint256 transferAmount, OrderBookLib.Book storage book) = newOrder.isBuy
-            ? (IERC20(pair.quoteToken), newOrder.quantity * newOrder.price / 1e18, pair.buyOrders)
+            ? (IERC20(pair.quoteToken), newOrder.quantity * newOrder.price / PRECISION, pair.buyOrders)
             : (IERC20(pair.baseToken), newOrder.quantity, pair.sellOrders);
 
         token.safeTransferFrom(msg.sender, address(this), transferAmount);
@@ -110,11 +117,11 @@ library PairLib {
                 IERC20(pair.baseToken),
                 matchedOrder.availableQuantity,
                 IERC20(pair.quoteToken),
-                matchedOrder.availableQuantity * matchedOrder.price / 1e18
+                matchedOrder.availableQuantity * matchedOrder.price / PRECISION
             )
             : (
                 IERC20(pair.quoteToken),
-                matchedOrder.availableQuantity * matchedOrder.price / 1e18,
+                matchedOrder.availableQuantity * matchedOrder.price / PRECISION,
                 IERC20(pair.baseToken),
                 matchedOrder.availableQuantity
             );
@@ -159,11 +166,11 @@ library PairLib {
                 IERC20(pair.baseToken),
                 takerOrder.quantity,
                 IERC20(pair.quoteToken),
-                takerOrder.quantity * matchedOrder.price / 1e18
+                takerOrder.quantity * matchedOrder.price / PRECISION
             )
             : (
                 IERC20(pair.quoteToken),
-                takerOrder.quantity * matchedOrder.price / 1e18,
+                takerOrder.quantity * matchedOrder.price / PRECISION,
                 IERC20(pair.baseToken),
                 takerOrder.quantity
             );
@@ -223,10 +230,11 @@ library PairLib {
         return (newOrder.quantity, orderCount);
     }
 
-    function createOrder(Pair storage pair, bool isBuy, uint256 _price, uint256 _quantity, uint256 timestamp) internal {
-        uint256 currentPricePoint = isBuy
-            ? pair.sellOrders.getLowestPrice()
-            : pair.buyOrders.getHighestPrice();
+    function createOrder(Pair storage pair, bool isBuy, uint256 _price, uint256 _quantity, uint256 timestamp) private {
+        if (_price == 0) revert PL__InvalidPrice(_price);
+        if (_quantity == 0) revert PL__InvalidQuantity(_quantity);
+
+        uint256 currentPricePoint = isBuy ? pair.sellOrders.getLowestPrice() : pair.buyOrders.getHighestPrice();
 
         bytes32 _orderId = keccak256(abi.encodePacked(msg.sender, isBuy ? "buy" : "sell", _price, timestamp));
 
@@ -247,16 +255,12 @@ library PairLib {
                 break;
             }
 
-            bool shouldMatch = isBuy
-                ? newOrder.price >= currentPricePoint
-                : newOrder.price <= currentPricePoint;
+            bool shouldMatch = isBuy ? newOrder.price >= currentPricePoint : newOrder.price <= currentPricePoint;
 
             if (shouldMatch) {
                 (_quantity, orderCount) = matchOrder(pair, orderCount, newOrder);
                 newOrder.quantity = _quantity;
-                currentPricePoint = isBuy
-                    ? pair.sellOrders.getLowestPrice()
-                    : pair.buyOrders.getHighestPrice();
+                currentPricePoint = isBuy ? pair.sellOrders.getLowestPrice() : pair.buyOrders.getHighestPrice();
             } else {
                 break;
             }
@@ -268,10 +272,12 @@ library PairLib {
     }
 
     function addBuyOrder(Pair storage pair, uint256 _price, uint256 _quantity, uint256 timestamp) internal {
+        if (!pair.enabled) revert PL__PairDisabled();
         createOrder(pair, true, _price, _quantity, timestamp);
     }
 
     function addSellOrder(Pair storage pair, uint256 _price, uint256 _quantity, uint256 timestamp) internal {
+        if (!pair.enabled) revert PL__PairDisabled();
         createOrder(pair, false, _price, _quantity, timestamp);
     }
 
@@ -281,7 +287,7 @@ library PairLib {
         OrderBookLib.Order memory removedOrder = pair.orders[_orderId];
 
         (IERC20 token, uint256 remainingFunds) = removedOrder.isBuy
-            ? (IERC20(pair.quoteToken), removedOrder.availableQuantity * removedOrder.price / 1e18)
+            ? (IERC20(pair.quoteToken), removedOrder.availableQuantity * removedOrder.price / PRECISION)
             : (IERC20(pair.baseToken), removedOrder.availableQuantity);
 
         token.safeTransfer(removedOrder.traderAddress, remainingFunds); //Transfiero la cantidad indicada
@@ -355,8 +361,11 @@ library PairLib {
         return pair.sellOrders.get3Prices(false);
     }
 
-    function getPrice(Pair storage pair, uint256 price, bool isBuy) internal view returns (OrderBookLib.PricePoint storage)
+    function getPrice(Pair storage pair, uint256 price, bool isBuy)
+        internal
+        view
+        returns (OrderBookLib.PricePoint storage)
     {
-        return (isBuy? pair.buyOrders : pair.sellOrders).getPricePointData(price);
+        return (isBuy ? pair.buyOrders : pair.sellOrders).getPricePointData(price);
     }
 }

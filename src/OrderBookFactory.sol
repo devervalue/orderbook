@@ -66,7 +66,7 @@ contract OrderBookFactory {
      *  @dev Modificador para restringir las ordenes si el libro no esta habilitado.
      */
     modifier onlyEnabledBook(bytes32 orderBookId) {
-        if (!ordersBook[orderBookId].status) revert OrderBookFactory__OrderBookNotEnabled();
+        if (!ordersBook[orderBookId].enabled) revert OrderBookFactory__OrderBookNotEnabled();
         _;
     }
 
@@ -113,7 +113,7 @@ contract OrderBookFactory {
         orderBook.baseToken = baseToken;
         orderBook.quoteToken = quoteToken;
         orderBook.lastTradePrice = 0;
-        orderBook.status = true;
+        orderBook.enabled = true;
         // TODO Validate the fee is less than maximum allowed
         orderBook.fee = fee;
         orderBook.feeAddress = feeAddress;
@@ -138,7 +138,7 @@ contract OrderBookFactory {
         return (
             ordersBook[_orderId].baseToken,
             ordersBook[_orderId].quoteToken,
-            ordersBook[_orderId].status,
+            ordersBook[_orderId].enabled,
             ordersBook[_orderId].lastTradePrice,
             ordersBook[_orderId].fee
         );
@@ -160,7 +160,7 @@ contract OrderBookFactory {
      */
     function setOrderBookStatus(bytes32 idOrderBook, bool status) external onlyOwner {
         if (!orderBookExists(idOrderBook)) revert OrderBookFactory__OrderBookIdOutOfRange();
-        ordersBook[idOrderBook].status = status;
+        ordersBook[idOrderBook].enabled = status;
 
         emit OrderBookStatusChanged(idOrderBook, status);
     }
@@ -200,7 +200,8 @@ contract OrderBookFactory {
     }
 
     // TODO add a way to get the current fee for an orderbook
-
+    // TODO protect from reentrancy attack
+    // TODO Add a circuit breaker when the contract is paused
     function addNewOrder(
         bytes32 idOrderBook,
         uint256 quantity,
