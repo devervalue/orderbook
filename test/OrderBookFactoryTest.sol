@@ -90,16 +90,16 @@ contract OrderBookFactoryTest is Test {
         factory.addPair(address(tokenA), address(0), 5, feeAddress);
     }
 
-//    //Prueba que se revierte si el propietario es la dirección cero, simulando un cambio inválido de propietario.
-//    function testRevertIfOwnerAddressIsZero() public {
-//        vm.prank(owner);
-//        vm.expectRevert(Ownable.OwnableInvalidOwner.selector);
-//        factory.transferOwnership(address(0));
-//
-//        //vm.prank(owner);
-//        //vm.expectRevert(Ownable.OwnableUnauthorizedAccount.selector);
-//        //factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
-//    }
+    //    //Prueba que se revierte si el propietario es la dirección cero, simulando un cambio inválido de propietario.
+    //    function testRevertIfOwnerAddressIsZero() public {
+    //        vm.prank(owner);
+    //        vm.expectRevert(Ownable.OwnableInvalidOwner.selector);
+    //        factory.transferOwnership(address(0));
+    //
+    //        //vm.prank(owner);
+    //        //vm.expectRevert(Ownable.OwnableUnauthorizedAccount.selector);
+    //        //factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
+    //    }
 
     //Verifica que se revierte si los tokens base y de cotización son iguales.
     function testRevertIfTokensAreEqual() public {
@@ -126,12 +126,12 @@ contract OrderBookFactoryTest is Test {
         assertEq(quoteToken, address(tokenA));
     }
 
-//    //Verifica que se revierte la transacción si alguien que no es el propietario intenta agregar un libro de órdenes.
-//    function testRevertIfaddPairCalledByNonOwner() public {
-//        vm.prank(trader1); // Simula que un usuario que no es el propietario llama a la función
-//        vm.expectRevert(Ownable.OwnableUnauthorizedAccount.selector);
-//        factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
-//    }
+    //    //Verifica que se revierte la transacción si alguien que no es el propietario intenta agregar un libro de órdenes.
+    //    function testRevertIfaddPairCalledByNonOwner() public {
+    //        vm.prank(trader1); // Simula que un usuario que no es el propietario llama a la función
+    //        vm.expectRevert(Ownable.OwnableUnauthorizedAccount.selector);
+    //        factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
+    //    }
 
     //Comprueba que se puedan agregar múltiples libros de órdenes de forma exitosa y que los identificadores sean únicos.
     function testAddMultipleOrderBooks() public {
@@ -622,9 +622,7 @@ contract OrderBookFactoryTest is Test {
     function testownerInitially() public {
         // Verificar que la dirección del propietario inicial sea la correcta
         assertEq(
-            factory.owner(),
-            owner,
-            unicode"La dirección del propietario debería ser la dirección inicial establecida."
+            factory.owner(), owner, unicode"La dirección del propietario debería ser la dirección inicial establecida."
         );
     }
 

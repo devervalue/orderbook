@@ -22,13 +22,13 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable {
     /// @dev Utilizes OrderBookLib for managing price points
     using OrderBookLib for OrderBookLib.PricePoint;
 
-/**
+    /**
      * @dev Maximum fee in basis points (2%)
      * This constant limits the maximum fee that can be set for a trading pair
      */
     uint256 private constant MAX_FEE = 200;
 
-/**
+    /**
      * @dev Array to store all pair IDs
      * This allows for easy iteration over all trading pairs
      */
@@ -65,7 +65,6 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable {
     /// @param fee The proposed fee that caused the error
     /// @param maxFee The maximum allowed fee
     error OBF__FeeExceedsMaximum(uint256 fee, uint256 maxFee);
-
 
     /// @notice Emitted when a new order book is created
     /// @param id The unique identifier of the new order book
@@ -113,9 +112,9 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable {
     /// @param feeAddress The address that will receive the collected fees
     /// @custom:security This function is only callable by the contract owner and when the contract is not paused
     function addPair(address quoteToken, address baseToken, uint256 initialFee, address feeAddress)
-    external
-    onlyOwner
-    whenNotPaused
+        external
+        onlyOwner
+        whenNotPaused
     {
         // Validate input parameters
         if (quoteToken == address(0) || baseToken == address(0)) revert OBF__InvalidTokenAddress();
@@ -165,16 +164,16 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable {
     /// @return fee The current fee percentage for trades in this pair
     /// @return feeAddress The address currently set to receive fees from this pair's trades
     function getPairById(bytes32 _pairId)
-    external
-    view
-    returns (
-        address baseToken,
-        address quoteToken,
-        bool status,
-        uint256 lastTradePrice,
-        uint256 fee,
-        address feeAddress
-    )
+        external
+        view
+        returns (
+            address baseToken,
+            address quoteToken,
+            bool status,
+            uint256 lastTradePrice,
+            uint256 fee,
+            address feeAddress
+        )
     {
         if (!pairExists(_pairId)) revert OBF__PairDoesNotExist();
         return (
@@ -230,10 +229,10 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable {
     /// @param _isBuy A boolean indicating whether this is a buy (true) or sell (false) order
     /// @param _timestamp The timestamp of when the order was created
     function addNewOrder(bytes32 _pairId, uint256 _quantity, uint256 _price, bool _isBuy, uint256 _timestamp)
-    external
-    onlyEnabledPair(_pairId)
-    nonReentrant
-    whenNotPaused
+        external
+        onlyEnabledPair(_pairId)
+        nonReentrant
+        whenNotPaused
     {
         if (!pairExists(_pairId)) revert OBF__PairDoesNotExist();
         if (_quantity == 0) revert OBF__InvalidQuantityValueZero();
@@ -294,9 +293,9 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable {
     /// @param _orderId The unique identifier of the order
     /// @return An OrderBookLib.Order struct containing all details of the order
     function getOrderDetailForPair(bytes32 _pairId, bytes32 _orderId)
-    external
-    view
-    returns (OrderBookLib.Order memory)
+        external
+        view
+        returns (OrderBookLib.Order memory)
     {
         if (!pairExists(_pairId)) revert OBF__PairDoesNotExist();
 
@@ -327,7 +326,9 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable {
     /// @return orderCount The number of orders at the specified price
     /// @return orderValue The total value of all orders at the specified price
     function getPricePointDataForPair(bytes32 _pairId, uint256 price, bool isBuy)
-    external view returns (uint256 orderCount, uint256 orderValue)
+        external
+        view
+        returns (uint256 orderCount, uint256 orderValue)
     {
         OrderBookLib.PricePoint storage p = pairs[_pairId].getPrice(price, isBuy);
         return (p.orderCount, p.orderValue);
