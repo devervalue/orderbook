@@ -19,6 +19,14 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable {
     using OrderBookLib for OrderBookLib.Order;
     using OrderBookLib for OrderBookLib.PricePoint;
 
+    /// @dev Maximum fee in basis points (2%)
+    uint256 private constant MAX_FEE = 200;
+
+
+    bytes32[] public pairIds;
+
+    mapping(bytes32 => PairLib.Pair) pairs;
+
     error OBF__InvalidTokenAddress();
     error OBF__InvalidFeeAddress();
     error OBF__TokensMustBeDifferent();
@@ -31,12 +39,6 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable {
     /// @param maxFee The maximum allowed fee
     error OBF__FeeExceedsMaximum(uint256 fee, uint256 maxFee);
 
-    bytes32[] public pairIds;
-
-    mapping(bytes32 => PairLib.Pair) pairs;
-
-    /// @dev Maximum fee in basis points (2%)
-    uint256 private constant MAX_FEE = 200;
 
     /**
      *  @notice Evento que se emite cuando se crea un nuevo libro de órdenes.
@@ -110,11 +112,6 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable {
         newPair.feeAddress = feeAddress;
 
         emit OrderBookCreated(identifier, baseToken, quoteToken, msg.sender);
-    }
-
-    //Existe el libro
-    function pairExists(bytes32 _pairId) private view returns (bool) {
-        return pairs[_pairId].baseToken != address(0x0);
     }
 
     function getPairIds() external view returns (bytes32[] memory) {
@@ -243,5 +240,10 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable {
     {
         OrderBookLib.PricePoint storage p = pairs[_pairId].getPrice(price, isBuy);
         return (p.orderCount, p.orderValue);
+    }
+
+    //Existe el libro
+    function pairExists(bytes32 _pairId) private view returns (bool) {
+        return pairs[_pairId].baseToken != address(0x0);
     }
 }
