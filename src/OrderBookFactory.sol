@@ -6,6 +6,7 @@ import "./RedBlackTreeLib.sol";
 import {PairLib} from "./PairLib.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title Contrato Principal para la Gestión de Libros de Órdenes
@@ -13,29 +14,22 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  * @notice This contract is for creating a sample rafle
  * @dev Este contrato administra la información de los libros de ordenes.
  */
-contract OrderBookFactory is ReentrancyGuard, Pausable {
+contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable {
     using PairLib for PairLib.Pair;
     using OrderBookLib for OrderBookLib.Order;
     using OrderBookLib for OrderBookLib.PricePoint;
 
     error OBF__InvalidTokenAddress();
-    error OBF__InvalidOwnerAddress();
     error OBF__InvalidFeeAddress();
     error OBF__TokensMustBeDifferent();
-    error OBF__InvalidOwnerAddressZero();
     error OBF__PairDoesNotExist();
     error OBF__InvalidQuantityValueZero();
-    error OBF__OrderBookNotEnabled();
+    error OBF__PairNotEnabled();
     error OBF__PairAlreadyExists();
     /// @notice Thrown when the fee exceeds the maximum allowed
     /// @param fee The proposed fee
     /// @param maxFee The maximum allowed fee
     error OBF__FeeExceedsMaximum(uint256 fee, uint256 maxFee);
-
-    /**
-     *  @notice Dirección del propietario autorizado del contrato.
-     */
-    address public owner;
 
     bytes32[] public pairIds;
 
@@ -67,24 +61,14 @@ contract OrderBookFactory is ReentrancyGuard, Pausable {
     event ContractPauseStatusChanged(bool isPaused);
 
     /**
-     *  @dev Modificador para restringir funciones solo al propietario autorizado.
-     */
-    modifier onlyOwner() {
-        if (msg.sender != owner) revert OBF__InvalidOwnerAddress();
-        _;
-    }
-
-    /**
      *  @dev Modificador para restringir las ordenes si el libro no esta habilitado.
      */
     modifier onlyEnabledPair(bytes32 _pairId) {
-        if (!pairs[_pairId].enabled) revert OBF__OrderBookNotEnabled();
+        if (!pairs[_pairId].enabled) revert OBF__PairNotEnabled();
         _;
     }
 
-    constructor() {
-        owner = msg.sender; // Set the contract deployer as the owner
-    }
+    constructor() Ownable(msg.sender) {}
 
     /**
      *  @notice Agrega un nuevo libro de órdenes al mapping.
@@ -99,25 +83,16 @@ contract OrderBookFactory is ReentrancyGuard, Pausable {
         whenNotPaused
     {
         if (_tokenA == address(0) || _tokenB == address(0)) revert OBF__InvalidTokenAddress();
-        if (owner == address(0)) revert OBF__InvalidOwnerAddress();
         if (feeAddress == address(0)) revert OBF__InvalidFeeAddress();
         if (_tokenA == _tokenB) revert OBF__TokensMustBeDifferent();
         if (initialFee > MAX_FEE) revert OBF__FeeExceedsMaximum(initialFee, MAX_FEE);
-
-        address baseToken;
-        address quoteToken;
 
         /* This ensures that token addresses are order correctly, this way if
          * the same pair is entered but in different order, a new orderbook will
          * NOT be created!
          */
-        if (uint160(baseToken) > uint160(quoteToken)) {
-            baseToken = _tokenA;
-            quoteToken = _tokenB;
-        } else {
-            baseToken = _tokenB;
-            quoteToken = _tokenA;
-        }
+        (address baseToken, address quoteToken) =
+            uint160(_tokenA) > uint160(_tokenB) ? (_tokenA, _tokenB) : (_tokenB, _tokenA);
 
         // mapping identifier is computed from the hash of the ordered addresses
         bytes32 identifier = keccak256(abi.encodePacked(baseToken, quoteToken));
@@ -134,7 +109,7 @@ contract OrderBookFactory is ReentrancyGuard, Pausable {
         newPair.fee = initialFee;
         newPair.feeAddress = feeAddress;
 
-        emit OrderBookCreated(identifier, baseToken, quoteToken, owner);
+        emit OrderBookCreated(identifier, baseToken, quoteToken, msg.sender);
     }
 
     //Existe el libro
@@ -147,7 +122,7 @@ contract OrderBookFactory is ReentrancyGuard, Pausable {
     }
 
     function getPairById(bytes32 _pairId)
-        public
+        external
         view
         returns (
             address baseToken,
@@ -167,15 +142,6 @@ contract OrderBookFactory is ReentrancyGuard, Pausable {
             pairs[_pairId].fee,
             pairs[_pairId].feeAddress
         );
-    }
-
-    /**
-     *  @notice Cambia la dirección del propietario autorizado.
-     *  @param newOwner La nueva dirección del propietario.
-     */
-    function setOwner(address newOwner) external onlyOwner {
-        if (newOwner == address(0)) revert OBF__InvalidOwnerAddressZero();
-        owner = newOwner;
     }
 
     function setPairStatus(bytes32 _pairId, bool _enabled) external onlyOwner {
@@ -204,16 +170,8 @@ contract OrderBookFactory is ReentrancyGuard, Pausable {
         emit PairFeeAddressChanged(_pairId, newFeeAddress);
     }
 
-    /**
-     *  @notice Devuelve la dirección del propietario autorizado.
-     *  @return La dirección del propietario actual.
-     */
-    function getOwner() external view returns (address) {
-        return owner;
-    }
-
     function addNewOrder(bytes32 _pairId, uint256 _quantity, uint256 _price, bool _isBuy, uint256 _timestamp)
-        public
+        external
         onlyEnabledPair(_pairId)
         nonReentrant
         whenNotPaused
@@ -221,18 +179,16 @@ contract OrderBookFactory is ReentrancyGuard, Pausable {
         if (!pairExists(_pairId)) revert OBF__PairDoesNotExist();
         if (_quantity == 0) revert OBF__InvalidQuantityValueZero();
 
-        PairLib.Pair storage pair = pairs[_pairId];
         if (_isBuy) {
-            pair.addBuyOrder(_price, _quantity, _timestamp);
+            pairs[_pairId].addBuyOrder(_price, _quantity, _timestamp);
         } else {
-            pair.addSellOrder(_price, _quantity, _timestamp);
+            pairs[_pairId].addSellOrder(_price, _quantity, _timestamp);
         }
     }
 
-    function cancelOrder(bytes32 _pairId, bytes32 _orderId) public nonReentrant {
+    function cancelOrder(bytes32 _pairId, bytes32 _orderId) external nonReentrant {
         if (!pairExists(_pairId)) revert OBF__PairDoesNotExist();
-        PairLib.Pair storage pair = pairs[_pairId];
-        pair.cancelOrder(_orderId);
+        pairs[_pairId].cancelOrder(_orderId);
     }
 
     /**
@@ -253,42 +209,39 @@ contract OrderBookFactory is ReentrancyGuard, Pausable {
         emit ContractPauseStatusChanged(false);
     }
 
-    function getPairFee(bytes32 _pairId) public view returns (uint256) {
+    function getPairFee(bytes32 _pairId) external view returns (uint256) {
         if (!pairExists(_pairId)) revert OBF__PairDoesNotExist();
         return pairs[_pairId].fee;
     }
 
-    function getTraderOrdersForPair(bytes32 _pairId, address _trader) public view returns (bytes32[] memory) {
+    function getTraderOrdersForPair(bytes32 _pairId, address _trader) external view returns (bytes32[] memory) {
         if (!pairExists(_pairId)) revert OBF__PairDoesNotExist();
 
-        PairLib.Pair storage pair = pairs[_pairId];
-        return pair.getTraderOrders(_trader);
+        return pairs[_pairId].getTraderOrders(_trader);
     }
 
-    function getOrderDetailForPair(bytes32 _pairId, bytes32 _orderId) public view returns (OrderBookLib.Order memory) {
+    function getOrderDetailForPair(bytes32 _pairId, bytes32 _orderId)
+        external
+        view
+        returns (OrderBookLib.Order memory)
+    {
         if (!pairExists(_pairId)) revert OBF__PairDoesNotExist();
 
-        PairLib.Pair storage pair = pairs[_pairId];
-        return pair.getOrderDetail(_orderId);
+        return pairs[_pairId].getOrderDetail(_orderId);
     }
 
-    function getTop3BuyPricesForPair(bytes32 pairId) public view returns (uint256[3] memory) {
-        PairLib.Pair storage pair = pairs[pairId];
-        return pair.getTop3BuyPrices();
+    function getTop3BuyPricesForPair(bytes32 pairId) external view returns (uint256[3] memory) {
+        return pairs[pairId].getTop3BuyPrices();
     }
 
-    function getTop3SellPricesForPair(bytes32 pairId) public view returns (uint256[3] memory) {
-        PairLib.Pair storage pair = pairs[pairId];
-        return pair.getTop3SellPrices();
+    function getTop3SellPricesForPair(bytes32 pairId) external view returns (uint256[3] memory) {
+        return pairs[pairId].getTop3SellPrices();
     }
 
     function getPricePointDataForPair(bytes32 _pairId, uint256 price, bool isBuy)
-        public
-        view
-        returns (uint256, uint256)
+        external view returns (uint256, uint256)
     {
-        PairLib.Pair storage pair = pairs[_pairId];
-        OrderBookLib.PricePoint storage p = pair.getPrice(price, isBuy);
+        OrderBookLib.PricePoint storage p = pairs[_pairId].getPrice(price, isBuy);
         return (p.orderCount, p.orderValue);
     }
 }

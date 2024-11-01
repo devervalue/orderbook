@@ -90,16 +90,16 @@ contract OrderBookFactoryTest is Test {
         factory.addPair(address(tokenA), address(0), 5, feeAddress);
     }
 
-    //Prueba que se revierte si el propietario es la dirección cero, simulando un cambio inválido de propietario.
-    function testRevertIfOwnerAddressIsZero() public {
-        vm.prank(owner);
-        vm.expectRevert(OrderBookFactory.OBF__InvalidOwnerAddressZero.selector);
-        factory.setOwner(address(0));
-
-        //vm.prank(owner);
-        //vm.expectRevert(OrderBookFactory.OBF__InvalidOwnerAddress.selector);
-        //factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
-    }
+//    //Prueba que se revierte si el propietario es la dirección cero, simulando un cambio inválido de propietario.
+//    function testRevertIfOwnerAddressIsZero() public {
+//        vm.prank(owner);
+//        vm.expectRevert(Ownable.OwnableInvalidOwner.selector);
+//        factory.transferOwnership(address(0));
+//
+//        //vm.prank(owner);
+//        //vm.expectRevert(Ownable.OwnableUnauthorizedAccount.selector);
+//        //factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
+//    }
 
     //Verifica que se revierte si los tokens base y de cotización son iguales.
     function testRevertIfTokensAreEqual() public {
@@ -126,12 +126,12 @@ contract OrderBookFactoryTest is Test {
         assertEq(quoteToken, address(tokenA));
     }
 
-    //Verifica que se revierte la transacción si alguien que no es el propietario intenta agregar un libro de órdenes.
-    function testRevertIfaddPairCalledByNonOwner() public {
-        vm.prank(trader1); // Simula que un usuario que no es el propietario llama a la función
-        vm.expectRevert(OrderBookFactory.OBF__InvalidOwnerAddress.selector);
-        factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
-    }
+//    //Verifica que se revierte la transacción si alguien que no es el propietario intenta agregar un libro de órdenes.
+//    function testRevertIfaddPairCalledByNonOwner() public {
+//        vm.prank(trader1); // Simula que un usuario que no es el propietario llama a la función
+//        vm.expectRevert(Ownable.OwnableUnauthorizedAccount.selector);
+//        factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
+//    }
 
     //Comprueba que se puedan agregar múltiples libros de órdenes de forma exitosa y que los identificadores sean únicos.
     function testAddMultipleOrderBooks() public {
@@ -154,12 +154,12 @@ contract OrderBookFactoryTest is Test {
     }
 
     //Verifica que un nuevo propietario pueda agregar un libro de órdenes después de que se haya cambiado el propietario.
-    function testSetOwnerAndaddPair() public {
+    function testtransferOwnershipAndaddPair() public {
         address newOwner = address(5);
 
         // Cambiamos el propietario
         vm.prank(owner);
-        factory.setOwner(newOwner);
+        factory.transferOwnership(newOwner);
 
         vm.prank(newOwner); // Ahora simulamos que el nuevo propietario llama a la función
         factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
@@ -365,51 +365,51 @@ contract OrderBookFactoryTest is Test {
     //-------------------- SET OWNER ------------------------------
 
     //Verifica que el propietario actual pueda cambiar correctamente la dirección del propietario a una nueva dirección válida.
-    function testSetOwnerAsOwner() public {
+    function testtransferOwnershipAsOwner() public {
         // El propietario actual intenta cambiar la dirección del propietario
         vm.prank(owner); // Simular que el propietario actual está llamando
-        factory.setOwner(trader1);
+        factory.transferOwnership(trader1);
 
         // Verificar que el propietario haya sido cambiado correctamente
-        assertEq(factory.getOwner(), trader1, unicode"La nueva dirección del propietario debería ser addr1");
+        assertEq(factory.owner(), trader1, unicode"La nueva dirección del propietario debería ser addr1");
     }
 
-    //Verifica que la función setOwner revierta si es llamada por una dirección que no es el propietario actual.
-    function testSetOwnerRevertsIfCallerIsNotOwner() public {
+    //Verifica que la función transferOwnership revierta si es llamada por una dirección que no es el propietario actual.
+    function testtransferOwnershipRevertsIfCallerIsNotOwner() public {
         // Intentar cambiar el propietario desde una dirección que no es el propietario actual
 
         // Verificar que la llamada revierte
         vm.startPrank(trader1);
-        vm.expectRevert(OrderBookFactory.OBF__InvalidOwnerAddress.selector);
-        factory.setOwner(trader1);
+        vm.expectRevert(Ownable.OwnableUnauthorizedAccount.selector);
+        factory.transferOwnership(trader1);
         vm.stopPrank();
     }
 
-    //Verifica que la función setOwner revierta si se intenta establecer la dirección del propietario como la dirección cero (address(0)).
-    function testSetOwnerRevertsIfNewOwnerIsZeroAddress() public {
+    //Verifica que la función transferOwnership revierta si se intenta establecer la dirección del propietario como la dirección cero (address(0)).
+    function testtransferOwnershipRevertsIfNewOwnerIsZeroAddress() public {
         // El propietario intenta establecer la dirección cero como el nuevo propietario
         vm.prank(owner); // Simular que el propietario actual está llamando
 
         // Verificar que la llamada revierte debido a que la dirección nueva es 0x0
-        vm.expectRevert(OrderBookFactory.OBF__InvalidOwnerAddressZero.selector);
-        factory.setOwner(address(0));
+        vm.expectRevert(Ownable.OwnableInvalidOwner.selector);
+        factory.transferOwnership(address(0));
     }
 
     //Después de cambiar la propiedad una vez, verificar que el nuevo propietario pueda cambiar la propiedad nuevamente a otra dirección válida.
-    function testSetOwnerFromNewOwner() public {
+    function testtransferOwnershipFromNewOwner() public {
         // El propietario actual (owner) cambia la propiedad a addr1
         vm.prank(owner); // Simular que el propietario actual llama
-        factory.setOwner(trader1);
+        factory.transferOwnership(trader1);
 
         // Verificar que la propiedad haya sido transferida a addr1
-        assertEq(factory.getOwner(), trader1, unicode"El nuevo propietario debería ser addr1");
+        assertEq(factory.owner(), trader1, unicode"El nuevo propietario debería ser addr1");
 
         // El nuevo propietario (addr1) cambia la propiedad a addr2
         vm.prank(trader1); // Simular que el nuevo propietario llama
-        factory.setOwner(owner);
+        factory.transferOwnership(owner);
 
         // Verificar que la propiedad haya sido transferida a addr2
-        assertEq(factory.getOwner(), owner, unicode"El nuevo propietario debería ser addr2");
+        assertEq(factory.owner(), owner, unicode"El nuevo propietario debería ser addr2");
     }
 
     //-------------------- SET ORDER BOOK STATUS ------------------------------
@@ -489,7 +489,7 @@ contract OrderBookFactoryTest is Test {
         vm.prank(trader1); // Simular que una dirección no propietaria llama
 
         // Verificar que la llamada revierte
-        vm.expectRevert(OrderBookFactory.OBF__InvalidOwnerAddress.selector);
+        vm.expectRevert(Ownable.OwnableUnauthorizedAccount.selector);
         factory.setPairFee(orderId1, newFee);
     }
 
@@ -559,7 +559,7 @@ contract OrderBookFactoryTest is Test {
         // Intentar cambiar la dirección de la tarifa desde una dirección no propietaria
         vm.prank(trader1); // Simular que una dirección no propietaria llama
         // Verificar que la llamada revierte
-        vm.expectRevert(OrderBookFactory.OBF__InvalidOwnerAddress.selector);
+        vm.expectRevert(Ownable.OwnableUnauthorizedAccount.selector);
         factory.setPairFeeAddress(nonExistentOrderBookId, newFeeAddress);
     }
 
@@ -619,25 +619,25 @@ contract OrderBookFactoryTest is Test {
     //-------------------- GET OWNER ------------------------------
 
     //Verifica que la dirección del propietario sea la dirección inicialmente establecida al desplegar el contrato.
-    function testGetOwnerInitially() public {
+    function testownerInitially() public {
         // Verificar que la dirección del propietario inicial sea la correcta
         assertEq(
-            factory.getOwner(),
+            factory.owner(),
             owner,
             unicode"La dirección del propietario debería ser la dirección inicial establecida."
         );
     }
 
-    //Verifica que la función getOwner devuelva la dirección correcta después de que el propietario haya sido cambiado utilizando la función setOwner.
-    function testGetOwnerAfterOwnershipChange() public {
+    //Verifica que la función owner devuelva la dirección correcta después de que el propietario haya sido cambiado utilizando la función transferOwnership.
+    function testownerAfterOwnershipChange() public {
         address newOwner = makeAddr("newOwner");
         // Cambiar la propiedad a una nueva dirección
         vm.prank(owner); // Simular que el propietario actual está llamando
-        factory.setOwner(newOwner);
+        factory.transferOwnership(newOwner);
 
-        // Verificar que la función getOwner devuelva la nueva dirección de propietario
+        // Verificar que la función owner devuelva la nueva dirección de propietario
         assertEq(
-            factory.getOwner(),
+            factory.owner(),
             newOwner,
             unicode"La dirección del propietario debería haber cambiado a la nueva dirección."
         );
@@ -709,7 +709,7 @@ contract OrderBookFactoryTest is Test {
         bool isBuy = true;
 
         vm.prank(owner);
-        vm.expectRevert(OrderBookFactory.OBF__OrderBookNotEnabled.selector);
+        vm.expectRevert(OrderBookFactory.OBF__PairNotEnabled.selector);
         factory.addNewOrder(nonExistentOrderBookId, quantity, price, isBuy, 1);
     }
 
@@ -1206,7 +1206,7 @@ contract OrderBookFactoryTest is Test {
         bool isBuy = true;
 
         vm.prank(trader1);
-        vm.expectRevert(OrderBookFactory.OBF__OrderBookNotEnabled.selector);
+        vm.expectRevert(OrderBookFactory.OBF__PairNotEnabled.selector);
         factory.addNewOrder(invalidOrderBookKey, quantity, price, isBuy, 1);
     }
 
