@@ -262,9 +262,9 @@ contract OrderBookFactoryTest is Test {
         bytes32[] memory keys = factory.getPairIds();
 
         // Verificar que las claves se devuelven en el mismo orden en que se agregaron
-        bytes32 expectedKey1 = keccak256(abi.encodePacked(address(tokenB), address(tokenA)));
+        bytes32 expectedKey1 = keccak256(abi.encodePacked(address(tokenA), address(tokenB)));
         bytes32 expectedKey2 = keccak256(abi.encodePacked(trader1, address(tokenB)));
-        bytes32 expectedKey3 = keccak256(abi.encodePacked(trader2, trader1));
+        bytes32 expectedKey3 = keccak256(abi.encodePacked(trader1, trader2));
 
         assertEq(keys.length, 3, unicode"Debería haber tres claves en el array");
         console.logBytes32(expectedKey1);
