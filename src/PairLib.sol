@@ -21,10 +21,6 @@ library PairLib {
     error PL__OrderIdDoesNotExist();
     /// @notice Thrown when an order ID already exists
     error PL__OrderIdAlreadyExists();
-    /// @notice Thrown when the fee exceeds the maximum allowed
-    /// @param fee The proposed fee
-    /// @param maxFee The maximum allowed fee
-    error PL__FeeExceedsMaximum(uint256 fee, uint256 maxFee);
     /// @notice Thrown when an invalid price is provided
     /// @param price The invalid price
     error PL__InvalidPrice(uint256 price);
@@ -36,8 +32,6 @@ library PairLib {
 
     /// @dev Precision factor for price calculations
     uint256 private constant PRECISION = 1e18;
-    /// @dev Maximum fee in basis points (2%)
-    uint256 private constant MAX_FEE = 200;
     /// @dev Maximum number of orders that can be filled in a single transaction
     uint256 private constant MAX_NUMBER_ORDERS_FILLED = 1500; // A new order can take this orders at max
     /// @dev Constant representing the status of a newly created order
@@ -123,7 +117,6 @@ library PairLib {
     /// @param pair The storage reference to the Pair struct
     /// @param newFee The new fee to be set (in basis points)
     function changePairFee(Pair storage pair, uint256 newFee) internal {
-        if (newFee > MAX_FEE) revert PL__FeeExceedsMaximum(newFee, MAX_FEE);
         pair.fee = newFee;
         emit PairFeeChanged(pair.baseToken, pair.quoteToken, newFee);
     }

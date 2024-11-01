@@ -42,7 +42,7 @@ contract CreateOrderBooks is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         for (uint256 i = 0; i < orderBooks.length; i++) {
-            orderBookFactory.addOrderBook(
+            orderBookFactory.addPair(
                 orderBooks[i].tokenA, orderBooks[i].tokenB, orderBooks[i].fee, orderBooks[i].feeAddress
             );
         }
