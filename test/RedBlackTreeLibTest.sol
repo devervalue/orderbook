@@ -6,7 +6,7 @@ import "../src/QueueLib.sol";
 import "../src/RedBlackTreeLib.sol";
 import "forge-std/console.sol";
 
-contract RedBlackTreeTest is Test {
+contract RedBlackTreeLibTest is Test {
     using RedBlackTreeLib for RedBlackTreeLib.Tree;
 
     RedBlackTreeLib.Tree private tree;
@@ -656,5 +656,547 @@ contract RedBlackTreeTest is Test {
         assertEq(node.red, false, "Root node should be black after removal");
         assertEq(node.left, 5, "New root should have 5 as left child");
         assertEq(node.right, 25, "New root should have 25 as right child");
+    }
+
+    function testRemoveRedLeafNode() public {
+        // Case 1: Removing a red leaf node
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+        tree.insert(3);
+
+        // Verify initial structure
+        assertEq(tree.root, 10);
+        assertEq(tree.nodes[10].left, 5);
+        assertEq(tree.nodes[10].right, 15);
+        assertEq(tree.nodes[5].left, 3);
+
+        // Remove the leaf node 3
+        tree.remove(3);
+
+        // Verify the structure after removal
+        assertEq(tree.root, 10);
+        assertEq(tree.nodes[10].left, 5);
+        assertEq(tree.nodes[10].right, 15);
+        assertEq(tree.nodes[5].left, 0); // 0 represents EMPTY
+        assertTrue(tree.nodes[10].red == false);
+        assertTrue(tree.nodes[5].red == false);
+        assertTrue(tree.nodes[15].red == false);
+    }
+
+    function testRemoveBlackNodeWithOneChildren() public {
+        // Case 2: Removing a black node with one child
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+        tree.insert(3);
+
+        // Verify initial structure
+        assertEq(tree.root, 10);
+        assertEq(tree.nodes[10].left, 5);
+        assertEq(tree.nodes[5].left, 3);
+
+        // Remove node 5 (black node with one red child)
+        tree.remove(5);
+
+        // Verify the structure after removal
+        assertEq(tree.root, 10);
+        assertTrue(tree.nodes[10].left == 3);
+        assertTrue(tree.nodes[10].red == false);
+        assertTrue(tree.nodes[3].red == false);
+        assertTrue(tree.nodes[15].red == false);
+    }
+
+    function testRemoveBlackNodeWithTwoChildren() public {
+        // Case 2: Removing a black node with one child
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+        tree.insert(3);
+        tree.insert(7);
+
+        // Verify initial structure
+        assertEq(tree.root, 10);
+        assertEq(tree.nodes[10].left, 5);
+        assertEq(tree.nodes[5].left, 3);
+        assertEq(tree.nodes[5].right, 7);
+
+        // Remove node 5 (black node with one red child)
+        tree.remove(5);
+
+        // Verify the structure after removal
+        assertEq(tree.root, 10);
+        assertTrue(tree.nodes[10].left == 3 || tree.nodes[10].left == 7);
+        assertTrue(tree.nodes[10].red == false);
+        assertTrue(tree.nodes[3].red == true);
+        assertTrue(tree.nodes[7].red == false);
+        assertTrue(tree.nodes[15].red == false);
+    }
+
+    function testBasicLeftRotation() public {
+        tree.insert(5);
+        tree.insert(7);
+
+        // Perform left rotation on 5
+        // Note: Since rotateLeft is private, we'll need to trigger it indirectly
+        // This could be done by inserting more nodes or removing nodes to cause rebalancing
+        tree.insert(8);
+
+        // Assert the new structure
+        assertEq(tree.root, 7);
+        assertEq(tree.getNode(7).left, 5);
+        assertEq(tree.getNode(7).right, 8);
+    }
+
+    function testLeftRotationWithNonEmptyCursorLeft() public {
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(20);
+        tree.insert(15);
+        tree.insert(25);
+        tree.insert(28);
+        tree.insert(30);
+
+        // Trigger rotation
+        tree.insert(35);
+
+        // Assert the new structure
+        assertEq(tree.root, 20);
+        assertEq(tree.getNode(20).left, 10);
+        assertEq(tree.getNode(20).right, 28);
+        assertEq(tree.getNode(10).right, 15);
+    }
+
+    function testLeftRotationOnRoot() public {
+        tree.insert(5);
+        tree.insert(7);
+
+        // Trigger rotation
+        tree.insert(8);
+
+        // Assert the new root
+        assertEq(tree.root, 7);
+    }
+
+    function testLeftRotationOnLeftChild() public {
+        tree.insert(20);
+        tree.insert(5);
+        tree.insert(25);
+
+        // Trigger rotation
+        tree.insert(10);
+        tree.insert(15);
+
+
+        // Assert the new structure
+        assertEq(tree.getNode(10).left, 5);
+        assertEq(tree.getNode(10).right, 15);
+        assertEq(tree.getNode(20).left, 10);
+    }
+
+    function testLeftRotationOnRightChild() public {
+        tree.insert(20);
+        tree.insert(5);
+        tree.insert(25);
+
+        // Trigger rotation
+        tree.insert(30);
+        tree.insert(35);
+
+
+        // Assert the new structure
+        assertEq(tree.getNode(20).right, 30);
+        assertEq(tree.getNode(30).right, 35);
+        assertEq(tree.getNode(30).left, 25);
+    }
+
+    function testBasicRightRotation() public {
+        tree.insert(7);
+        tree.insert(5);
+
+        // Trigger rotation
+        tree.insert(3);
+
+        // Assert the new structure
+        assertEq(tree.root, 5);
+        assertEq(tree.getNode(5).left, 3);
+        assertEq(tree.getNode(5).right, 7);
+    }
+
+    function testRightRotationWithNonEmptyCursorRight() public {
+        tree.insert(35);
+        tree.insert(20);
+        tree.insert(30);
+        tree.insert(25);
+
+
+        tree.insert(15);
+        tree.insert(10);
+        tree.insert(5);
+
+        // Trigger rotation
+        tree.insert(2);
+
+        // Assert the new structure
+        assertEq(tree.root, 20);
+        assertEq(tree.getNode(20).left, 10);
+        assertEq(tree.getNode(20).right, 30);
+        assertEq(tree.getNode(30).left, 25);
+    }
+
+    function testRightRotationOnRoot() public {
+        tree.insert(7);
+        tree.insert(5);
+
+        // Trigger rotation
+        tree.insert(3);
+
+        // Assert the new root
+        assertEq(tree.root, 5);
+    }
+
+    function testRightRotationOnRightChild() public {
+        tree.insert(5);
+        tree.insert(10);
+        tree.insert(20);
+        tree.insert(15);
+
+        // Trigger rotation
+        tree.insert(13);
+
+        // Assert the new structure
+        assertEq(tree.getNode(10).right, 15);
+        assertEq(tree.getNode(15).left, 13);
+        assertEq(tree.getNode(15).right, 20);
+    }
+
+    function testRightRotationOnLeftChild() public {
+        tree.insert(20);
+        tree.insert(25);
+        tree.insert(30);
+        tree.insert(10);
+
+        // Trigger rotation
+        tree.insert(5);
+
+        // Assert the new structure
+        assertEq(tree.getNode(25).left, 10);
+        assertEq(tree.getNode(10).left, 5);
+        assertEq(tree.getNode(10).right, 20);
+    }
+
+    function testComplexTreeStructureLeftRotation() public {
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+        tree.insert(3);
+        tree.insert(7);
+        tree.insert(12);
+        tree.insert(17);
+        tree.insert(6);
+        tree.insert(8);
+
+        // Trigger rotation on 5
+        tree.insert(9);
+
+        // Assert the new structure
+        assertEq(tree.getNode(10).left, 8);
+        assertEq(tree.getNode(7).left, 5);
+        assertEq(tree.getNode(7).right, 10);
+        assertEq(tree.getNode(8).right, 9);
+    }
+
+    function testComplexTreeStructureRightRotation() public {
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+        tree.insert(3);
+        tree.insert(7);
+        tree.insert(12);
+        tree.insert(17);
+        tree.insert(13);
+        tree.insert(14);
+
+        // Trigger rotation on 15
+        tree.insert(11);
+
+        // Assert the new structure
+        assertEq(tree.getNode(13).right, 15);
+        assertEq(tree.getNode(15).left, 14);
+        assertEq(tree.getNode(15).right, 17);
+        assertEq(tree.getNode(10).right, 12);
+    }
+
+    function testRotationAfterRemoval() public {
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+        tree.insert(3);
+        tree.insert(7);
+        tree.remove(3);
+
+        // Trigger rotation
+        tree.insert(4);
+
+        // Assert the new structure
+        assertEq(tree.getNode(10).left, 5);
+        assertEq(tree.getNode(5).left, 4);
+        assertEq(tree.getNode(5).right, 7);
+    }
+
+    // Helper functions
+    function assertNodeColor(uint256 value, bool expectedRed) internal {
+        assertEq(tree.nodes[value].red, expectedRed);
+    }
+
+
+    // Test scenarios
+    function testRemoveBlackLeafWithRedSibling() public {
+        // Scenario 1
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+        tree.insert(3);
+        tree.insert(7);
+
+        assertNodeColor(10, false);
+        assertNodeColor(5, false);
+        assertNodeColor(15, false);
+        assertNodeColor(3, true);
+        assertNodeColor(7, true);
+
+        tree.remove(3);
+
+
+        assertEq(tree.nodes[10].left,5);
+        assertEq(tree.nodes[10].right,15);
+        assertEq(tree.nodes[5].right,7);
+        assertNodeColor(10, false);
+        assertNodeColor(5, false);
+        assertNodeColor(15, false);
+        assertNodeColor(7, true);
+    }
+
+    function testRemoveBlackNodeWithTwoBlackNephews() public {
+        // Scenario 2
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+        tree.insert(3);
+        tree.insert(7);
+        tree.insert(13);
+        tree.insert(17);
+
+        assertNodeColor(10, false);
+        assertNodeColor(5, false);
+        assertNodeColor(15, false);
+        assertNodeColor(3, true);
+        assertNodeColor(7, true);
+        assertNodeColor(13, true);
+        assertNodeColor(17, true);
+
+        tree.remove(3);
+
+        assertEq(tree.nodes[10].left,5);
+        assertEq(tree.nodes[10].right,15);
+        assertEq(tree.nodes[5].right,7);
+        assertNodeColor(10, false);
+        assertNodeColor(5, false);
+        assertNodeColor(15, false);
+        assertNodeColor(7, true);
+        assertNodeColor(13, true);
+        assertNodeColor(17, true);
+    }
+
+    function testRemoveBlackNodeSiblingFarChildBlackNearChildRed() public {
+        // Scenario 3
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+        tree.insert(3);
+        tree.insert(7);
+        tree.insert(6);
+
+        assertNodeColor(10, false);
+        assertNodeColor(5, true);
+        assertNodeColor(15, false);
+        assertNodeColor(3, false);
+        assertNodeColor(7, false);
+        assertNodeColor(6, true);
+
+        tree.remove(3);
+
+        assertEq(tree.nodes[10].left,6);
+        assertEq(tree.nodes[10].right,15);
+        assertEq(tree.nodes[6].right,7);
+        assertEq(tree.nodes[6].left,5);
+
+        assertNodeColor(10, false);
+        assertNodeColor(6, true);
+        assertNodeColor(15, false);
+        assertNodeColor(5, false);
+        assertNodeColor(7, false);
+    }
+
+    function testRemoveBlackNodeSiblingBothChildrenRed() public {
+        // Scenario 4
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+        tree.insert(3);
+        tree.insert(7);
+        tree.insert(6);
+        tree.insert(8);
+
+        assertNodeColor(10, false);
+        assertNodeColor(5, true);
+        assertNodeColor(15, false);
+        assertNodeColor(3, false);
+        assertNodeColor(7, false);
+        assertNodeColor(6, true);
+        assertNodeColor(8, true);
+
+        tree.remove(3);
+
+        assertEq(tree.nodes[10].left,7);
+        assertEq(tree.nodes[7].right,8);
+        assertEq(tree.nodes[7].left,5);
+        assertEq(tree.nodes[5].right,6);
+
+        assertNodeColor(10, false);
+        assertNodeColor(7, true);
+        assertNodeColor(15, false);
+        assertNodeColor(5, false);
+        assertNodeColor(8, false);
+        assertNodeColor(6, true);
+    }
+
+    function testRemoveBlackNodeMultipleIterations() public {
+        // Scenario 5
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+        tree.insert(3);
+        tree.insert(7);
+        tree.insert(13);
+        tree.insert(17);
+        tree.insert(1);
+        tree.insert(4);
+
+
+        assertNodeColor(10, false);
+        assertNodeColor(5, true);
+        assertNodeColor(15, false);
+        assertNodeColor(3, false);
+        assertNodeColor(7, false);
+        assertNodeColor(13, true);
+        assertNodeColor(17, true);
+        assertNodeColor(1, true);
+        assertNodeColor(4, true);
+
+        tree.remove(13);
+
+        assertEq(tree.nodes[10].left,5);
+        assertEq(tree.nodes[10].right,15);
+        assertEq(tree.nodes[15].left,0);
+        assertEq(tree.nodes[15].right,17);
+
+        assertNodeColor(10, false);
+        assertNodeColor(5, true);
+        assertNodeColor(15, false);
+        assertNodeColor(3, false);
+        assertNodeColor(7, false);
+        assertNodeColor(17, true);
+        assertNodeColor(1, true);
+        assertNodeColor(4, true);
+    }
+
+    function testRemoveBlackLeftChild() public {
+        // Scenario 6 (using tree from scenario 5)
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+        tree.insert(3);
+        tree.insert(7);
+        tree.insert(13);
+        tree.insert(17);
+        tree.insert(1);
+        tree.insert(4);
+
+        tree.remove(3);
+
+        assertEq(tree.nodes[10].left,5);
+        assertEq(tree.nodes[10].right,15);
+        assertEq(tree.nodes[15].left,13);
+        assertEq(tree.nodes[15].right,17);
+        assertEq(tree.nodes[5].left,4);
+        assertEq(tree.nodes[4].left,1);
+
+        assertNodeColor(10, false);
+        assertNodeColor(5, true);
+        assertNodeColor(15, false);
+        assertNodeColor(7, false);
+        assertNodeColor(17, true);
+        assertNodeColor(13, true);
+        assertNodeColor(1, true);
+        assertNodeColor(4, false);
+    }
+
+    function testRemoveBlackRightChild() public {
+        // Scenario 7 (using tree from scenario 5)
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+        tree.insert(3);
+        tree.insert(7);
+        tree.insert(13);
+        tree.insert(17);
+        tree.insert(1);
+        tree.insert(4);
+
+        assertEq(tree.nodes[10].left,5);
+        assertEq(tree.nodes[10].right,15);
+        assertEq(tree.nodes[15].left,13);
+        assertEq(tree.nodes[15].right,17);
+        assertEq(tree.nodes[5].left,3);
+        assertEq(tree.nodes[3].left,1);
+        assertEq(tree.nodes[3].left,1);
+        assertEq(tree.nodes[3].right,4);
+
+        tree.remove(7);
+
+        assertEq(tree.nodes[10].left,3);
+        assertEq(tree.nodes[10].right,15);
+        assertEq(tree.nodes[15].left,13);
+        assertEq(tree.nodes[15].right,17);
+        assertEq(tree.nodes[3].right,5);
+        assertEq(tree.nodes[3].left,1);
+        assertEq(tree.nodes[5].left,4);
+
+        assertNodeColor(10, false);
+        assertNodeColor(5, false);
+        assertNodeColor(15, false);
+        assertNodeColor(7, false);
+        assertNodeColor(17, true);
+        assertNodeColor(13, true);
+        assertNodeColor(3, true);
+        assertNodeColor(4, true);
+    }
+
+    function testRemoveNodeFixRoot() public {
+        // Scenario 8
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+
+        assertNodeColor(10, false);
+        assertNodeColor(5, true);
+        assertNodeColor(15, true);
+
+        tree.remove(10);
+
+
+        assertNodeColor(5, true);
+        assertNodeColor(15, false);
     }
 }

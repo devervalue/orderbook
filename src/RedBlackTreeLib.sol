@@ -449,7 +449,7 @@ library RedBlackTreeLib {
      * @return The value of the maximum node in the subtree. If the subtree is empty,
      *         it returns `EMPTY`.
      */
-    function treeMaximum(Tree storage self, uint256 value) private view returns (uint256) {
+    function treeMaximum(Tree storage self, uint256 value) internal view returns (uint256) {
         while (self.nodes[value].right != EMPTY) {
             value = self.nodes[value].right;
         }
