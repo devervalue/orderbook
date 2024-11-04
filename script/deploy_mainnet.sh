@@ -1,5 +1,5 @@
 #!/bin/sh
 
-# Deploy OrderbookFactory
-echo "Deploy OrderbookFactory"
-source .env && forge script script/DeployScript.s.sol --rpc-url https://arbitrum.meowrpc.com --broadcast --private-key $PRIVATE_KEY
+# Deploy OrderbookFactory Mainnet
+echo "Deploy Mainnet"
+source .env && forge script script/DeployMainnetScript.s.sol --rpc-url $RPC_ARBISCAN_URL --broadcast --private-key $PRIVATE_KEY_ARBISCAN
