@@ -3,8 +3,8 @@ pragma solidity ^0.8.26;
 
 import "forge-std/Test.sol";
 import "../src/OrderBookFactory.sol";
-import "../src/MyTokenB.sol";
-import "../src/MyTokenA.sol";
+import "./MyTokenB.sol";
+import "./MyTokenA.sol";
 import "forge-std/console.sol";
 
 contract OrderBookFactoryTest is Test {
@@ -224,7 +224,7 @@ contract OrderBookFactoryTest is Test {
         assertEq(keys.length, 1, unicode"Debería haber una sola clave en el array");
 
         // Verificar que el identificador del libro de órdenes es correcto
-        bytes32 expectedKey = keccak256(abi.encodePacked(address(tokenB), address(tokenA)));
+        bytes32 expectedKey = keccak256(abi.encodePacked(address(tokenA), address(tokenB)));
         assertEq(keys[0], expectedKey, unicode"El identificador del libro de órdenes debería coincidir");
     }
 
@@ -243,7 +243,7 @@ contract OrderBookFactoryTest is Test {
         assertEq(keys.length, 2, unicode"Debería haber dos claves en el array");
 
         // Verificar que los identificadores de los libros de órdenes son correctos
-        bytes32 expectedKey1 = keccak256(abi.encodePacked(address(tokenB), address(tokenA))); //TODO REVISAR PQ LOS DEBO INVERTIR
+        bytes32 expectedKey1 = keccak256(abi.encodePacked(address(tokenA), address(tokenB))); //TODO REVISAR PQ LOS DEBO INVERTIR
         bytes32 expectedKey2 = keccak256(abi.encodePacked(trader1, address(tokenB)));
         assertEq(keys[0], expectedKey1, unicode"El primer identificador debería coincidir");
         assertEq(keys[1], expectedKey2, unicode"El segundo identificador debería coincidir");
@@ -380,7 +380,7 @@ contract OrderBookFactoryTest is Test {
 
         // Verificar que la llamada revierte
         vm.startPrank(trader1);
-        vm.expectRevert(Ownable.OwnableUnauthorizedAccount.selector);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, trader1));
         factory.transferOwnership(trader1);
         vm.stopPrank();
     }
@@ -391,7 +391,7 @@ contract OrderBookFactoryTest is Test {
         vm.prank(owner); // Simular que el propietario actual está llamando
 
         // Verificar que la llamada revierte debido a que la dirección nueva es 0x0
-        vm.expectRevert(Ownable.OwnableInvalidOwner.selector);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableInvalidOwner.selector, address(0)));
         factory.transferOwnership(address(0));
     }
 
@@ -489,7 +489,7 @@ contract OrderBookFactoryTest is Test {
         vm.prank(trader1); // Simular que una dirección no propietaria llama
 
         // Verificar que la llamada revierte
-        vm.expectRevert(Ownable.OwnableUnauthorizedAccount.selector);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, trader1));
         factory.setPairFee(orderId1, newFee);
     }
 
@@ -559,7 +559,7 @@ contract OrderBookFactoryTest is Test {
         // Intentar cambiar la dirección de la tarifa desde una dirección no propietaria
         vm.prank(trader1); // Simular que una dirección no propietaria llama
         // Verificar que la llamada revierte
-        vm.expectRevert(Ownable.OwnableUnauthorizedAccount.selector);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, trader1));
         factory.setPairFeeAddress(nonExistentOrderBookId, newFeeAddress);
     }
 

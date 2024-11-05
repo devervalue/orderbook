@@ -5,8 +5,8 @@ import "forge-std/Test.sol";
 import "../src/QueueLib.sol";
 import "../src/RedBlackTreeLib.sol";
 import "forge-std/console.sol";
-import "../src/MyTokenA.sol";
-import "../src/MyTokenB.sol";
+import "./MyTokenA.sol";
+import "./MyTokenB.sol";
 
 import "./OrderBookImpl.sol";
 

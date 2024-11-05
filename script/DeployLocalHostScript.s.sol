@@ -4,8 +4,8 @@ pragma solidity ^0.8.26;
 import {Script} from "forge-std/Script.sol";
 import {OrderBookFactory} from "../src/OrderBookFactory.sol";
 import "forge-std/console.sol";
-import "../src/MyTokenA.sol";
-import "../src/MyTokenB.sol";
+import "../test/MyTokenA.sol";
+import "../test/MyTokenB.sol";
 import "../src/interface/IOrderBookFactory.sol";
 
 /// @title DeployLocalHostScript - Script to deploy OrderBookFactory, MyTokenA, and MyTokenB contracts
