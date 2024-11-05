@@ -99,10 +99,7 @@ contract DeployLocalHostScript is Script {
         // @dev Loops through the `orderBooks` array to add each pair to the OrderBookFactory
         for (uint256 i = 0; i < orderBooks.length; i++) {
             orderBookFactory.addPair(
-                orderBooks[i].tokenA,
-                orderBooks[i].tokenB,
-                orderBooks[i].fee,
-                orderBooks[i].feeAddress
+                orderBooks[i].tokenA, orderBooks[i].tokenB, orderBooks[i].fee, orderBooks[i].feeAddress
             );
         }
 
