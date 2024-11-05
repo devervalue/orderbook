@@ -205,9 +205,6 @@ library PairLib {
     /// @param pair The storage reference to the Pair struct
     /// @param newOrder The new order to be added to the book
     function addOrder(Pair storage pair, OrderBookLib.Order memory newOrder) private {
-        // Check if an order with the same ID already exists
-        if (orderExists(pair, newOrder.id)) revert PL__OrderIdAlreadyExists();
-
         // Get the trader's order registry and add the new order
         TraderOrderRegistry storage registry = pair.traderOrderRegistry[msg.sender];
         registry.orderIds.push(newOrder.id);
@@ -520,14 +517,6 @@ library PairLib {
         return pair.buyOrders.getHighestPrice();
     }
 
-    /// @notice Gets the highest sell price in the order book
-    /// @dev This function returns the highest price at which there is a sell order
-    /// @param pair The storage reference to the Pair struct
-    /// @return uint256 The highest sell price, or 0 if there are no sell orders
-    function getHighestSellPrice(Pair storage pair) internal view returns (uint256) {
-        return pair.sellOrders.getHighestPrice();
-    }
-
     /// @notice Retrieves the ID of the next buy order at a specific price
     /// @dev This function is used to traverse the order book for buy orders
     /// @param pair The storage reference to the Pair struct
@@ -535,15 +524,6 @@ library PairLib {
     /// @return bytes32 The ID of the next buy order at the specified price, or 0 if none exists
     function getNextBuyOrderId(Pair storage pair, uint256 price) internal view returns (bytes32) {
         return pair.buyOrders.getNextOrderIdAtPrice(price);
-    }
-
-    /// @notice Retrieves the ID of the next sell order at a specific price
-    /// @dev This function is used to traverse the order book for sell orders
-    /// @param pair The storage reference to the Pair struct
-    /// @param price The price point to check for the next sell order
-    /// @return bytes32 The ID of the next sell order at the specified price, or 0 if none exists
-    function getNextSellOrderId(Pair storage pair, uint256 price) internal view returns (bytes32) {
-        return pair.sellOrders.getNextOrderIdAtPrice(price);
     }
 
     /// @notice Retrieves the top 3 buy prices in the order book

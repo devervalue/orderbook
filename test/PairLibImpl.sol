@@ -23,27 +23,27 @@ contract PairLibImpl {
         pair.feeAddress = address(0x7);
     }
 
+    function disable() public {
+        pair.enabled = false;
+    }
+
     function lastTradePrice() public view returns (uint256 _lastTradePrice) {
         _lastTradePrice = pair.lastTradePrice;
     }
 
     function createOrder(bool isBuy, uint256 price, uint256 quantity) public {
-        if (isBuy){
+        if (isBuy) {
             addBuyBaseToken(price, quantity, msg.sender, block.timestamp + price + quantity);
-        } else{
+        } else {
             addSellBaseToken(price, quantity, msg.sender, block.timestamp + price + quantity);
         }
     }
 
-    function addBuyBaseToken(uint256 _price, uint256 _quantity, address _trader, uint256 nonce)
-        public
-    {
+    function addBuyBaseToken(uint256 _price, uint256 _quantity, address _trader, uint256 nonce) public {
         pair.addBuyOrder(_price, _quantity, nonce);
     }
 
-    function addSellBaseToken(uint256 _price, uint256 _quantity, address _trader, uint256 nonce)
-        public
-    {
+    function addSellBaseToken(uint256 _price, uint256 _quantity, address _trader, uint256 nonce) public {
         pair.addSellOrder(_price, _quantity, nonce);
     }
 
@@ -56,10 +56,6 @@ contract PairLibImpl {
     }
 
     function getLastBuyOrders() public returns (uint256) {
-        return pair.getHighestBuyPrice();
-    }
-
-    function getLastSellOrders() public returns (uint256) {
         return pair.getHighestBuyPrice();
     }
 
@@ -97,12 +93,8 @@ contract PairLibImpl {
         return pair.getTop3SellPrices();
     }
 
-    function getPrice(uint256 price, bool isBuy)
-    public
-    view
-    returns (uint256, uint256)
-    {
-        OrderBookLib.PricePoint storage pp =  pair.getPrice(price, isBuy);
+    function getPrice(uint256 price, bool isBuy) public view returns (uint256, uint256) {
+        OrderBookLib.PricePoint storage pp = pair.getPrice(price, isBuy);
         return (pp.orderValue, pp.orderCount);
     }
 }

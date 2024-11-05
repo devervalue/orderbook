@@ -82,7 +82,7 @@ contract PairLibTest is Test {
 
     // Helper function to assert equality of uint256[3] arrays
     function assertEqualArrays(uint256[3] memory actual, uint256[3] memory expected) internal {
-        for (uint i = 0; i < 3; i++) {
+        for (uint256 i = 0; i < 3; i++) {
             assertEq(actual[i], expected[i], string(abi.encodePacked("Failed at index ", i)));
         }
     }
@@ -211,9 +211,7 @@ contract PairLibTest is Test {
         // Verificar que la orden de compra se empareje parcialmente
         assertEq(pair.getFirstSellOrders(), 0, "La orden de venta debe haberse emparejado");
         assertEq(
-            pair.getFirstBuyOrders(),
-            100 * 10 ** 18,
-            "La cantidad restante de la orden de compra debe estar almacenada"
+            pair.getFirstBuyOrders(), 100 * 10 ** 18, "La cantidad restante de la orden de compra debe estar almacenada"
         );
         assertEq(tokenB.balanceOf(trader1), 500); // Verificar que el balance restante es correcto
         assertEq(tokenA.balanceOf(trader2), 5); // Verificar que el balance restante es correcto
@@ -359,9 +357,7 @@ contract PairLibTest is Test {
         assertEq(pair.getFirstBuyOrders(), 0, "La orden de compra debe haberse ejecutado completamente");
 
         // Verificar que no haya órdenes de venta pendientes a este precio
-        assertEq(
-            pair.getFirstSellOrders(), 0, unicode"No debe haber órdenes de venta pendientes si se emparejaron"
-        );
+        assertEq(pair.getFirstSellOrders(), 0, unicode"No debe haber órdenes de venta pendientes si se emparejaron");
     }
 
     //Sin matching con precio de venta más alto: Verifica que no se realice matching si el precio de venta es mayor al de compra.
@@ -426,11 +422,7 @@ contract PairLibTest is Test {
         console.log("Balance Contract TA FIN", tokenA.balanceOf(address(pair)));
         console.log("Balance Contract TB FIN", tokenB.balanceOf(address(pair)));
 
-        assertEq(
-            pair.getFirstSellOrders(),
-            100 * 10 ** 18,
-            "La orden de venta debe haberse emparejado completamente"
-        );
+        assertEq(pair.getFirstSellOrders(), 100 * 10 ** 18, "La orden de venta debe haberse emparejado completamente");
         assertEq(pair.getFirstBuyOrders(), 0, "La orden de compra debe haberse ejecutado completamente");
         assertEq(tokenB.balanceOf(trader1), 500); // Verificar que el balance restante es correcto
         assertEq(tokenA.balanceOf(trader2), 5); // Verificar que el balance restante es correcto
@@ -640,7 +632,7 @@ contract PairLibTest is Test {
         vm.stopPrank();
 
         // Obtener la orden por su ID
-        OrderBookLib.Order memory result = pair.getOrderById( orderId);
+        OrderBookLib.Order memory result = pair.getOrderById(orderId);
 
         // Verificar los detalles de la orden devuelta
         assertEq(result.price, price, "El precio de la orden debe ser 100");
@@ -657,7 +649,7 @@ contract PairLibTest is Test {
         pair.addSellBaseToken(price, 10, trader1, nonce);
 
         // Obtener la orden por su ID
-        OrderBookLib.Order memory result = pair.getOrderById( orderId);
+        OrderBookLib.Order memory result = pair.getOrderById(orderId);
 
         // Verificar los detalles de la orden devuelta
         assertEq(result.price, price, "El precio de la orden debe ser 100");
@@ -671,7 +663,7 @@ contract PairLibTest is Test {
 
         // Intentar obtener la orden inexistente
         vm.expectRevert(PairLib.PL__OrderIdDoesNotExist.selector);
-        pair.getOrderById( orderId);
+        pair.getOrderById(orderId);
     }
 
     //Recuperar una orden con un orderId inválido: Asegura que la función no devuelve detalles de órdenes con IDs inválidos.
@@ -685,7 +677,7 @@ contract PairLibTest is Test {
 
         // Intentar obtener la orden inválida
         vm.expectRevert(); // Espera que la operación falle
-        pair.getOrderById( invalidOrderId);
+        pair.getOrderById(invalidOrderId);
     }
 
     //Recuperar una orden de un trader sin órdenes: Verifica que la función maneje correctamente cuando un trader no tiene órdenes.
@@ -699,7 +691,7 @@ contract PairLibTest is Test {
 
         // Verificar que se revertirá la transacción ya que trader2 no tiene órdenes
         vm.expectRevert(); // Espera que la operación falle
-        pair.getOrderById( orderId);
+        pair.getOrderById(orderId);
     }
 
     //Verifica que una orden de compra se ejecute completamente si encuentra una orden de venta con el mismo precio.
@@ -860,7 +852,7 @@ contract PairLibTest is Test {
     }
 
     function testLargeNumberOfOrders() public {
-        for (uint i = 1; i <= 100; i++) {
+        for (uint256 i = 1; i <= 100; i++) {
             vm.prank(trader2);
             pair.createOrder(true, i * 10, 10);
             vm.prank(trader1);
@@ -888,7 +880,6 @@ contract PairLibTest is Test {
 
         uint256[3] memory topBuyPrices = pair.getTop3BuyPrices();
         uint256[3] memory topSellPrices = pair.getTop3SellPrices();
-
     }
 
     function testDuplicatePrices() public {
@@ -937,7 +928,6 @@ contract PairLibTest is Test {
         assertEqualArrays(topBuyPrices, [uint256(100), 95, 90]);
         assertEqualArrays(topSellPrices, [uint256(110), 115, 120]);
     }
-
 
     function testGetPrice() public {
         // 1. Empty order book
@@ -1002,4 +992,24 @@ contract PairLibTest is Test {
         vm.stopPrank();
     }
 
+    function testDisabledPair() public {
+        pair.disable();
+        vm.expectRevert(PairLib.PL__PairDisabled.selector);
+        pair.createOrder(true, 100, 100);
+        vm.expectRevert(PairLib.PL__PairDisabled.selector);
+        pair.createOrder(false, 102, 100);
+    }
+
+    function testInvalidQuantity() public {
+        vm.expectRevert(abi.encodeWithSelector(PairLib.PL__InvalidQuantity.selector, 0));
+        pair.createOrder(true, 100, 0);
+    }
+
+    function testDuplicateId() public {
+        vm.prank(trader2);
+        pair.createOrder(true, 100, 5);
+        vm.prank(trader2);
+        vm.expectRevert(PairLib.PL__OrderIdAlreadyExists.selector);
+        pair.createOrder(true, 100, 5);
+    }
 }
