@@ -1199,4 +1199,216 @@ contract RedBlackTreeLibTest is Test {
         assertNodeColor(5, true);
         assertNodeColor(15, false);
     }
+
+    function testNextWithRightChildNoLeftDescendant() public {
+        // 1. Create a tree with at least three nodes
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+
+        // 2. Set up the tree so that one node has a right child,
+        // but that right child doesn't have any left descendants
+        tree.insert(20);
+
+        // The tree should now look like this:
+        //       10
+        //      /  \
+        //     5    15
+        //           \
+        //            20
+
+        // 3. Call the next function on the parent of this right child
+        uint256 nextValue = tree.next(15);
+
+        // 4. Verify that the function correctly returns the right child as the next node
+        assertEq(nextValue, 20, "Next value after 15 should be 20");
+
+        // Additional test to ensure the structure is correct
+        assertEq(tree.next(10), 15, "Next value after 10 should be 15");
+        assertEq(tree.next(5), 10, "Next value after 5 should be 10");
+        assertEq(tree.next(20), 0, "Next value after 20 should be 0 (EMPTY)");
+    }
+
+    function testRemoveNodeWithLeftChildNoRightChild() public {
+        // 1. Create a tree with at least three nodes
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+
+        // 2. Set up the tree so that the node to be removed has a left child but no right child
+        tree.insert(3);
+
+        // The tree should now look like this:
+        //       10
+        //      /  \
+        //     5   15
+        //    /
+        //   3
+
+        // Verify initial structure
+        assertEq(tree.nodes[10].left, 5);
+        assertEq(tree.nodes[10].right, 15);
+        assertEq(tree.nodes[5].left, 3);
+        assertEq(tree.nodes[5].right, 0); // No right child
+
+        // 3. Call the remove function on the node with only a left child (5)
+        tree.remove(5);
+
+        // 4. Verify that the function correctly replaces the removed node with its left child
+        assertEq(tree.nodes[10].left, 3, "Node 5 should be replaced by its left child 3");
+        assertEq(tree.nodes[10].right, 15, "Right child of root should still be 15");
+        assertEq(tree.nodes[3].left, 0, "Node 3 should not have a left child");
+        assertEq(tree.nodes[3].right, 0, "Node 3 should not have a right child");
+
+        // Additional checks to ensure the tree structure is correct
+        assertEq(tree.first(), 3, "First (smallest) node should be 3");
+        assertEq(tree.last(), 15, "Last (largest) node should be 15");
+        assertEq(tree.next(3), 10, "Next node after 3 should be 10");
+        assertEq(tree.next(10), 15, "Next node after 10 should be 15");
+        assertEq(tree.next(15), 0, "Next node after 15 should be 0 (EMPTY)");
+
+        // Check colors to ensure Red-Black properties are maintained
+        assertNodeColor(10, false);
+        assertNodeColor(3, false);
+        assertNodeColor(15, false);
+    }
+
+    function testRemoveEmptyNode() public {
+        tree.insert(10);
+        tree.insert(20);
+
+        // Try to remove a node that doesn't exist
+        vm.expectRevert(RedBlackTreeLib.RBT__ValueCannotBeZero.selector);
+        tree.remove(0);
+    }
+
+    function testRemoveNodeWithTwoChildren2() public {
+        tree.insert(50);
+        tree.insert(30);
+        tree.insert(70);
+        tree.insert(20);
+        tree.insert(40);
+        tree.insert(60);
+        tree.insert(80);
+
+        // Remove the root node (50), which has both left and right children
+        tree.remove(50);
+
+        // Verify the new structure
+        assertTrue(!tree.exists(50));
+        assertTrue(tree.exists(60)); // 60 should replace 50 as the new root
+        assertTrue(tree.root == 60); // 60 should replace 50 as the new root
+        // Add more assertions to verify the new tree structure
+    }
+
+    function testReplaceParentScenarios() public {
+
+        // Setup: Create a simple tree
+        tree.insert( 50);
+        tree.insert( 25);
+        tree.insert( 75);
+        tree.insert( 12);
+        tree.insert( 37);
+        tree.insert( 62);
+        tree.insert( 87);
+
+        // Scenario 1: Replace a non-root node (left child)
+        // Removing 25 will cause 37 to replace it, triggering replaceParent
+        tree.remove( 25);
+        assert(tree.nodes[50].left == 37);
+        assert(tree.nodes[37].parent == 50);
+
+        // Scenario 2: Replace a non-root node (right child)
+        // Removing 75 will cause 87 to replace it, triggering replaceParent
+        tree.remove( 75);
+        assert(tree.nodes[50].right == 87);
+        assert(tree.nodes[87].parent == 50);
+
+        // Scenario 3: Replace the root
+        // Removing 50 will cause another node (likely 62) to become the new root
+        uint256 oldRoot = tree.root;
+        tree.remove(50);
+        assert(tree.root != oldRoot);
+        assert(tree.nodes[tree.root].parent == EMPTY);
+
+        // Verify the structure after removals
+        assert(tree.exists(12));
+        assert(tree.exists(37));
+        assert(tree.exists(62));
+        assert(tree.exists(87));
+        assert(!tree.exists(25));
+        assert(!tree.exists(50));
+        assert(!tree.exists(75));
+    }
+
+    function testNextIsTheLeftmostNodeInRightSubtree() public {
+        // Scenario 7 (using tree from scenario 5)
+        tree.insert(20);
+        tree.insert(100);
+        tree.insert(50);
+        tree.insert(75);
+        tree.insert(60);
+        tree.insert(58);
+
+        assertEq(tree.nodes[50].left,20);
+        assertEq(tree.nodes[50].right,75);
+        assertEq(tree.root,50);
+        assertEq(tree.next(50),58);
+
+    }
+
+    function testRemoveFixupRightSideRedSibling() public {
+
+        // Insert nodes to create a specific tree structure
+        tree.insert( 50);
+        tree.insert( 25);
+        tree.insert( 75);
+        tree.insert( 60);
+        tree.insert( 80);
+        tree.insert( 55);
+        tree.insert( 65);
+
+        // The tree should look like this:
+        //       50B
+        //     /     \
+        //   25B     75R
+        //          /   \
+        //        60B   80B
+        //       /  \
+        //     55R  65R
+
+        // Remove node 25, which will trigger the removeFixup function
+        tree.remove( 25);
+
+        // Verify the tree structure and colors after removal
+        assertEq(tree.root, 75);
+        assertNodeColor(75, false);// Root should be black
+
+        assertEq(tree.nodes[75].left, 60);
+        assertNodeColor(60, true);// Root-left should be red
+
+        assertEq(tree.nodes[75].right, 80);
+        assertNodeColor(80, false);// Root-left should be red
+
+
+    }
+
+    function testPrevIsTheRightmostNodeInLeftSubtree() public {
+        // Scenario 7 (using tree from scenario 5)
+        tree.insert(20);
+        tree.insert(100);
+        tree.insert(10);
+        tree.insert(19);
+        tree.insert(17);
+        tree.insert(18);
+
+        assertEq(tree.nodes[20].left,17);
+        assertEq(tree.nodes[20].right,100);
+        assertEq(tree.root,20);
+        assertEq(tree.prev(20),19);
+
+    }
+
+
+
 }
