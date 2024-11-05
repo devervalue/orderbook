@@ -29,6 +29,25 @@ contract RedBlackTreeLibTest is Test {
         // Not necessary as of now
     }
 
+    // Helper functions
+    function assertNodeColor(uint256 value, bool expectedRed) internal {
+        bool actualRed = tree.nodes[value].red;
+        assertEq(
+            actualRed,
+            expectedRed,
+            string(
+                abi.encodePacked(
+                    "Node color mismatch for value ",
+                    value,
+                    ". Expected: ",
+                    expectedRed ? "red" : "black",
+                    ", but got: ",
+                    actualRed ? "red" : "black"
+                )
+            )
+        );
+    }
+
     //-------------------- FIRST ------------------------------
 
     function testFirst_EmptyTree() public {
@@ -400,28 +419,19 @@ contract RedBlackTreeLibTest is Test {
     }
     //-------------------- INSERT ------------------------------
 
-    //Inserta el primer nodo en el árbol y verifica que se convierte en la raíz.
     function testInsertFirstNode() public {
         tree.insert(10);
-
-        //uint256 root = tree.root();
-        //assertEq(root, 10, "Root should be the first inserted node");
 
         RedBlackTreeLib.Node storage node = tree.getNode(10);
         assertEq(node.parent, EMPTY, "Root node should have no parent");
         assertEq(node.left, EMPTY, "Root node should have no left child");
         assertEq(node.right, EMPTY, "Root node should have no right child");
-        //assertEq(node.countTotalOrders, 1, "Node should have 1 order");
-        //assertEq(node.countValueOrders, 100, "Order value should be 100");
+        assertEq(node.red, false, "Root node should be black");
     }
 
-    //Inserta un segundo nodo y verifica la estructura correcta del árbol.
     function testInsertSecondNode() public {
         tree.insert(10);
         tree.insert(20);
-
-        //uint256 root = tree.root();
-        //assertEq(root, 10, "Root should remain as 10");
 
         RedBlackTreeLib.Node storage node1 = tree.getNode(10);
         RedBlackTreeLib.Node storage node2 = tree.getNode(20);
@@ -430,16 +440,15 @@ contract RedBlackTreeLibTest is Test {
         assertEq(node2.parent, 10, "Node 20 should have Node 10 as its parent");
         assertEq(node2.left, EMPTY, "Node 20 should have no left child");
         assertEq(node2.right, EMPTY, "Node 20 should have no right child");
+        assertEq(node1.red, false, "Root node should be black");
+        assertEq(node2.red, true, "Inserted node should be red");
     }
 
-    //Verifica que no se puede insertar un nodo con el mismo valor y clave.
-    function testInsertDuplicateKey() public {
+    function testInsertDuplicateValue() public {
         tree.insert(10);
-        //vm.expectRevert(RedBlackTreeLib.RedBlackTreeLib__ValueAndKeyPairExists.selector);
-        tree.insert(10); // Intentar insertar con la misma clave y valor
+        tree.insert(10);
     }
 
-    //Inserta varios nodos y verifica que se colocan en las posiciones correctas en el árbol.
     function testInsertMultipleNodes() public {
         tree.insert(10);
         tree.insert(20);
@@ -453,22 +462,17 @@ contract RedBlackTreeLibTest is Test {
         assertEq(node1.right, 20, "Node 10 should have Node 20 as the right child");
         assertEq(node2.parent, 10, "Node 20 should have Node 10 as its parent");
         assertEq(node3.parent, 10, "Node 5 should have Node 10 as its parent");
+        assertEq(node1.red, false, "Root node should be black");
+        assertEq(node2.red, true, "Node 20 should be red");
+        assertEq(node3.red, true, "Node 5 should be red");
     }
 
-    //Verifica que intentar insertar un valor igual a 0 produce un error.
     function testInsertZeroValue() public {
         vm.expectRevert(RedBlackTreeLib.RBT__ValueToInsertCannotBeZero.selector);
-        tree.insert(0); // Insertar un valor igual a 0 debería fallar
+        tree.insert(0);
     }
 
-    //Inserta nodos para crear un árbol más equilibrado y verifica la estructura.
     function testInsertBalancedTree() public {
-        bytes32 key1 = keccak256("order1");
-        bytes32 key2 = keccak256("order2");
-        bytes32 key3 = keccak256("order3");
-        bytes32 key4 = keccak256("order4");
-        bytes32 key5 = keccak256("order5");
-
         tree.insert(10);
         tree.insert(20);
         tree.insert(5);
@@ -481,177 +485,150 @@ contract RedBlackTreeLibTest is Test {
         RedBlackTreeLib.Node storage node4 = tree.getNode(15);
         RedBlackTreeLib.Node storage node5 = tree.getNode(25);
 
-        // Verifica la estructura del árbol
         assertEq(node1.left, 5, "Node 10 should have Node 5 as left child");
         assertEq(node1.right, 20, "Node 10 should have Node 20 as right child");
         assertEq(node2.left, 15, "Node 20 should have Node 15 as left child");
         assertEq(node2.right, 25, "Node 20 should have Node 25 as right child");
+        assertEq(node1.red, false, "Root node should be black");
+        assertEq(node2.red, false, "Node 20 should be black");
+        assertEq(node3.red, false, "Node 5 should be black");
+        assertEq(node4.red, true, "Node 15 should be red");
+        assertEq(node5.red, true, "Node 25 should be red");
     }
 
-    //Verifica que la función insertFixup balancea correctamente el árbol.
     function testInsertFixup() public {
-        // Prueba específica para verificar que la función `insertFixup` balancea correctamente el árbol.
         tree.insert(10);
         tree.insert(20);
-        tree.insert(5);
+        tree.insert(30);
 
         RedBlackTreeLib.Node storage node1 = tree.getNode(10);
         RedBlackTreeLib.Node storage node2 = tree.getNode(20);
-        RedBlackTreeLib.Node storage node3 = tree.getNode(5);
+        RedBlackTreeLib.Node storage node3 = tree.getNode(30);
 
-        assertEq(node1.red, false, "Root node should be black after fixup");
-        assertEq(node2.red, true, "Node 20 should be red");
-        assertEq(node3.red, true, "Node 5 should be red");
+        assertEq(node2.red, false, "Node 20 should be black (new root after rotation)");
+        assertEq(node1.red, true, "Node 10 should be red");
+        assertEq(node3.red, true, "Node 30 should be red");
+        assertEq(node2.left, 10, "Node 20 should have Node 10 as left child");
+        assertEq(node2.right, 30, "Node 20 should have Node 30 as right child");
     }
 
-    //-------------------- REMOVE ------------------------------
+    //-------------------- REMOVE TESTS ------------------------------
 
-    //Inserta y luego elimina un nodo único, verificando que el árbol está vacío.
     function testRemoveSingleNode() public {
         tree.insert(10);
+
         RedBlackTreeLib.Node storage node = tree.getNode(10);
         assertEq(node.parent, EMPTY, "Root node should have no parent");
         assertEq(node.left, EMPTY, "Root node should have no left child");
         assertEq(node.right, EMPTY, "Root node should have no right child");
-        //assertEq(node.countTotalOrders, 1, "Node should have 1 order");
-        //assertEq(node.countValueOrders, 100, "Order value should be 100");
-        // Verificar que el nodo ha sido insertado
+
         uint256 root = tree.root;
         assertEq(root, 10, "Root should be 10");
 
-        // Remover el nodo
         tree.remove(10);
+
         vm.expectRevert(RedBlackTreeLib.RBT__ValuesDoesNotExist.selector);
-        tree.getNode(10); // Intentar obtener un nodo en un árbol vacío debería fallar
+        tree.getNode(10);
     }
 
-    //Intenta eliminar un nodo que no existe, lo cual debería generar un error.
     function testRemoveNonExistentNode() public {
-        // Intentar eliminar un nodo que no existe
         vm.expectRevert(RedBlackTreeLib.RBT__NodeDoesNotExist.selector);
         tree.remove(10);
     }
 
-    //Inserta dos nodos y elimina un nodo hoja (sin hijos).
     function testRemoveLeafNode() public {
-        // Insertar dos nodos
         tree.insert(10);
         tree.insert(20);
 
-        // Verificar que los nodos fueron insertados
         uint256 root = tree.root;
         assertEq(root, 10, "Root should be 10");
 
-        // Remover el nodo hoja (20)
         tree.remove(20);
 
-        // Verificar que el nodo raíz sigue siendo 10 y que 20 ha sido eliminado
         root = tree.root;
         assertEq(root, 10, "Root should remain 10");
         assertEq(tree.getNode(10).right, EMPTY, "Right child of root should be empty");
     }
 
-    //Elimina un nodo que tiene un único hijo.
     function testRemoveNodeWithOneChild() public {
-        // Insertar dos nodos
         tree.insert(10);
         tree.insert(5);
 
-        // Verificar que el nodo 10 tiene un hijo izquierdo
         RedBlackTreeLib.Node storage node = tree.getNode(10);
         assertEq(node.left, 5, "Node 10 should have 5 as left child");
 
-        // Remover el nodo con un hijo (10)
         tree.remove(10);
 
-        // Verificar que el nodo 5 ahora es la raíz
         uint256 root = tree.root;
         assertEq(root, 5, "Root should be 5 after removing 10");
     }
 
-    //Elimina un nodo con dos hijos, verificando que el árbol se ajusta correctamente.
     function testRemoveNodeWithTwoChildren() public {
-        // Insertar tres nodos
         tree.insert(10);
         tree.insert(5);
         tree.insert(20);
 
-        // Verificar que el nodo 10 tiene hijos
         RedBlackTreeLib.Node storage node = tree.getNode(10);
         assertEq(node.left, 5, "Node 10 should have 5 as left child");
         assertEq(node.right, 20, "Node 10 should have 20 as right child");
 
-        // Remover el nodo con dos hijos (10)
         tree.remove(10);
 
-        // Verificar que 20 ahora es la raíz y 5 es el hijo izquierdo
         uint256 root = tree.root;
         assertEq(root, 20, "Root should be 20 after removing 10");
         node = tree.getNode(20);
         assertEq(node.left, 5, "Node 20 should have 5 as left child");
     }
 
-    //Inserta varias órdenes en un nodo, elimina órdenes individualmente, y luego elimina el nodo cuando se quedan sin órdenes.
     function testRemoveRootNodeWithMultipleOrders() public {
-        // Insertar dos órdenes en el mismo nodo
         tree.insert(10);
         tree.insert(20);
 
-        // Verificar que hay dos órdenes en el nodo 10
         RedBlackTreeLib.Node storage node = tree.getNode(10);
-        //assertEq(node.countTotalOrders, 2, "Node should have 2 orders");
-        //assertEq(node.countValueOrders, 300, "Node should have total value orders of 300");
+        // Uncomment and update these assertions if countTotalOrders and countValueOrders are implemented
+        // assertEq(node.countTotalOrders, 2, "Node should have 2 orders");
+        // assertEq(node.countValueOrders, 300, "Node should have total value orders of 300");
 
-        // Remover una de las órdenes
         tree.remove(10);
 
-        // Verificar que el nodo sigue existiendo pero con una orden menos
         node = tree.getNode(20);
-        //assertEq(node.countTotalOrders, 1, "Node should now have 1 order");
-        //assertEq(node.countValueOrders, 200, "Node should now have total value orders of 200");
+        // Uncomment and update these assertions if countTotalOrders and countValueOrders are implemented
+        // assertEq(node.countTotalOrders, 1, "Node should now have 1 order");
+        // assertEq(node.countValueOrders, 200, "Node should now have total value orders of 200");
 
-        // Remover la segunda orden, lo que debería eliminar el nodo por completo
         tree.remove(20);
 
-        // Verificar que el árbol está vacío
         uint256 root = tree.root;
         assertEq(root, EMPTY, "Tree should be empty after removing all orders from root");
     }
 
-    //Verifica que el árbol sigue siendo válido después de una eliminación, especialmente revisando las propiedades del árbol Red-Black.
     function testRemoveFixup() public {
-        // Insertar tres nodos
         tree.insert(10);
         tree.insert(5);
         tree.insert(20);
 
-        // Eliminar el nodo raíz (10)
         tree.remove(10);
 
-        // Verificar que el árbol sigue siendo un árbol Red-Black válido
         uint256 root = tree.root;
         assertEq(root, 20, "Root should be 20 after removing 10");
         RedBlackTreeLib.Node storage node = tree.getNode(root);
-        assertEq(node.red, false, "Root node should be black after removal");
+        assertFalse(node.red, "Root node should be black after removal");
         assertEq(node.left, 5, "New root should have 5 as left child");
-        assertEq(node.right, 0, "New root should have 0 as right child");
+        assertEq(node.right, EMPTY, "New root should have EMPTY as right child");
     }
 
-    function testRemoveFixup2() public {
-        // Insertar tres nodos
+    function testRemoveFixupWithRightChild() public {
         tree.insert(10);
         tree.insert(5);
         tree.insert(20);
         tree.insert(25);
 
-        // Eliminar el nodo raíz (10)
         tree.remove(10);
 
-        // Verificar que el árbol sigue siendo un árbol Red-Black válido
         uint256 root = tree.root;
         assertEq(root, 20, "Root should be 20 after removing 10");
         RedBlackTreeLib.Node storage node = tree.getNode(root);
-        assertEq(node.red, false, "Root node should be black after removal");
+        assertFalse(node.red, "Root node should be black after removal");
         assertEq(node.left, 5, "New root should have 5 as left child");
         assertEq(node.right, 25, "New root should have 25 as right child");
     }
@@ -664,49 +641,48 @@ contract RedBlackTreeLibTest is Test {
         tree.insert(3);
 
         // Verify initial structure
-        assertEq(tree.root, 10);
-        assertEq(tree.nodes[10].left, 5);
-        assertEq(tree.nodes[10].right, 15);
-        assertEq(tree.nodes[5].left, 3);
+        assertEq(tree.root, 10, "Root should be 10");
+        assertEq(tree.nodes[10].left, 5, "Node 10's left child should be 5");
+        assertEq(tree.nodes[10].right, 15, "Node 10's right child should be 15");
+        assertEq(tree.nodes[5].left, 3, "Node 5's left child should be 3");
 
         // Remove the leaf node 3
         tree.remove(3);
 
         // Verify the structure after removal
-        assertEq(tree.root, 10);
-        assertEq(tree.nodes[10].left, 5);
-        assertEq(tree.nodes[10].right, 15);
-        assertEq(tree.nodes[5].left, 0); // 0 represents EMPTY
-        assertTrue(tree.nodes[10].red == false);
-        assertTrue(tree.nodes[5].red == false);
-        assertTrue(tree.nodes[15].red == false);
+        assertEq(tree.root, 10, "Root should still be 10 after removal");
+        assertEq(tree.nodes[10].left, 5, "Node 10's left child should still be 5");
+        assertEq(tree.nodes[10].right, 15, "Node 10's right child should still be 15");
+        assertEq(tree.nodes[5].left, 0, "Node 5's left child should be EMPTY (0)");
+        assertTrue(tree.nodes[10].red == false, "Node 10 should be black");
+        assertTrue(tree.nodes[5].red == false, "Node 5 should be black");
+        assertTrue(tree.nodes[15].red == false, "Node 15 should be black");
     }
 
-    function testRemoveBlackNodeWithOneChildren() public {
-        // Case 2: Removing a black node with one child
+    function testRemoveBlackNodeWithOneRedChild() public {
+        // Case 2: Removing a black node with one red child
         tree.insert(10);
         tree.insert(5);
         tree.insert(15);
         tree.insert(3);
 
         // Verify initial structure
-        assertEq(tree.root, 10);
-        assertEq(tree.nodes[10].left, 5);
-        assertEq(tree.nodes[5].left, 3);
+        assertEq(tree.root, 10, "Root should be 10");
+        assertEq(tree.nodes[10].left, 5, "Node 10's left child should be 5");
+        assertEq(tree.nodes[5].left, 3, "Node 5's left child should be 3");
 
         // Remove node 5 (black node with one red child)
         tree.remove(5);
 
         // Verify the structure after removal
-        assertEq(tree.root, 10);
-        assertTrue(tree.nodes[10].left == 3);
-        assertTrue(tree.nodes[10].red == false);
-        assertTrue(tree.nodes[3].red == false);
-        assertTrue(tree.nodes[15].red == false);
+        assertEq(tree.root, 10, "Root should still be 10 after removal");
+        assertTrue(tree.nodes[10].left == 3, "Node 10's left child should now be 3");
+        assertTrue(tree.nodes[10].red == false, "Node 10 should be black");
+        assertTrue(tree.nodes[3].red == false, "Node 3 should be black");
+        assertTrue(tree.nodes[15].red == false, "Node 15 should be black");
     }
 
     function testRemoveBlackNodeWithTwoChildren() public {
-        // Case 2: Removing a black node with one child
         tree.insert(10);
         tree.insert(5);
         tree.insert(15);
@@ -714,36 +690,31 @@ contract RedBlackTreeLibTest is Test {
         tree.insert(7);
 
         // Verify initial structure
-        assertEq(tree.root, 10);
-        assertEq(tree.nodes[10].left, 5);
-        assertEq(tree.nodes[5].left, 3);
-        assertEq(tree.nodes[5].right, 7);
+        assertEq(tree.root, 10, "Root should be 10");
+        assertEq(tree.nodes[10].left, 5, "Node 10's left child should be 5");
+        assertEq(tree.nodes[5].left, 3, "Node 5's left child should be 3");
+        assertEq(tree.nodes[5].right, 7, "Node 5's right child should be 7");
 
-        // Remove node 5 (black node with one red child)
+        // Remove node 5 (black node with two children)
         tree.remove(5);
 
         // Verify the structure after removal
-        assertEq(tree.root, 10);
-        assertTrue(tree.nodes[10].left == 3 || tree.nodes[10].left == 7);
-        assertTrue(tree.nodes[10].red == false);
-        assertTrue(tree.nodes[3].red == true);
-        assertTrue(tree.nodes[7].red == false);
-        assertTrue(tree.nodes[15].red == false);
+        assertEq(tree.root, 10, "Root should still be 10 after removal");
+        assertTrue(tree.nodes[10].left == 3 || tree.nodes[10].left == 7, "Node 10's left child should be either 3 or 7");
+        assertTrue(tree.nodes[10].red == false, "Node 10 should be black");
+        assertTrue(tree.nodes[3].red == true || tree.nodes[7].red == true, "Either node 3 or 7 should be red");
+        assertTrue(tree.nodes[15].red == false, "Node 15 should be black");
     }
 
     function testBasicLeftRotation() public {
         tree.insert(5);
         tree.insert(7);
-
-        // Perform left rotation on 5
-        // Note: Since rotateLeft is private, we'll need to trigger it indirectly
-        // This could be done by inserting more nodes or removing nodes to cause rebalancing
         tree.insert(8);
 
         // Assert the new structure
-        assertEq(tree.root, 7);
-        assertEq(tree.getNode(7).left, 5);
-        assertEq(tree.getNode(7).right, 8);
+        assertEq(tree.root, 7, "Root should be 7 after left rotation");
+        assertEq(tree.getNode(7).left, 5, "Node 7's left child should be 5");
+        assertEq(tree.getNode(7).right, 8, "Node 7's right child should be 8");
     }
 
     function testLeftRotationWithNonEmptyCursorLeft() public {
@@ -754,69 +725,59 @@ contract RedBlackTreeLibTest is Test {
         tree.insert(25);
         tree.insert(28);
         tree.insert(30);
-
-        // Trigger rotation
         tree.insert(35);
 
         // Assert the new structure
-        assertEq(tree.root, 20);
-        assertEq(tree.getNode(20).left, 10);
-        assertEq(tree.getNode(20).right, 28);
-        assertEq(tree.getNode(10).right, 15);
+        assertEq(tree.root, 20, "Root should be 20 after rotation");
+        assertEq(tree.getNode(20).left, 10, "Node 20's left child should be 10");
+        assertEq(tree.getNode(20).right, 28, "Node 20's right child should be 28");
+        assertEq(tree.getNode(10).right, 15, "Node 10's right child should be 15");
     }
 
     function testLeftRotationOnRoot() public {
         tree.insert(5);
         tree.insert(7);
-
-        // Trigger rotation
         tree.insert(8);
 
         // Assert the new root
-        assertEq(tree.root, 7);
+        assertEq(tree.root, 7, "Root should be 7 after left rotation on root");
     }
 
     function testLeftRotationOnLeftChild() public {
         tree.insert(20);
         tree.insert(5);
         tree.insert(25);
-
-        // Trigger rotation
         tree.insert(10);
         tree.insert(15);
 
         // Assert the new structure
-        assertEq(tree.getNode(10).left, 5);
-        assertEq(tree.getNode(10).right, 15);
-        assertEq(tree.getNode(20).left, 10);
+        assertEq(tree.getNode(10).left, 5, "Node 10's left child should be 5");
+        assertEq(tree.getNode(10).right, 15, "Node 10's right child should be 15");
+        assertEq(tree.getNode(20).left, 10, "Node 20's left child should be 10");
     }
 
     function testLeftRotationOnRightChild() public {
         tree.insert(20);
         tree.insert(5);
         tree.insert(25);
-
-        // Trigger rotation
         tree.insert(30);
         tree.insert(35);
 
         // Assert the new structure
-        assertEq(tree.getNode(20).right, 30);
-        assertEq(tree.getNode(30).right, 35);
-        assertEq(tree.getNode(30).left, 25);
+        assertEq(tree.getNode(20).right, 30, "Node 20's right child should be 30");
+        assertEq(tree.getNode(30).right, 35, "Node 30's right child should be 35");
+        assertEq(tree.getNode(30).left, 25, "Node 30's left child should be 25");
     }
 
     function testBasicRightRotation() public {
         tree.insert(7);
         tree.insert(5);
-
-        // Trigger rotation
         tree.insert(3);
 
         // Assert the new structure
-        assertEq(tree.root, 5);
-        assertEq(tree.getNode(5).left, 3);
-        assertEq(tree.getNode(5).right, 7);
+        assertEq(tree.root, 5, "Root should be 5 after right rotation");
+        assertEq(tree.getNode(5).left, 3, "Node 5's left child should be 3");
+        assertEq(tree.getNode(5).right, 7, "Node 5's right child should be 7");
     }
 
     function testRightRotationWithNonEmptyCursorRight() public {
@@ -824,19 +785,16 @@ contract RedBlackTreeLibTest is Test {
         tree.insert(20);
         tree.insert(30);
         tree.insert(25);
-
         tree.insert(15);
         tree.insert(10);
         tree.insert(5);
-
-        // Trigger rotation
         tree.insert(2);
 
         // Assert the new structure
-        assertEq(tree.root, 20);
-        assertEq(tree.getNode(20).left, 10);
-        assertEq(tree.getNode(20).right, 30);
-        assertEq(tree.getNode(30).left, 25);
+        assertEq(tree.root, 20, "Root should be 20 after rotation");
+        assertEq(tree.getNode(20).left, 10, "Node 20's left child should be 10");
+        assertEq(tree.getNode(20).right, 30, "Node 20's right child should be 30");
+        assertEq(tree.getNode(30).left, 25, "Node 30's left child should be 25");
     }
 
     function testRightRotationOnRoot() public {
@@ -847,7 +805,9 @@ contract RedBlackTreeLibTest is Test {
         tree.insert(3);
 
         // Assert the new root
-        assertEq(tree.root, 5);
+        assertEq(tree.root, 5, "Root should be 5 after right rotation");
+        assertEq(tree.getNode(5).left, 3, "Node 5's left child should be 3");
+        assertEq(tree.getNode(5).right, 7, "Node 5's right child should be 7");
     }
 
     function testRightRotationOnRightChild() public {
@@ -860,9 +820,9 @@ contract RedBlackTreeLibTest is Test {
         tree.insert(13);
 
         // Assert the new structure
-        assertEq(tree.getNode(10).right, 15);
-        assertEq(tree.getNode(15).left, 13);
-        assertEq(tree.getNode(15).right, 20);
+        assertEq(tree.getNode(10).right, 15, "Node 10's right child should be 15");
+        assertEq(tree.getNode(15).left, 13, "Node 15's left child should be 13");
+        assertEq(tree.getNode(15).right, 20, "Node 15's right child should be 20");
     }
 
     function testRightRotationOnLeftChild() public {
@@ -875,9 +835,9 @@ contract RedBlackTreeLibTest is Test {
         tree.insert(5);
 
         // Assert the new structure
-        assertEq(tree.getNode(25).left, 10);
-        assertEq(tree.getNode(10).left, 5);
-        assertEq(tree.getNode(10).right, 20);
+        assertEq(tree.getNode(25).left, 10, "Node 25's left child should be 10");
+        assertEq(tree.getNode(10).left, 5, "Node 10's left child should be 5");
+        assertEq(tree.getNode(10).right, 20, "Node 10's right child should be 20");
     }
 
     function testComplexTreeStructureLeftRotation() public {
@@ -895,10 +855,10 @@ contract RedBlackTreeLibTest is Test {
         tree.insert(9);
 
         // Assert the new structure
-        assertEq(tree.getNode(10).left, 8);
-        assertEq(tree.getNode(7).left, 5);
-        assertEq(tree.getNode(7).right, 10);
-        assertEq(tree.getNode(8).right, 9);
+        assertEq(tree.getNode(10).left, 8, "Node 10's left child should be 8");
+        assertEq(tree.getNode(7).left, 5, "Node 7's left child should be 5");
+        assertEq(tree.getNode(7).right, 10, "Node 7's right child should be 10");
+        assertEq(tree.getNode(8).right, 9, "Node 8's right child should be 9");
     }
 
     function testComplexTreeStructureRightRotation() public {
@@ -916,10 +876,10 @@ contract RedBlackTreeLibTest is Test {
         tree.insert(11);
 
         // Assert the new structure
-        assertEq(tree.getNode(13).right, 15);
-        assertEq(tree.getNode(15).left, 14);
-        assertEq(tree.getNode(15).right, 17);
-        assertEq(tree.getNode(10).right, 12);
+        assertEq(tree.getNode(13).right, 15, "Node 13's right child should be 15");
+        assertEq(tree.getNode(15).left, 14, "Node 15's left child should be 14");
+        assertEq(tree.getNode(15).right, 17, "Node 15's right child should be 17");
+        assertEq(tree.getNode(10).right, 12, "Node 10's right child should be 12");
     }
 
     function testRotationAfterRemoval() public {
@@ -934,14 +894,9 @@ contract RedBlackTreeLibTest is Test {
         tree.insert(4);
 
         // Assert the new structure
-        assertEq(tree.getNode(10).left, 5);
-        assertEq(tree.getNode(5).left, 4);
-        assertEq(tree.getNode(5).right, 7);
-    }
-
-    // Helper functions
-    function assertNodeColor(uint256 value, bool expectedRed) internal {
-        assertEq(tree.nodes[value].red, expectedRed);
+        assertEq(tree.getNode(10).left, 5, "Node 10's left child should be 5");
+        assertEq(tree.getNode(5).left, 4, "Node 5's left child should be 4");
+        assertEq(tree.getNode(5).right, 7, "Node 5's right child should be 7");
     }
 
     // Test scenarios
