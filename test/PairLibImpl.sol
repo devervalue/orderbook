@@ -6,7 +6,7 @@ import "forge-std/console.sol";
 import "../src/RedBlackTreeLib.sol";
 import "../src/PairLib.sol";
 
-contract OrderBookImpl {
+contract PairLibImpl {
     using PairLib for PairLib.Pair;
     using OrderBookLib for OrderBookLib.Order;
     using OrderBookLib for OrderBookLib.Book;
@@ -27,13 +27,21 @@ contract OrderBookImpl {
         _lastTradePrice = pair.lastTradePrice;
     }
 
-    function addBuyBaseToken(uint256 _price, uint256 _quantity, address _trader, uint256 nonce, uint256 _expired)
+    function createOrder(bool isBuy, uint256 price, uint256 quantity) public {
+        if (isBuy){
+            addBuyBaseToken(price, quantity, msg.sender, block.timestamp + price + quantity);
+        } else{
+            addSellBaseToken(price, quantity, msg.sender, block.timestamp + price + quantity);
+        }
+    }
+
+    function addBuyBaseToken(uint256 _price, uint256 _quantity, address _trader, uint256 nonce)
         public
     {
         pair.addBuyOrder(_price, _quantity, nonce);
     }
 
-    function addSellBaseToken(uint256 _price, uint256 _quantity, address _trader, uint256 nonce, uint256 _expired)
+    function addSellBaseToken(uint256 _price, uint256 _quantity, address _trader, uint256 nonce)
         public
     {
         pair.addSellOrder(_price, _quantity, nonce);
@@ -55,8 +63,8 @@ contract OrderBookImpl {
         return pair.getHighestBuyPrice();
     }
 
-    function getFirstOrderBuyById(uint256 keyNode) public returns (bytes32) {
-        return pair.getNextBuyOrderId(keyNode);
+    function getFirstOrderBuyByPrice(uint256 _price) public returns (bytes32) {
+        return pair.getNextBuyOrderId(_price);
     }
 
     function getCancelOrder(bytes32 _orderId) public {
@@ -67,7 +75,7 @@ contract OrderBookImpl {
         return pair.getTraderOrders(_trader);
     }
 
-    function getOrderById(address _trader, bytes32 _orderId) public returns (OrderBookLib.Order memory _order) {
+    function getOrderById(bytes32 _orderId) public returns (OrderBookLib.Order memory _order) {
         OrderBookLib.Order storage orderDetail = pair.getOrderDetail(_orderId);
         _order = OrderBookLib.Order({
             id: orderDetail.id,
@@ -79,5 +87,22 @@ contract OrderBookImpl {
             traderAddress: orderDetail.traderAddress,
             status: orderDetail.status
         });
+    }
+
+    function getTop3BuyPrices() public view returns (uint256[3] memory) {
+        return pair.getTop3BuyPrices();
+    }
+
+    function getTop3SellPrices() public view returns (uint256[3] memory) {
+        return pair.getTop3SellPrices();
+    }
+
+    function getPrice(uint256 price, bool isBuy)
+    public
+    view
+    returns (uint256, uint256)
+    {
+        OrderBookLib.PricePoint storage pp =  pair.getPrice(price, isBuy);
+        return (pp.orderValue, pp.orderCount);
     }
 }

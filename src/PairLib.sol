@@ -430,6 +430,9 @@ library PairLib {
         // Generate a unique order ID
         bytes32 _orderId = keccak256(abi.encodePacked(msg.sender, isBuy ? "buy" : "sell", _price, timestamp));
 
+        // Check if an order with the same ID already exists
+        if (orderExists(pair, _orderId)) revert PL__OrderIdAlreadyExists();
+
         // Create a new order struct
         OrderBookLib.Order memory newOrder = OrderBookLib.Order({
             id: _orderId,
