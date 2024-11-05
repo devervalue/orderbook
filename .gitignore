@@ -12,7 +12,7 @@ out/
 lcov.info
 
 # Docs
-docs/
+#docs/
 
 # Dotenv file
 .env
