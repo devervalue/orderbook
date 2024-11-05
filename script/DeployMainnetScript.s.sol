@@ -48,8 +48,8 @@ contract DeployMainnetScript is Script {
 
         // @dev Creates a new OrderBook struct with specified token addresses and fee details
         OrderBook memory newOrderBook = OrderBook({
-            tokenA: vm.envUint("ADDRESS_WBTC"), // WBTC
-            tokenB: vm.envUint("ADDRESS_EVA"), // EVA
+            tokenA: vm.envAddress("ADDRESS_WBTC"), // WBTC
+            tokenB: vm.envAddress("ADDRESS_EVA"), // EVA
             fee: vm.envUint("FEE_ARBISCAN"),
             feeAddress: vm.envAddress("FEE_ADDRESS_ARBISCAN")
         });
@@ -65,10 +65,7 @@ contract DeployMainnetScript is Script {
         // @dev Loops through the `orderBooks` array to add each pair to the OrderBookFactory
         for (uint256 i = 0; i < orderBooks.length; i++) {
             orderBookFactory.addPair(
-                orderBooks[i].tokenA,
-                orderBooks[i].tokenB,
-                orderBooks[i].fee,
-                orderBooks[i].feeAddress
+                orderBooks[i].tokenA, orderBooks[i].tokenB, orderBooks[i].fee, orderBooks[i].feeAddress
             );
         }
 

@@ -26,366 +26,365 @@ contract RedBlackTreeLibTest is Test {
     bytes32 private orderId5 = keccak256(abi.encodePacked(trader4, "sell", "500", block.timestamp));
 
     function setUp() public {
-        // Setup inicial para las pruebas
+        // Not necessary as of now
     }
 
     //-------------------- FIRST ------------------------------
 
-    //Cuando el arbol esta vacio
-    function testFirstOnEmptyTree() public {
+    function testFirst_EmptyTree() public {
         uint256 result = tree.first();
-        assertEq(result, 0, "Should return 0 for an empty tree");
+        assertEq(result, EMPTY, "First should return EMPTY for an empty tree");
     }
 
-    //Cuando el arbol tiene un solo nodo deberia retornar el unico nodo que existe
-    function testFirstOnSingleNodeTree() public {
+    function testFirst_SingleNode() public {
         tree.insert(10);
         uint256 result = tree.first();
-        assertEq(result, 10, "Should return the only node in the tree");
+        assertEq(result, 10, "First should return the only node in the tree");
+        assertTrue(tree.exists(result), "The returned node should exist in the tree");
     }
 
-    //Cuando se insertan varios nodos deberian retornar el nodo mas pequeño
-    function testFirstOnTreeWithMultipleNodes() public {
+    function testFirst_MultipleNodes() public {
         tree.insert(10);
         tree.insert(20);
         tree.insert(5);
 
         uint256 result = tree.first();
-        assertEq(result, 5, "Should return the smallest value node after removal");
+        assertEq(result, 5, "First should return the smallest value node");
+        assertTrue(tree.exists(result), "The returned node should exist in the tree");
+        assertTrue(result < tree.next(result), "The first node should be smaller than the next node");
     }
 
-    //Cuando un arbol tiene multiples nodos pero no tiene un nodo izquierdo
-    function testFirstOnTreeWithNoLeftNodes() public {
+    function testFirst_NoLeftNodes() public {
         tree.insert(20);
         tree.insert(30);
 
         uint256 result = tree.first();
-        assertEq(result, 20, "Should return the first node when there are no left children");
+        assertEq(result, 20, "First should return the leftmost node when there are no left children");
+        assertTrue(tree.exists(result), "The returned node should exist in the tree");
+        assertTrue(result < tree.next(result), "The first node should be smaller than the next node");
+    }
+
+    function testFirst_AfterRemoval() public {
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+        tree.remove(5);
+
+        uint256 result = tree.first();
+        assertEq(result, 10, "First should return the new smallest value after removal");
+        assertTrue(tree.exists(result), "The returned node should exist in the tree");
+        assertFalse(tree.exists(5), "The removed node should not exist in the tree");
     }
 
     //-------------------- LAST ------------------------------
 
-    //Verifica que la función devuelve 0 si el árbol está vacío
-    function testLastOnEmptyTree() public {
+    function testLast_EmptyTree() public {
         uint256 result = tree.last();
-        assertEq(result, 0, "Should return 0 for an empty tree");
+        assertEq(result, EMPTY, "Last should return EMPTY for an empty tree");
     }
 
-    //Verifica que la función devuelve el valor del único nodo si el árbol contiene solo uno.
-    function testLastOnSingleNodeTree() public {
+    function testLast_SingleNode() public {
         tree.insert(10);
         uint256 result = tree.last();
-        assertEq(result, 10, "Should return the only node in the tree");
+        assertEq(result, 10, "Last should return the only node in the tree");
+        assertTrue(tree.exists(result), "The returned node should exist in the tree");
     }
 
-    //Crea un árbol sesgado a la izquierda y verifica que la función devuelve el valor correcto
-    function testLastWithLeftHeavyTree() public {
-        // Create a left-heavy tree
+    function testLast_LeftHeavyTree() public {
         tree.insert(30);
         tree.insert(25);
         tree.insert(20);
 
         uint256 result = tree.last();
-        assertEq(result, 30, "Should return the last node with the highest value in a left-heavy tree");
+        assertEq(result, 30, "Last should return the highest value node in a left-heavy tree");
+        assertTrue(tree.exists(result), "The returned node should exist in the tree");
+        assertTrue(result > tree.prev(result), "The last node should be greater than the previous node");
     }
 
-    //Crea un árbol sesgado a la derecha y verifica que la función devuelve el valor correcto.
-    function testLastWithRightHeavyTree() public {
-        // Create a right-heavy tree
+    function testLast_RightHeavyTree() public {
         tree.insert(10);
         tree.insert(15);
         tree.insert(20);
 
         uint256 result = tree.last();
-        assertEq(result, 20, "Should return the last node with the highest value in a right-heavy tree");
+        assertEq(result, 20, "Last should return the highest value node in a right-heavy tree");
+        assertTrue(tree.exists(result), "The returned node should exist in the tree");
+        assertTrue(result > tree.prev(result), "The last node should be greater than the previous node");
     }
 
-    //Crea un árbol equilibrado y verifica que la función devuelve el valor del hijo derecho del nodo raíz.
-    function testLastAfterInsertionsAndRemovals() public {
+    function testLast_AfterInsertionsAndRemovals() public {
         tree.insert(10);
         tree.insert(30);
         tree.insert(20);
-        tree.remove(20); // Remove the last node
+        tree.remove(20);
 
         uint256 result = tree.last();
-        assertEq(result, 30, "Should return the last node after removal of the last node");
+        assertEq(result, 30, "Last should return the highest value node after removal");
+        assertTrue(tree.exists(result), "The returned node should exist in the tree");
+        assertFalse(tree.exists(20), "The removed node should not exist in the tree");
     }
 
     //-------------------- NEXT ------------------------------
 
-    //Verifica que la función revierte si se intenta obtener el siguiente valor desde un árbol vacío.
-    function testNextOnEmptyTree() public {
-        // Expecting a revert for trying to get next from an empty tree
+    function testNext_EmptyTree() public {
         vm.expectRevert(RedBlackTreeLib.RBT__StartingValueCannotBeZero.selector);
         tree.next(EMPTY);
     }
 
-    //Comprueba que no hay un siguiente nodo en un árbol con un solo nodo.
-    function testNextOnSingleNodeTree() public {
+    function testNext_SingleNodeTree() public {
         tree.insert(10);
         uint256 result = tree.next(10);
-        assertEq(result, EMPTY, "Should return EMPTY when there is no next node");
+        assertEq(result, EMPTY, "Next should return EMPTY when there is no next node");
     }
-    //Verifica que se devuelve el hijo izquierdo más bajo si el nodo tiene un hijo derecho.
 
-    function testNextOnNodeWithRightChild() public {
+    function testNext_NodeWithRightChild() public {
         tree.insert(10);
         tree.insert(15);
         tree.insert(20);
 
         uint256 result = tree.next(10);
-        assertEq(result, 15, "Should return the next node (15) for the node (10)");
+        assertEq(result, 15, "Next should return 15 for node 10");
     }
 
-    //Asegura que se devuelve el siguiente nodo correcto cuando no hay un hijo derecho.
-    function testNextOnNodeWithoutRightChild() public {
+    function testNext_NodeWithoutRightChild() public {
         tree.insert(10);
         tree.insert(15);
         tree.insert(5);
 
-        uint256 result = tree.next(10);
-        assertEq(result, 15, "Should return the next node (15) for the node (10) with no right child");
+        uint256 result = tree.next(5);
+        assertEq(result, 10, "Next should return 10 for node 5");
     }
 
-    //Verifica que se devuelva el siguiente nodo correcto desde un nodo hoja.
-    function testNextOnLeafNode() public {
+    function testNext_LeafNode() public {
         tree.insert(10);
         tree.insert(15);
         tree.insert(20);
 
-        uint256 result = tree.next(15); // 15 is a leaf node
-        assertEq(result, 20, "Should return the next node (20) for the leaf node (15)");
+        uint256 result = tree.next(15);
+        assertEq(result, 20, "Next should return 20 for leaf node 15");
     }
 
-    //Comprueba el comportamiento en un árbol más complejo con múltiples nodos y relaciones padre-hijo.
-    function testNextInComplexTree() public {
-        // Build a more complex tree
+    function testNext_ComplexTree() public {
         tree.insert(20);
         tree.insert(10);
         tree.insert(30);
         tree.insert(25);
 
-        uint256 result = tree.next(20); // 20 has a right child (30)
-        assertEq(result, 25, "Should return the next node (25) for the node (20)");
+        uint256 result = tree.next(20);
+        assertEq(result, 25, "Next should return 25 for node 20 in a complex tree");
+    }
+
+    function testNext_RightChildNoLeftDescendant() public {
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+        tree.insert(20);
+
+        uint256 nextValue = tree.next(15);
+        assertEq(nextValue, 20, "Next value after 15 should be 20");
+
+        assertEq(tree.next(10), 15, "Next value after 10 should be 15");
+        assertEq(tree.next(5), 10, "Next value after 5 should be 10");
+        assertEq(tree.next(20), EMPTY, "Next value after 20 should be EMPTY");
+    }
+
+    function testNext_LeftmostNodeInRightSubtree() public {
+        tree.insert(20);
+        tree.insert(100);
+        tree.insert(50);
+        tree.insert(75);
+        tree.insert(60);
+        tree.insert(58);
+
+        assertEq(tree.nodes[50].left, 20, "Left child of 50 should be 20");
+        assertEq(tree.nodes[50].right, 75, "Right child of 50 should be 75");
+        assertEq(tree.root, 50, "Root should be 50");
+        assertEq(tree.next(50), 58, "Next value after 50 should be 58");
     }
 
     //-------------------- PREV ------------------------------
-    //Verifica que la función revierte si se intenta obtener el nodo previo desde un árbol vacío.
-    function testPrevOnEmptyTree() public {
-        // Expecting a revert for trying to get previous from an empty tree
+
+    function testPrev_EmptyTree() public {
         vm.expectRevert(RedBlackTreeLib.RBT__StartingValueCannotBeZero.selector);
         tree.prev(EMPTY);
     }
-    //Comprueba que no hay un nodo previo en un árbol con un solo nodo.
 
-    function testPrevOnSingleNodeTree() public {
+    function testPrev_SingleNodeTree() public {
         tree.insert(10);
         uint256 result = tree.prev(10);
-        assertEq(result, EMPTY, "Should return EMPTY when there is no previous node");
+        assertEq(result, EMPTY, "Prev should return EMPTY when there is no previous node");
     }
-    //Verifica que se devuelve el máximo valor del subárbol izquierdo si el nodo tiene un hijo izquierdo.
 
-    function testPrevOnNodeWithLeftChild() public {
+    function testPrev_NodeWithLeftChild() public {
         tree.insert(20);
         tree.insert(15);
         tree.insert(10);
 
         uint256 result = tree.prev(20);
-        assertEq(result, 15, "Should return the previous node (15) for the node (20)");
+        assertEq(result, 15, "Prev should return 15 for node 20");
     }
 
-    //Asegura que se devuelve el padre o el ancestro más cercano que sea un hijo derecho cuando no hay un hijo izquierdo.
-    function testPrevOnNodeWithoutLeftChild() public {
+    function testPrev_NodeWithoutLeftChild() public {
         tree.insert(20);
         tree.insert(25);
         tree.insert(30);
 
         uint256 result = tree.prev(25);
-        assertEq(result, 20, "Should return the previous node (20) for the node (25) with no left child");
+        assertEq(result, 20, "Prev should return 20 for node 25 with no left child");
     }
 
-    //Verifica que se devuelve el nodo correcto para un nodo hoja.
-    function testPrevOnLeafNode() public {
+    function testPrev_LeafNode() public {
         tree.insert(10);
         tree.insert(5);
         tree.insert(1);
 
-        uint256 result = tree.prev(5); // 5 is a leaf node
-        assertEq(result, 1, "Should return the previous node (1) for the leaf node (5)");
+        uint256 result = tree.prev(5);
+        assertEq(result, 1, "Prev should return 1 for leaf node 5");
     }
 
-    //Comprueba el comportamiento en un árbol más complejo con múltiples nodos y relaciones padre-hijo.
-    function testPrevInComplexTree() public {
-        // Build a more complex tree
+    function testPrev_ComplexTree() public {
         tree.insert(30);
         tree.insert(20);
         tree.insert(10);
         tree.insert(5);
         tree.insert(25);
 
-        uint256 result = tree.prev(25); // 25 has a left child (20)
-        assertEq(result, 20, "Should return the previous node (20) for the node (25)");
+        uint256 result = tree.prev(25);
+        assertEq(result, 20, "Prev should return 20 for node 25 in a complex tree");
     }
 
-    //Verifica que la función devuelve el nodo anterior correctamente para un nodo raíz.
-    function testPrevOnRootNode() public {
+    function testPrev_RootNode() public {
         tree.insert(15);
         tree.insert(20);
         tree.insert(10);
 
-        uint256 result = tree.prev(15); // 15 is the root node
-        assertEq(result, 10, "Should return the previous node (10) for the root node (15)");
+        uint256 result = tree.prev(15);
+        assertEq(result, 10, "Prev should return 10 for root node 15");
+    }
+
+    function testPrev_RightmostNodeInLeftSubtree() public {
+        tree.insert(20);
+        tree.insert(100);
+        tree.insert(10);
+        tree.insert(19);
+        tree.insert(17);
+        tree.insert(18);
+
+        assertEq(tree.nodes[20].left, 17, "Left child of 20 should be 17");
+        assertEq(tree.nodes[20].right, 100, "Right child of 20 should be 100");
+        assertEq(tree.root, 20, "Root should be 20");
+        assertEq(tree.prev(20), 19, "Prev should return 19 for node 20");
     }
 
     //-------------------- EXISTS ------------------------------
 
-    //Verifica que la función exists devuelve false cuando se consulta en un árbol vacío.
-    function testExistsOnEmptyTree() public {
-        bool result = tree.exists(10);
-        assertFalse(result, "Should return false for any node in an empty tree");
+    function testExists_EmptyTree() public {
+        assertFalse(tree.exists(10), "Should return false for any node in an empty tree");
     }
 
-    //Verifica que la función devuelve true cuando se consulta por el único nodo presente en el árbol.
-    function testExistsOnSingleNodeTree() public {
+    function testExists_SingleNodeTree() public {
         tree.insert(10);
-        bool result = tree.exists(10);
-        assertTrue(result, "Should return true for the only node in the tree");
+        assertTrue(tree.exists(10), "Should return true for the only node in the tree");
     }
 
-    //Verifica que la función devuelve false cuando se consulta por un valor que no existe en el árbol.
-    function testExistsOnNonExistingNode() public {
+    function testExists_NonExistingNode() public {
         tree.insert(10);
-        bool result = tree.exists(20);
-        assertFalse(result, "Should return false for a node that doesn't exist in the tree");
+        assertFalse(tree.exists(20), "Should return false for a node that doesn't exist in the tree");
     }
 
-    //Verifica que la función devuelve true cuando se consulta por el nodo raíz.
-    function testExistsOnRootNode() public {
+    function testExists_RootNode() public {
         tree.insert(15);
-        bool result = tree.exists(15);
-        assertTrue(result, "Should return true for the root node");
+        assertTrue(tree.exists(15), "Should return true for the root node");
     }
 
-    //Verifica que la función devuelve true cuando se consulta por un nodo hoja.
-    function testExistsOnLeafNode() public {
+    function testExists_LeafNode() public {
         tree.insert(20);
         tree.insert(10);
-
-        bool result = tree.exists(10); // 10 is a leaf node
-        assertTrue(result, "Should return true for a leaf node");
+        assertTrue(tree.exists(10), "Should return true for a leaf node");
     }
 
-    //Verifica que la función devuelve true para un nodo intermedio en el árbol.
-    function testExistsOnIntermediateNode() public {
+    function testExists_IntermediateNode() public {
         tree.insert(30);
         tree.insert(20);
         tree.insert(25);
-
-        bool result = tree.exists(20); // 20 is an intermediate node
-        assertTrue(result, "Should return true for an intermediate node");
+        assertTrue(tree.exists(20), "Should return true for an intermediate node");
     }
 
-    //Comprueba que la función sigue devolviendo true para el nodo raíz en un árbol con múltiples nodos.
-    function testExistsOnRootWithMultipleNodes() public {
+    function testExists_RootWithMultipleNodes() public {
         tree.insert(50);
         tree.insert(30);
         tree.insert(70);
-
-        bool result = tree.exists(50); // 50 is the root
-        assertTrue(result, "Should return true for the root node in a tree with multiple nodes");
+        assertTrue(tree.exists(50), "Should return true for the root node in a tree with multiple nodes");
     }
 
-    //Verifica que la función devuelve true para un nodo que es padre pero no es la raíz.
-    function testExistsOnNonRootParentNode() public {
+    function testExists_NonRootParentNode() public {
         tree.insert(40);
         tree.insert(20);
         tree.insert(10);
-
-        bool result = tree.exists(20); // 20 is a non-root parent node
-        assertTrue(result, "Should return true for a non-root parent node");
+        assertTrue(tree.exists(20), "Should return true for a non-root parent node");
     }
 
-    //Verifica que la función devuelve false cuando se consulta por un valor EMPTY, que representa un valor inválido.
-    function testExistsOnInvalidValue() public {
-        bool result = tree.exists(EMPTY); // EMPTY is a predefined constant for invalid values
-        assertFalse(result, "Should return false for EMPTY value");
+    function testExists_InvalidValue() public {
+        assertFalse(tree.exists(EMPTY), "Should return false for EMPTY value");
     }
 
     //-------------------- GET NODE ------------------------------
 
-    //Verifica que la función falla cuando se intenta obtener un nodo de un árbol vacío.
-    function testGetNodeOnEmptyTree() public {
+    function testGetNode_EmptyTree() public {
         vm.expectRevert(RedBlackTreeLib.RBT__ValuesDoesNotExist.selector);
-        tree.getNode(10); // Intentar obtener un nodo en un árbol vacío debería fallar
+        tree.getNode(10);
     }
 
-    //Verifica que la función falla cuando se intenta acceder a un nodo que no existe.
-    function testGetNodeOnNonExistentNode() public {
+    function testGetNode_NonExistentNode() public {
         tree.insert(10);
         vm.expectRevert(RedBlackTreeLib.RBT__ValuesDoesNotExist.selector);
-        tree.getNode(20); // Intentar obtener un nodo que no existe debería fallar
+        tree.getNode(20);
     }
 
-    //Verifica que la función devuelve correctamente el nodo para un valor existente.
-    function testGetNodeOnValidNode() public {
+    function testGetNode_ValidNode() public {
         tree.insert(10);
 
         RedBlackTreeLib.Node storage node = tree.getNode(10);
-        //TODO VERIFICAR ESTOS CAMPOS
-        //assertEq(node.countTotalOrders, 1, "Should have 1 total order in the node");
-        //assertEq(node.countValueOrders, 1, "Should have value of 1 in the node");
+
         assertEq(node.parent, EMPTY, "Parent should be EMPTY for the root node");
         assertEq(node.left, EMPTY, "Left child should be EMPTY for a single node");
         assertEq(node.right, EMPTY, "Right child should be EMPTY for a single node");
     }
 
-    //Verifica que la función devuelve correctamente los nodos después de insertar varios valores.
-    function testGetNodeAfterInsertions() public {
+    function testGetNode_AfterInsertions() public {
         tree.insert(10);
         tree.insert(20);
 
         RedBlackTreeLib.Node storage node1 = tree.getNode(10);
         RedBlackTreeLib.Node storage node2 = tree.getNode(20);
-        //TODO VERIFICAR ESTOS CAMPOS
-        //assertEq(node1.countTotalOrders, 1, "Node 10 should have 1 total order");
-        //assertEq(node2.countTotalOrders, 1, "Node 20 should have 1 total order");
+
         assertEq(node1.right, 20, "Node 10 should have Node 20 as right child");
         assertEq(node2.parent, 10, "Node 20 should have Node 10 as parent");
     }
 
-    //Verifica que la función falla cuando se pasa un valor inválido (por ejemplo, EMPTY).
-    function testGetNodeOnInvalidValue() public {
+    function testGetNode_InvalidValue() public {
         vm.expectRevert(RedBlackTreeLib.RBT__ValuesDoesNotExist.selector);
-        tree.getNode(EMPTY); // Intentar obtener un nodo con un valor inválido debería fallar
+        tree.getNode(EMPTY);
     }
 
-    //Verifica que la función falla después de eliminar un nodo del árbol.
-    function testGetNodeAfterRemovingNode() public {
+    function testGetNode_AfterRemovingNode() public {
         tree.insert(10);
-
-        tree.remove(10); // Supongamos que tienes una función para eliminar nodos
+        tree.remove(10);
 
         vm.expectRevert(RedBlackTreeLib.RBT__ValuesDoesNotExist.selector);
-        tree.getNode(10); // Intentar obtener un nodo eliminado debería fallar
+        tree.getNode(10);
     }
 
-    //Verifica que la función devuelve correctamente el nodo cuando tiene múltiples órdenes asociadas.
-    function testGetNodeWithMultipleOrders() public {
-        bytes32 key1 = keccak256("order1");
-        bytes32 key2 = keccak256("order2");
-
+    function testGetNode_WithMultipleOrders() public {
         tree.insert(10);
         tree.insert(10);
 
         RedBlackTreeLib.Node storage node = tree.getNode(10);
-        //TODO VERIFICAR ESTOS CAMPOS
-        assertEq(node.right, 0, "Node 10 should have Node 0 as right child");
-        //assertEq(node.countTotalOrders, 2, "Node should have 2 total orders");
-        //assertEq(node.countValueOrders, 201, "Node should have sum of order values equal to 201");
+        assertEq(node.right, EMPTY, "Node 10 should have EMPTY as right child");
+        // Add more assertions here to check multiple orders if applicable
     }
 
-    //Verifica la estructura del árbol después de insertar varios nodos para formar un árbol balanceado.
-    function testGetNodeOnBalancedTree() public {
+    function testGetNode_BalancedTree() public {
         tree.insert(10);
         tree.insert(20);
         tree.insert(5);
@@ -399,7 +398,6 @@ contract RedBlackTreeLibTest is Test {
         assertEq(nodeLeft.parent, 10, "Node 5 should have Node 10 as parent");
         assertEq(nodeRight.parent, 10, "Node 20 should have Node 10 as parent");
     }
-
     //-------------------- INSERT ------------------------------
 
     //Inserta el primer nodo en el árbol y verifica que se convierte en la raíz.
@@ -787,7 +785,6 @@ contract RedBlackTreeLibTest is Test {
         tree.insert(10);
         tree.insert(15);
 
-
         // Assert the new structure
         assertEq(tree.getNode(10).left, 5);
         assertEq(tree.getNode(10).right, 15);
@@ -802,7 +799,6 @@ contract RedBlackTreeLibTest is Test {
         // Trigger rotation
         tree.insert(30);
         tree.insert(35);
-
 
         // Assert the new structure
         assertEq(tree.getNode(20).right, 30);
@@ -828,7 +824,6 @@ contract RedBlackTreeLibTest is Test {
         tree.insert(20);
         tree.insert(30);
         tree.insert(25);
-
 
         tree.insert(15);
         tree.insert(10);
@@ -949,7 +944,6 @@ contract RedBlackTreeLibTest is Test {
         assertEq(tree.nodes[value].red, expectedRed);
     }
 
-
     // Test scenarios
     function testRemoveBlackLeafWithRedSibling() public {
         // Scenario 1
@@ -967,10 +961,9 @@ contract RedBlackTreeLibTest is Test {
 
         tree.remove(3);
 
-
-        assertEq(tree.nodes[10].left,5);
-        assertEq(tree.nodes[10].right,15);
-        assertEq(tree.nodes[5].right,7);
+        assertEq(tree.nodes[10].left, 5);
+        assertEq(tree.nodes[10].right, 15);
+        assertEq(tree.nodes[5].right, 7);
         assertNodeColor(10, false);
         assertNodeColor(5, false);
         assertNodeColor(15, false);
@@ -997,9 +990,9 @@ contract RedBlackTreeLibTest is Test {
 
         tree.remove(3);
 
-        assertEq(tree.nodes[10].left,5);
-        assertEq(tree.nodes[10].right,15);
-        assertEq(tree.nodes[5].right,7);
+        assertEq(tree.nodes[10].left, 5);
+        assertEq(tree.nodes[10].right, 15);
+        assertEq(tree.nodes[5].right, 7);
         assertNodeColor(10, false);
         assertNodeColor(5, false);
         assertNodeColor(15, false);
@@ -1026,10 +1019,10 @@ contract RedBlackTreeLibTest is Test {
 
         tree.remove(3);
 
-        assertEq(tree.nodes[10].left,6);
-        assertEq(tree.nodes[10].right,15);
-        assertEq(tree.nodes[6].right,7);
-        assertEq(tree.nodes[6].left,5);
+        assertEq(tree.nodes[10].left, 6);
+        assertEq(tree.nodes[10].right, 15);
+        assertEq(tree.nodes[6].right, 7);
+        assertEq(tree.nodes[6].left, 5);
 
         assertNodeColor(10, false);
         assertNodeColor(6, true);
@@ -1058,10 +1051,10 @@ contract RedBlackTreeLibTest is Test {
 
         tree.remove(3);
 
-        assertEq(tree.nodes[10].left,7);
-        assertEq(tree.nodes[7].right,8);
-        assertEq(tree.nodes[7].left,5);
-        assertEq(tree.nodes[5].right,6);
+        assertEq(tree.nodes[10].left, 7);
+        assertEq(tree.nodes[7].right, 8);
+        assertEq(tree.nodes[7].left, 5);
+        assertEq(tree.nodes[5].right, 6);
 
         assertNodeColor(10, false);
         assertNodeColor(7, true);
@@ -1083,7 +1076,6 @@ contract RedBlackTreeLibTest is Test {
         tree.insert(1);
         tree.insert(4);
 
-
         assertNodeColor(10, false);
         assertNodeColor(5, true);
         assertNodeColor(15, false);
@@ -1096,10 +1088,10 @@ contract RedBlackTreeLibTest is Test {
 
         tree.remove(13);
 
-        assertEq(tree.nodes[10].left,5);
-        assertEq(tree.nodes[10].right,15);
-        assertEq(tree.nodes[15].left,0);
-        assertEq(tree.nodes[15].right,17);
+        assertEq(tree.nodes[10].left, 5);
+        assertEq(tree.nodes[10].right, 15);
+        assertEq(tree.nodes[15].left, 0);
+        assertEq(tree.nodes[15].right, 17);
 
         assertNodeColor(10, false);
         assertNodeColor(5, true);
@@ -1125,12 +1117,12 @@ contract RedBlackTreeLibTest is Test {
 
         tree.remove(3);
 
-        assertEq(tree.nodes[10].left,5);
-        assertEq(tree.nodes[10].right,15);
-        assertEq(tree.nodes[15].left,13);
-        assertEq(tree.nodes[15].right,17);
-        assertEq(tree.nodes[5].left,4);
-        assertEq(tree.nodes[4].left,1);
+        assertEq(tree.nodes[10].left, 5);
+        assertEq(tree.nodes[10].right, 15);
+        assertEq(tree.nodes[15].left, 13);
+        assertEq(tree.nodes[15].right, 17);
+        assertEq(tree.nodes[5].left, 4);
+        assertEq(tree.nodes[4].left, 1);
 
         assertNodeColor(10, false);
         assertNodeColor(5, true);
@@ -1154,24 +1146,24 @@ contract RedBlackTreeLibTest is Test {
         tree.insert(1);
         tree.insert(4);
 
-        assertEq(tree.nodes[10].left,5);
-        assertEq(tree.nodes[10].right,15);
-        assertEq(tree.nodes[15].left,13);
-        assertEq(tree.nodes[15].right,17);
-        assertEq(tree.nodes[5].left,3);
-        assertEq(tree.nodes[3].left,1);
-        assertEq(tree.nodes[3].left,1);
-        assertEq(tree.nodes[3].right,4);
+        assertEq(tree.nodes[10].left, 5);
+        assertEq(tree.nodes[10].right, 15);
+        assertEq(tree.nodes[15].left, 13);
+        assertEq(tree.nodes[15].right, 17);
+        assertEq(tree.nodes[5].left, 3);
+        assertEq(tree.nodes[3].left, 1);
+        assertEq(tree.nodes[3].left, 1);
+        assertEq(tree.nodes[3].right, 4);
 
         tree.remove(7);
 
-        assertEq(tree.nodes[10].left,3);
-        assertEq(tree.nodes[10].right,15);
-        assertEq(tree.nodes[15].left,13);
-        assertEq(tree.nodes[15].right,17);
-        assertEq(tree.nodes[3].right,5);
-        assertEq(tree.nodes[3].left,1);
-        assertEq(tree.nodes[5].left,4);
+        assertEq(tree.nodes[10].left, 3);
+        assertEq(tree.nodes[10].right, 15);
+        assertEq(tree.nodes[15].left, 13);
+        assertEq(tree.nodes[15].right, 17);
+        assertEq(tree.nodes[3].right, 5);
+        assertEq(tree.nodes[3].left, 1);
+        assertEq(tree.nodes[5].left, 4);
 
         assertNodeColor(10, false);
         assertNodeColor(5, false);
@@ -1183,7 +1175,7 @@ contract RedBlackTreeLibTest is Test {
         assertNodeColor(4, true);
     }
 
-    function testRemoveNodeFixRoot() public {
+    function testRemoveRootNodeAndFixColors() public {
         // Scenario 8
         tree.insert(10);
         tree.insert(5);
@@ -1195,38 +1187,8 @@ contract RedBlackTreeLibTest is Test {
 
         tree.remove(10);
 
-
         assertNodeColor(5, true);
         assertNodeColor(15, false);
-    }
-
-    function testNextWithRightChildNoLeftDescendant() public {
-        // 1. Create a tree with at least three nodes
-        tree.insert(10);
-        tree.insert(5);
-        tree.insert(15);
-
-        // 2. Set up the tree so that one node has a right child,
-        // but that right child doesn't have any left descendants
-        tree.insert(20);
-
-        // The tree should now look like this:
-        //       10
-        //      /  \
-        //     5    15
-        //           \
-        //            20
-
-        // 3. Call the next function on the parent of this right child
-        uint256 nextValue = tree.next(15);
-
-        // 4. Verify that the function correctly returns the right child as the next node
-        assertEq(nextValue, 20, "Next value after 15 should be 20");
-
-        // Additional test to ensure the structure is correct
-        assertEq(tree.next(10), 15, "Next value after 10 should be 15");
-        assertEq(tree.next(5), 10, "Next value after 5 should be 10");
-        assertEq(tree.next(20), 0, "Next value after 20 should be 0 (EMPTY)");
     }
 
     function testRemoveNodeWithLeftChildNoRightChild() public {
@@ -1298,29 +1260,28 @@ contract RedBlackTreeLibTest is Test {
         assertTrue(!tree.exists(50));
         assertTrue(tree.exists(60)); // 60 should replace 50 as the new root
         assertTrue(tree.root == 60); // 60 should replace 50 as the new root
-        // Add more assertions to verify the new tree structure
+            // Add more assertions to verify the new tree structure
     }
 
     function testReplaceParentScenarios() public {
-
         // Setup: Create a simple tree
-        tree.insert( 50);
-        tree.insert( 25);
-        tree.insert( 75);
-        tree.insert( 12);
-        tree.insert( 37);
-        tree.insert( 62);
-        tree.insert( 87);
+        tree.insert(50);
+        tree.insert(25);
+        tree.insert(75);
+        tree.insert(12);
+        tree.insert(37);
+        tree.insert(62);
+        tree.insert(87);
 
         // Scenario 1: Replace a non-root node (left child)
         // Removing 25 will cause 37 to replace it, triggering replaceParent
-        tree.remove( 25);
+        tree.remove(25);
         assert(tree.nodes[50].left == 37);
         assert(tree.nodes[37].parent == 50);
 
         // Scenario 2: Replace a non-root node (right child)
         // Removing 75 will cause 87 to replace it, triggering replaceParent
-        tree.remove( 75);
+        tree.remove(75);
         assert(tree.nodes[50].right == 87);
         assert(tree.nodes[87].parent == 50);
 
@@ -1341,32 +1302,15 @@ contract RedBlackTreeLibTest is Test {
         assert(!tree.exists(75));
     }
 
-    function testNextIsTheLeftmostNodeInRightSubtree() public {
-        // Scenario 7 (using tree from scenario 5)
-        tree.insert(20);
-        tree.insert(100);
+    function testRemoveFixupRightSideRedSibling() public {
+        // Insert nodes to create a specific tree structure
         tree.insert(50);
+        tree.insert(25);
         tree.insert(75);
         tree.insert(60);
-        tree.insert(58);
-
-        assertEq(tree.nodes[50].left,20);
-        assertEq(tree.nodes[50].right,75);
-        assertEq(tree.root,50);
-        assertEq(tree.next(50),58);
-
-    }
-
-    function testRemoveFixupRightSideRedSibling() public {
-
-        // Insert nodes to create a specific tree structure
-        tree.insert( 50);
-        tree.insert( 25);
-        tree.insert( 75);
-        tree.insert( 60);
-        tree.insert( 80);
-        tree.insert( 55);
-        tree.insert( 65);
+        tree.insert(80);
+        tree.insert(55);
+        tree.insert(65);
 
         // The tree should look like this:
         //       50B
@@ -1378,37 +1322,16 @@ contract RedBlackTreeLibTest is Test {
         //     55R  65R
 
         // Remove node 25, which will trigger the removeFixup function
-        tree.remove( 25);
+        tree.remove(25);
 
         // Verify the tree structure and colors after removal
         assertEq(tree.root, 75);
-        assertNodeColor(75, false);// Root should be black
+        assertNodeColor(75, false); // Root should be black
 
         assertEq(tree.nodes[75].left, 60);
-        assertNodeColor(60, true);// Root-left should be red
+        assertNodeColor(60, true); // Root-left should be red
 
         assertEq(tree.nodes[75].right, 80);
-        assertNodeColor(80, false);// Root-left should be red
-
-
+        assertNodeColor(80, false); // Root-left should be red
     }
-
-    function testPrevIsTheRightmostNodeInLeftSubtree() public {
-        // Scenario 7 (using tree from scenario 5)
-        tree.insert(20);
-        tree.insert(100);
-        tree.insert(10);
-        tree.insert(19);
-        tree.insert(17);
-        tree.insert(18);
-
-        assertEq(tree.nodes[20].left,17);
-        assertEq(tree.nodes[20].right,100);
-        assertEq(tree.root,20);
-        assertEq(tree.prev(20),19);
-
-    }
-
-
-
 }
