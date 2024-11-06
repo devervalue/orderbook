@@ -12,7 +12,6 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 contract PairLibTest2 is PairLibTest {
-
     function setUp() public override {
         tokenA = new MyTokenA(INITIAL_SUPPLY);
         tokenB = new MyTokenC(INITIAL_SUPPLY);
@@ -39,5 +38,4 @@ contract PairLibTest2 is PairLibTest {
         tokenB.approve(address(pair), APPROVAL_AMOUNT);
         vm.stopPrank();
     }
-
 }

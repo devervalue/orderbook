@@ -57,8 +57,6 @@ contract OrderBookFactoryTest is Test {
 
     //-------------------- ADD ORDER BOOK ------------------------------
 
-
-
     //Verifica que se pueda añadir correctamente un nuevo libro de órdenes y que emita el evento OrderBookCreated con los parámetros esperados.
     function testaddPairSuccess() public {
         vm.prank(owner);
@@ -87,13 +85,13 @@ contract OrderBookFactoryTest is Test {
 
     function testRevertIfFeeExceedsMaxFee() public {
         vm.startPrank(owner);
-        vm.expectRevert(abi.encodeWithSelector(OrderBookFactory.OBF__FeeExceedsMaximum.selector,500,200));
+        vm.expectRevert(abi.encodeWithSelector(OrderBookFactory.OBF__FeeExceedsMaximum.selector, 500, 200));
         factory.addPair(address(tokenA), address(tokenB), 500, feeAddress);
         factory.addPair(address(tokenA), address(tokenB), 100, feeAddress);
         bytes32[] memory keys = factory.getPairIds();
 
-        bytes32 pairId= keys[0];
-        vm.expectRevert(abi.encodeWithSelector(OrderBookFactory.OBF__FeeExceedsMaximum.selector,600,200));
+        bytes32 pairId = keys[0];
+        vm.expectRevert(abi.encodeWithSelector(OrderBookFactory.OBF__FeeExceedsMaximum.selector, 600, 200));
         factory.setPairFee(pairId, 600);
         vm.stopPrank();
     }
@@ -101,7 +99,6 @@ contract OrderBookFactoryTest is Test {
     function testRevertPairAlreadyExists() public {
         vm.startPrank(owner);
         bytes32 expectedId = keccak256(abi.encodePacked(address(tokenA), address(tokenB)));
-
 
         factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
         vm.expectRevert(OrderBookFactory.OBF__PairAlreadyExists.selector);
@@ -1285,7 +1282,7 @@ contract OrderBookFactoryTest is Test {
 
         bytes32[] memory keys = factory.getPairIds();
 
-        bytes32 pairId= keys[0];
+        bytes32 pairId = keys[0];
 
         // Test pause functionality
         assertFalse(factory.paused());
@@ -1296,7 +1293,6 @@ contract OrderBookFactoryTest is Test {
         // Attempt to add a new order while paused (should revert)
         vm.expectRevert(Pausable.EnforcedPause.selector);
         factory.addNewOrder(pairId, 100, 1000, true, block.timestamp);
-
     }
 
     function testUnpause() public {
@@ -1305,7 +1301,7 @@ contract OrderBookFactoryTest is Test {
 
         bytes32[] memory keys = factory.getPairIds();
 
-        bytes32 pairId= keys[0];
+        bytes32 pairId = keys[0];
         // First pause the contract
         factory.pause();
         assertTrue(factory.paused());
@@ -1325,7 +1321,7 @@ contract OrderBookFactoryTest is Test {
 
         bytes32[] memory keys = factory.getPairIds();
 
-        bytes32 pairId= keys[0];
+        bytes32 pairId = keys[0];
         uint256 fee = factory.getPairFee(pairId);
         assertEq(fee, 5); // Assuming the initial fee was set to 10 in createOrderBook
     }
@@ -1336,7 +1332,7 @@ contract OrderBookFactoryTest is Test {
 
         bytes32[] memory keys = factory.getPairIds();
 
-        bytes32 pairId= keys[0];
+        bytes32 pairId = keys[0];
         // Add some orders for user1
         vm.startPrank(trader2);
         factory.addNewOrder(pairId, 10, 100, true, block.timestamp);
@@ -1353,7 +1349,7 @@ contract OrderBookFactoryTest is Test {
 
         bytes32[] memory keys = factory.getPairIds();
 
-        bytes32 pairId= keys[0];
+        bytes32 pairId = keys[0];
 
         // Add an order
         vm.startPrank(trader2);
@@ -1375,7 +1371,7 @@ contract OrderBookFactoryTest is Test {
 
         bytes32[] memory keys = factory.getPairIds();
 
-        bytes32 pairId= keys[0];
+        bytes32 pairId = keys[0];
         // Add some buy orders
         vm.startPrank(trader2);
         factory.addNewOrder(pairId, 10, 100, true, block.timestamp);
@@ -1395,7 +1391,7 @@ contract OrderBookFactoryTest is Test {
 
         bytes32[] memory keys = factory.getPairIds();
 
-        bytes32 pairId= keys[0];
+        bytes32 pairId = keys[0];
         // Add some sell orders
         vm.startPrank(trader2);
         factory.addNewOrder(pairId, 10, 10, false, block.timestamp);
@@ -1415,7 +1411,7 @@ contract OrderBookFactoryTest is Test {
 
         bytes32[] memory keys = factory.getPairIds();
 
-        bytes32 pairId= keys[0];
+        bytes32 pairId = keys[0];
         // Add some buy orders at the same price
         vm.startPrank(trader2);
         factory.addNewOrder(pairId, 10, 100, true, block.timestamp);

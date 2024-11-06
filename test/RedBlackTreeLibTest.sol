@@ -1291,6 +1291,7 @@ contract RedBlackTreeLibTest is Test {
     }
 
     function testRemoveFixupRedSiblingAsLeftChild() public {
+        // Setup: Create a tree structure
         tree.insert(15);
         tree.insert(5);
         tree.insert(20);
@@ -1298,31 +1299,32 @@ contract RedBlackTreeLibTest is Test {
         tree.insert(10);
         tree.insert(4);
 
-        tree.remove(20);  // Esto debe llamar a removeFixup y activar el caso 1 donde el hermano es rojo
+        // Action: Remove node 20, which should trigger removeFixup with a red sibling case
+        tree.remove(20);
 
-        assertEq(tree.root, 5);              // La raíz debería ser 5 y negra
-        assertNodeColor(5, false);
+        // Assertions: Verify the tree structure and colors after removal
+        assertEq(tree.root, 5, "Root should be 5");
+        assertNodeColor(5, false); // Root (5) should be black
 
-         // Verificar el subárbol izquierdo de la raíz
-        assertEq(tree.nodes[5].left, 3);
-        assertNodeColor(3, false);            // El nodo 3 debería ser negro
+        // Verify left subtree of root
+        assertEq(tree.nodes[5].left, 3, "Left child of root should be 3");
+        assertNodeColor(3, false); // Node 3 should be black
 
-        // Verificar el subárbol derecho de la raíz
-        assertEq(tree.nodes[5].right, 15);
-        assertNodeColor(15, false);            // El nodo 15 debería ser negro
+        // Verify right subtree of root
+        assertEq(tree.nodes[5].right, 15, "Right child of root should be 15");
+        assertNodeColor(15, false); // Node 15 should be black
 
-        // Verificar el subárbol derecho del nodo 3
-        assertEq(tree.nodes[3].right, 4);
-        assertNodeColor(4, true);            // El nodo 4 debería ser rojo
+        // Verify right child of node 3
+        assertEq(tree.nodes[3].right, 4, "Right child of node 3 should be 4");
+        assertNodeColor(4, true); // Node 4 should be red
 
-        // Verificar el subárbol izquierdo del nodo 15
-        assertEq(tree.nodes[15].left, 10);
-        assertNodeColor(10, true);            // El nodo 10 debería ser rojo
-
-
+        // Verify left child of node 15
+        assertEq(tree.nodes[15].left, 10, "Left child of node 15 should be 10");
+        assertNodeColor(10, true); // Node 10 should be red
     }
 
     function testRemoveFixupBrotherRightChildIsBlack() public {
+        // Setup: Create a tree structure
         tree.insert(50);
         tree.insert(10);
         tree.insert(70);
@@ -1330,30 +1332,27 @@ contract RedBlackTreeLibTest is Test {
         tree.insert(20);
         tree.insert(25);
 
-        tree.remove(70);  // Esto debe llamar a removeFixup y activar el caso 1 donde el hermano es rojo
+        // Action: Remove node 70, which should trigger removeFixup
+        tree.remove(70);
 
-        assertEq(tree.root, 10);              // La raíz debería ser 20 y negra
-        assertNodeColor(10, false);
+        // Assertions: Verify the tree structure and colors after removal
+        assertEq(tree.root, 10, "Root should be 10");
+        assertNodeColor(10, false); // Root (10) should be black
 
+        // Verify left subtree of root
+        assertEq(tree.nodes[10].left, 5, "Left child of root should be 5");
+        assertNodeColor(5, false); // Node 5 should be black
 
-        // Verificar el subárbol izquierdo de la raíz
-        assertEq(tree.nodes[10].left, 5);
-        assertNodeColor(5, false);            // El nodo 5 debería ser negro
+        // Verify right subtree of root
+        assertEq(tree.nodes[10].right, 25, "Right child of root should be 25");
+        assertNodeColor(25, true); // Node 25 should be red
 
-        // Verificar el subárbol derecho de la raíz
-        assertEq(tree.nodes[10].right, 25);
-        assertNodeColor(25, true);            // El nodo 15 debería ser rojo
+        // Verify right child of node 25
+        assertEq(tree.nodes[25].right, 50, "Right child of node 25 should be 50");
+        assertNodeColor(50, false); // Node 50 should be black
 
-        // Verificar el subárbol derecho del nodo 25
-        assertEq(tree.nodes[25].right, 50);
-        assertNodeColor(50, false);            // El nodo 50 debería ser negro
-
-        // Verificar el subárbol izquierdo del nodo 25
-        assertEq(tree.nodes[25].left, 20);
-        assertNodeColor(20, false);            // El nodo 20 debería ser negro
-
+        // Verify left child of node 25
+        assertEq(tree.nodes[25].left, 20, "Left child of node 25 should be 20");
+        assertNodeColor(20, false); // Node 20 should be black
     }
-
-
-
 }
