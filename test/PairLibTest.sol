@@ -11,7 +11,7 @@ import "./MyTokenB.sol";
 import "./PairLibImpl.sol";
 
 contract PairLibTest is Test {
-    PairLibImpl private pair;
+    PairLibImpl pair;
 
     // Tokens
     ERC20 tokenA;
@@ -33,7 +33,7 @@ contract PairLibTest is Test {
     uint256 nonce;
     uint256 expired;
 
-    function setUp() public {
+    function setUp() public virtual {
         tokenA = new MyTokenA(INITIAL_SUPPLY);
         tokenB = new MyTokenB(INITIAL_SUPPLY);
 
