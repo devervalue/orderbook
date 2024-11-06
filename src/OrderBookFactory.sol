@@ -234,7 +234,6 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable {
         nonReentrant
         whenNotPaused
     {
-        if (!pairExists(_pairId)) revert OBF__PairDoesNotExist();
         if (_quantity == 0) revert OBF__InvalidQuantityValueZero();
 
         if (_isBuy) {

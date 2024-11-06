@@ -57,6 +57,8 @@ contract OrderBookFactoryTest is Test {
 
     //-------------------- ADD ORDER BOOK ------------------------------
 
+
+
     //Verifica que se pueda añadir correctamente un nuevo libro de órdenes y que emita el evento OrderBookCreated con los parámetros esperados.
     function testaddPairSuccess() public {
         vm.prank(owner);
@@ -81,6 +83,32 @@ contract OrderBookFactoryTest is Test {
         vm.prank(owner);
         vm.expectRevert(OrderBookFactory.OBF__InvalidTokenAddress.selector);
         factory.addPair(address(0), address(tokenB), 5, feeAddress);
+    }
+
+    function testRevertIfFeeExceedsMaxFee() public {
+        vm.startPrank(owner);
+        vm.expectRevert(abi.encodeWithSelector(OrderBookFactory.OBF__FeeExceedsMaximum.selector,500,200));
+        factory.addPair(address(tokenA), address(tokenB), 500, feeAddress);
+        factory.addPair(address(tokenA), address(tokenB), 100, feeAddress);
+        bytes32[] memory keys = factory.getPairIds();
+
+        bytes32 pairId= keys[0];
+        vm.expectRevert(abi.encodeWithSelector(OrderBookFactory.OBF__FeeExceedsMaximum.selector,600,200));
+        factory.setPairFee(pairId, 600);
+        vm.stopPrank();
+    }
+
+    function testRevertPairAlreadyExists() public {
+        vm.startPrank(owner);
+        bytes32 expectedId = keccak256(abi.encodePacked(address(tokenA), address(tokenB)));
+
+
+        factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
+        vm.expectRevert(OrderBookFactory.OBF__PairAlreadyExists.selector);
+        factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
+        vm.expectRevert(OrderBookFactory.OBF__PairAlreadyExists.selector);
+        factory.addPair(address(tokenB), address(tokenA), 5, feeAddress);
+        vm.stopPrank();
     }
 
     //Verifica que se revierte si el _quoteToken es la dirección cero (address(0)).
@@ -1251,54 +1279,173 @@ contract OrderBookFactoryTest is Test {
         factory.addNewOrder(keys[0], quantity, price, isBuy, 1);
     }
 
-    //    // Test: Agregar orden con precio máximo válido
-    //    function testAddOrderWithMaxPrice() public {
-    //        vm.startPrank(owner);
-    //        factory.addPair(address(tokenA), address(tokenB), 10, feeAddress);
-    //        vm.stopPrank();
-    //
-    //        // Obtener las claves de los libros de órdenes
-    //        bytes32[] memory keys = factory.getKeysOrderBooks();
-    //
-    //        // Verificar que hay exactamente una clave
-    //        assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
-    //
-    //        // Agregar una nueva orden de compra
-    //        uint256 quantity = 1;
-    //        uint256 maxPrice = type(uint256).max;
-    //        bool isBuy = true;
-    //
-    //        vm.prank(trader1);
-    //        factory.addNewOrder(keys[0], quantity, maxPrice, isBuy,  1, 1);
-    //    }
-
-    //Test: Agregar orden con cantidad maxima valida
-    /*function testAddOrderWithMaxQuantity() public {
+    function testPause() public {
         vm.startPrank(owner);
-        factory.addPair(address(tokenA), address(tokenB), 10, feeAddress);
+        factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
+
+        bytes32[] memory keys = factory.getPairIds();
+
+        bytes32 pairId= keys[0];
+
+        // Test pause functionality
+        assertFalse(factory.paused());
+        factory.pause();
+        assertTrue(factory.paused());
+        vm.stopPrank();
+        vm.prank(trader2);
+        // Attempt to add a new order while paused (should revert)
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        factory.addNewOrder(pairId, 100, 1000, true, block.timestamp);
+
+    }
+
+    function testUnpause() public {
+        vm.startPrank(owner);
+        factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
+
+        bytes32[] memory keys = factory.getPairIds();
+
+        bytes32 pairId= keys[0];
+        // First pause the contract
+        factory.pause();
+        assertTrue(factory.paused());
+
+        // Now unpause
+        factory.unpause();
+        assertFalse(factory.paused());
+        vm.stopPrank();
+        vm.prank(trader2);
+        // Verify that operations can be performed after unpausing
+        factory.addNewOrder(pairId, 100, 1000, true, block.timestamp);
+    }
+
+    function testGetPairFee() public {
+        vm.prank(owner);
+        factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
+
+        bytes32[] memory keys = factory.getPairIds();
+
+        bytes32 pairId= keys[0];
+        uint256 fee = factory.getPairFee(pairId);
+        assertEq(fee, 5); // Assuming the initial fee was set to 10 in createOrderBook
+    }
+
+    function testGetTraderOrdersForPair() public {
+        vm.prank(owner);
+        factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
+
+        bytes32[] memory keys = factory.getPairIds();
+
+        bytes32 pairId= keys[0];
+        // Add some orders for user1
+        vm.startPrank(trader2);
+        factory.addNewOrder(pairId, 10, 100, true, block.timestamp);
+        factory.addNewOrder(pairId, 20, 110, true, block.timestamp);
         vm.stopPrank();
 
-        // Obtener las claves de los libros de órdenes
-        bytes32[] memory keys = factory.getKeysOrderBooks();
+        bytes32[] memory orders = factory.getTraderOrdersForPair(pairId, trader2);
+        assertEq(orders.length, 2);
+    }
 
-        // Verificar que hay exactamente una clave
-        assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
+    function testGetOrderDetailForPair() public {
+        vm.prank(owner);
+        factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
 
-        // Agregar una nueva orden de compra
+        bytes32[] memory keys = factory.getPairIds();
 
-        uint256 maxQuantity = type(uint256).max;
-        uint256 price = 100;
-        bool isBuy = true;
+        bytes32 pairId= keys[0];
 
-        vm.prank(trader2);
-        factory.addNewOrder(keys[0], maxQuantity, price, isBuy,  1, 1);
-    }*/
+        // Add an order
+        vm.startPrank(trader2);
+        factory.addNewOrder(pairId, 10, 100, true, block.timestamp);
+        vm.stopPrank();
 
-    //Test: Agregar orden con cantidad y precio maximo valido
+        bytes32[] memory orders = factory.getTraderOrdersForPair(pairId, trader2);
+        require(orders.length > 0, "No orders found");
 
-    /*// Test: Agregar orden con precio máximo válido
-    function testAddOrderWithMinNonce() public {
-        factory.addNewOrder(orderBookKey, validQuantity, validPrice, true, 0, validExpiry);
-        // Añadir verificaciones si es necesario
-    }*/
+        OrderBookLib.Order memory order = factory.getOrderDetailForPair(pairId, orders[0]);
+        assertEq(order.quantity, 10);
+        assertEq(order.price, 100);
+        assertTrue(order.isBuy);
+    }
+
+    function testGetTop3BuyPricesForPair() public {
+        vm.prank(owner);
+        factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
+
+        bytes32[] memory keys = factory.getPairIds();
+
+        bytes32 pairId= keys[0];
+        // Add some buy orders
+        vm.startPrank(trader2);
+        factory.addNewOrder(pairId, 10, 100, true, block.timestamp);
+        factory.addNewOrder(pairId, 10, 110, true, block.timestamp);
+        factory.addNewOrder(pairId, 10, 120, true, block.timestamp);
+        factory.addNewOrder(pairId, 10, 90, true, block.timestamp);
+        vm.stopPrank();
+        uint256[3] memory topPrices = factory.getTop3BuyPricesForPair(pairId);
+        assertEq(topPrices[0], 120);
+        assertEq(topPrices[1], 110);
+        assertEq(topPrices[2], 100);
+    }
+
+    function testGetTop3SellPricesForPair() public {
+        vm.prank(owner);
+        factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
+
+        bytes32[] memory keys = factory.getPairIds();
+
+        bytes32 pairId= keys[0];
+        // Add some sell orders
+        vm.startPrank(trader2);
+        factory.addNewOrder(pairId, 10, 10, false, block.timestamp);
+        factory.addNewOrder(pairId, 10, 11, false, block.timestamp);
+        factory.addNewOrder(pairId, 10, 12, false, block.timestamp);
+        factory.addNewOrder(pairId, 10, 9, false, block.timestamp);
+        vm.stopPrank();
+        uint256[3] memory topPrices = factory.getTop3SellPricesForPair(pairId);
+        assertEq(topPrices[0], 9);
+        assertEq(topPrices[1], 10);
+        assertEq(topPrices[2], 11);
+    }
+
+    function testGetPricePointDataForPair() public {
+        vm.prank(owner);
+        factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
+
+        bytes32[] memory keys = factory.getPairIds();
+
+        bytes32 pairId= keys[0];
+        // Add some buy orders at the same price
+        vm.startPrank(trader2);
+        factory.addNewOrder(pairId, 10, 100, true, block.timestamp);
+        factory.addNewOrder(pairId, 20, 100, true, block.timestamp + 1);
+        vm.stopPrank();
+        (uint256 orderCount, uint256 orderValue) = factory.getPricePointDataForPair(pairId, 100, true);
+        assertEq(orderCount, 2);
+        assertEq(orderValue, 30);
+    }
+
+    function testRevertOnNonExistantPair() public {
+        vm.startPrank(trader2);
+        bytes32 pairId = keccak256(abi.encodePacked("NonExistantPair"));
+        bytes32 orderId = keccak256(abi.encodePacked("TestOrder"));
+
+        vm.expectRevert(OrderBookFactory.OBF__PairNotEnabled.selector);
+        factory.addNewOrder(pairId, 10, 100, true, block.timestamp);
+
+        vm.expectRevert(OrderBookFactory.OBF__PairDoesNotExist.selector);
+        factory.cancelOrder(pairId, orderId);
+
+        vm.expectRevert(OrderBookFactory.OBF__PairDoesNotExist.selector);
+        factory.getPairFee(pairId);
+
+        vm.expectRevert(OrderBookFactory.OBF__PairDoesNotExist.selector);
+        factory.getTraderOrdersForPair(pairId, trader2);
+
+        vm.expectRevert(OrderBookFactory.OBF__PairDoesNotExist.selector);
+        factory.getOrderDetailForPair(pairId, orderId);
+
+        vm.stopPrank();
+    }
 }
