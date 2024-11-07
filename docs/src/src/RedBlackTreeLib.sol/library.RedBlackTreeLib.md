@@ -1,5 +1,5 @@
 # RedBlackTreeLib
-[Git Source](https://github.com/artechsoft/orderbook/blob/0738e4fc4a3ac086ca657a18219faf4a6d226499/src/RedBlackTreeLib.sol)
+[Git Source](https://github.com/artechsoft/orderbook/blob/d467ec6f814e6d5a69e8a8eaf6201520b0cb27a5/src/RedBlackTreeLib.sol)
 
 *This contract implements a red-black tree, which is a self-balancing binary search tree.
 It is designed to be used for managing order books or any other sorted data structures efficiently.*
@@ -298,7 +298,7 @@ of that node, as it is the maximum in the subtree.*
 
 
 ```solidity
-function treeMaximum(Tree storage self, uint256 value) private view returns (uint256);
+function treeMaximum(Tree storage self, uint256 value) internal view returns (uint256);
 ```
 **Parameters**
 

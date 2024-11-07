@@ -22,6 +22,7 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable {
     /// @dev Utilizes OrderBookLib for managing price points
     using OrderBookLib for OrderBookLib.PricePoint;
 
+
     /**
      * @dev Maximum fee in basis points (2%)
      * This constant limits the maximum fee that can be set for a trading pair

@@ -1,5 +1,5 @@
 # PairLib
-[Git Source](https://github.com/artechsoft/orderbook/blob/0738e4fc4a3ac086ca657a18219faf4a6d226499/src/PairLib.sol)
+[Git Source](https://github.com/artechsoft/orderbook/blob/d467ec6f814e6d5a69e8a8eaf6201520b0cb27a5/src/PairLib.sol)
 
 This library provides functionality for creating, canceling, and matching orders in a decentralized exchange
 
@@ -309,6 +309,9 @@ Retrieves the details of a specific order
 
 *This function returns the full Order struct for a given order ID*
 
+**Note:**
+throws: PL__OrderIdDoesNotExist if the order ID does not exist
+
 
 ```solidity
 function getOrderDetail(Pair storage pair, bytes32 orderId) internal view returns (OrderBookLib.Order storage);
@@ -396,29 +399,6 @@ function getHighestBuyPrice(Pair storage pair) internal view returns (uint256);
 |`<none>`|`uint256`|uint256 The highest buy price, or 0 if there are no buy orders|
 
 
-### getHighestSellPrice
-
-Gets the highest sell price in the order book
-
-*This function returns the highest price at which there is a sell order*
-
-
-```solidity
-function getHighestSellPrice(Pair storage pair) internal view returns (uint256);
-```
-**Parameters**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`pair`|`Pair`|The storage reference to the Pair struct|
-
-**Returns**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint256`|uint256 The highest sell price, or 0 if there are no sell orders|
-
-
 ### getNextBuyOrderId
 
 Retrieves the ID of the next buy order at a specific price
@@ -441,30 +421,6 @@ function getNextBuyOrderId(Pair storage pair, uint256 price) internal view retur
 |Name|Type|Description|
 |----|----|-----------|
 |`<none>`|`bytes32`|bytes32 The ID of the next buy order at the specified price, or 0 if none exists|
-
-
-### getNextSellOrderId
-
-Retrieves the ID of the next sell order at a specific price
-
-*This function is used to traverse the order book for sell orders*
-
-
-```solidity
-function getNextSellOrderId(Pair storage pair, uint256 price) internal view returns (bytes32);
-```
-**Parameters**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`pair`|`Pair`|The storage reference to the Pair struct|
-|`price`|`uint256`|The price point to check for the next sell order|
-
-**Returns**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`bytes32`|bytes32 The ID of the next sell order at the specified price, or 0 if none exists|
 
 
 ### getTop3BuyPrices

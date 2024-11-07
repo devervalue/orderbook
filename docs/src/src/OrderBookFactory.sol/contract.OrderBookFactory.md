@@ -1,5 +1,5 @@
 # OrderBookFactory
-[Git Source](https://github.com/artechsoft/orderbook/blob/0738e4fc4a3ac086ca657a18219faf4a6d226499/src/OrderBookFactory.sol)
+[Git Source](https://github.com/artechsoft/orderbook/blob/d467ec6f814e6d5a69e8a8eaf6201520b0cb27a5/src/OrderBookFactory.sol)
 
 **Inherits:**
 ReentrancyGuard, Pausable, Ownable
@@ -83,6 +83,9 @@ constructor() Ownable(msg.sender);
 Adds a new order book to the mapping
 
 *Creates a new trading pair and its associated order book with specified parameters*
+
+**Note:**
+security: This function is only callable by the contract owner and when the contract is not paused
 
 
 ```solidity
