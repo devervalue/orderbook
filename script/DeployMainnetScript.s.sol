@@ -27,8 +27,8 @@ contract DeployMainnetScript is Script {
     /// @dev Loads private keys from environment variables, deploys contracts, and configures trading pairs
     function run() external {
         // ORDERBOOKFACTORY DEPLOYMENT
-        // @dev Loads the deployer's private key for the OrderBookFactory contract from the `PRIVATE_KEY_ARBISCAN` environment variable
-        uint256 deployerOrderBookFactoryPrivateKey = vm.envUint("PRIVATE_KEY_ARBISCAN");
+        // @dev Loads the deployer's private key for the OrderBookFactory contract from the `PRIVATE_KEY_MAINNET` environment variable
+        uint256 deployerOrderBookFactoryPrivateKey = vm.envUint("PRIVATE_KEY_MAINNET");
 
         // @dev Starts broadcasting transactions for the OrderBookFactory deployment
         vm.startBroadcast(deployerOrderBookFactoryPrivateKey);
@@ -50,8 +50,8 @@ contract DeployMainnetScript is Script {
         OrderBook memory newOrderBook = OrderBook({
             tokenA: vm.envAddress("ADDRESS_WBTC"), // WBTC
             tokenB: vm.envAddress("ADDRESS_EVA"), // EVA
-            fee: vm.envUint("FEE_ARBISCAN"),
-            feeAddress: vm.envAddress("FEE_ADDRESS_ARBISCAN")
+            fee: vm.envUint("FEE_MAINNET"),
+            feeAddress: vm.envAddress("FEE_ADDRESS_MAINNET")
         });
 
         // @dev Adds the new OrderBook instance to the orderBooks array
@@ -59,7 +59,7 @@ contract DeployMainnetScript is Script {
 
         // ADDING PAIRS TO ORDERBOOKFACTORY
         // @dev Loads the deployer's private key to add pairs to the OrderBookFactory
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY_ARBISCAN");
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY_MAINNET");
         vm.startBroadcast(deployerPrivateKey);
 
         // @dev Loops through the `orderBooks` array to add each pair to the OrderBookFactory
