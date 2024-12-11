@@ -74,7 +74,10 @@ library PairLib {
         /// @dev Mapping of order IDs to Order structures
         /// @notice This allows O(1) access to any order details given its ID
         mapping(bytes32 => OrderBookLib.Order) orders;
+        // TODO crear un mapping traderBalances que va de la dirección de un trader a un objeto traderBalance
     }
+
+    // TODO Crear struct traderBalance que contiene baseTokenBalance y quoteTokenBalance
 
     /// @notice Emitted when a new order is created
     /// @param id The unique identifier of the created order
@@ -120,6 +123,9 @@ library PairLib {
         pair.fee = newFee;
         emit PairFeeChanged(pair.baseToken, pair.quoteToken, newFee);
     }
+
+    // TODO agregar operación interna que permita a un trader retirar su balance y actualice los balances
+    // TODO agregar operacion de lectura checkBalance
 
     /// @notice Adds a new buy order to the order book
     /// @dev This function checks if the pair is enabled before creating the order
@@ -277,6 +283,7 @@ library PairLib {
 
         // Transfer tokens between the taker and the maker
         /// @dev The taker sends the full amount, while receiving the amount minus the fee
+        // TODO Registrar el balance al trader que reciba segun sea compra o venta
         takerSendToken.safeTransferFrom(msg.sender, matchedOrder.traderAddress, takerSendAmount);
         takerReceiveToken.safeTransfer(msg.sender, takerReceiveAmountAfterFee);
 
@@ -331,7 +338,8 @@ library PairLib {
         uint256 takerReceiveAmountAfterFee = takerReceiveAmount - fee;
 
         // Transfer sell tokens from taker to maker (full amount)
-        takerSendToken.safeTransferFrom(msg.sender, matchedOrder.traderAddress, takerSendAmount);
+        // TODO Registrar el balance al trader que reciba segun sea compra o venta
+    takerSendToken.safeTransferFrom(msg.sender, matchedOrder.traderAddress, takerSendAmount);
 
         // Transfer buy tokens from maker to taker (minus fee)
         takerReceiveToken.safeTransfer(msg.sender, takerReceiveAmountAfterFee);

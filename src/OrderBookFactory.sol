@@ -334,6 +334,9 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable {
         return (p.orderCount, p.orderValue);
     }
 
+    // TODO agregar operación chequear balance de un par para un trader
+    // TODO agregar operación retirar balance de un par para un trader
+
     /// @notice Checks if a trading pair exists
     /// @dev A pair is considered to exist if its baseToken is not the zero address
     /// @param _pairId The unique identifier of the trading pair to check
