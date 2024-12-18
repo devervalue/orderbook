@@ -49,6 +49,12 @@ library PairLib {
         mapping(bytes32 => uint256) index;
     }
 
+    // TODO Crear struct traderBalance que contiene baseTokenBalance y quoteTokenBalance
+    struct TraderBalance{
+        uint256 baseTokenBalance;
+        uint256 quoteTokenBalance;
+    }
+
     /// @dev Main structure representing a trading pair
     /// @notice This structure encapsulates all data and functionality related to a specific trading pair
     struct Pair {
@@ -75,9 +81,9 @@ library PairLib {
         /// @notice This allows O(1) access to any order details given its ID
         mapping(bytes32 => OrderBookLib.Order) orders;
         // TODO crear un mapping traderBalances que va de la dirección de un trader a un objeto traderBalance
+        mapping(address => TraderBalance) traderBalances;
     }
 
-    // TODO Crear struct traderBalance que contiene baseTokenBalance y quoteTokenBalance
 
     /// @notice Emitted when a new order is created
     /// @param id The unique identifier of the created order
@@ -125,7 +131,20 @@ library PairLib {
     }
 
     // TODO agregar operación interna que permita a un trader retirar su balance y actualice los balances
-    // TODO agregar operacion de lectura checkBalance
+    function withdrawBalance(Pair storage pair, address traderAddress) internal{
+        uint256 quoteBalance = pair.traderBalances[traderAddress].quoteTokenBalance;
+        uint256 baseBalance = pair.traderBalances[traderAddress].baseTokenBalance;
+        console.log("quoteBalance",quoteBalance);
+        console.log("baseBalance",baseBalance);
+        if (quoteBalance > 0) {
+            pair.traderBalances[traderAddress].quoteTokenBalance = 0;
+            IERC20(pair.quoteToken).safeTransfer(traderAddress, quoteBalance);
+        }
+        if (baseBalance > 0) {
+            pair.traderBalances[traderAddress].baseTokenBalance = 0;
+            IERC20(pair.baseToken).safeTransfer(traderAddress, baseBalance);
+        }
+    }
 
     /// @notice Adds a new buy order to the order book
     /// @dev This function checks if the pair is enabled before creating the order
@@ -284,7 +303,12 @@ library PairLib {
         // Transfer tokens between the taker and the maker
         /// @dev The taker sends the full amount, while receiving the amount minus the fee
         // TODO Registrar el balance al trader que reciba segun sea compra o venta
-        takerSendToken.safeTransferFrom(msg.sender, matchedOrder.traderAddress, takerSendAmount);
+        takerSendToken.safeTransferFrom(msg.sender, address(this), takerSendAmount);
+        if(takerOrder.isBuy){
+            pair.traderBalances[matchedOrder.traderAddress].quoteTokenBalance += takerSendAmount;
+        }else{
+            pair.traderBalances[matchedOrder.traderAddress].baseTokenBalance += takerSendAmount;
+        }
         takerReceiveToken.safeTransfer(msg.sender, takerReceiveAmountAfterFee);
 
         // Transfer the fee to the designated fee address, if set
@@ -339,7 +363,12 @@ library PairLib {
 
         // Transfer sell tokens from taker to maker (full amount)
         // TODO Registrar el balance al trader que reciba segun sea compra o venta
-    takerSendToken.safeTransferFrom(msg.sender, matchedOrder.traderAddress, takerSendAmount);
+        takerSendToken.safeTransferFrom(msg.sender, address(this), takerSendAmount);
+        if(takerOrder.isBuy){
+            pair.traderBalances[matchedOrder.traderAddress].quoteTokenBalance += takerSendAmount;
+        }else{
+            pair.traderBalances[matchedOrder.traderAddress].baseTokenBalance += takerSendAmount;
+        }
 
         // Transfer buy tokens from maker to taker (minus fee)
         takerReceiveToken.safeTransfer(msg.sender, takerReceiveAmountAfterFee);
@@ -481,6 +510,11 @@ library PairLib {
         }
     }
 
+    // TODO agregar operacion de lectura checkBalance
+    function getTraderBalances(Pair storage pair, address _trader) internal view returns (TraderBalance memory) {
+        return pair.traderBalances[_trader];
+    }
+
     /// @notice Retrieves all order IDs for a specific trader
     /// @dev This function returns an array of order IDs associated with the given trader's address
     /// @param pair The storage reference to the Pair struct
@@ -573,4 +607,5 @@ library PairLib {
         // An order exists if its ID in the orders mapping is not the zero bytes32
         return pair.orders[_orderId].id != bytes32(0);
     }
+
 }

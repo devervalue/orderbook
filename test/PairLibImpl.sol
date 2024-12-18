@@ -39,6 +39,10 @@ contract PairLibImpl {
         }
     }
 
+    function getWithdrawBalance(address trader) public {
+        pair.withdrawBalance(trader);
+    }
+
     function addBuyBaseToken(uint256 _price, uint256 _quantity, address _trader, uint256 nonce) public {
         pair.addBuyOrder(_price, _quantity, nonce);
     }

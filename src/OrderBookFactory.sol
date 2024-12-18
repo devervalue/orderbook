@@ -221,7 +221,6 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable {
 
         emit PairFeeAddressChanged(_pairId, newFeeAddress);
     }
-
     /// @notice Adds a new order to the order book
     /// @dev This function allows users to place new buy or sell orders
     /// @param _pairId The unique identifier of the trading pair
@@ -335,7 +334,14 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable {
     }
 
     // TODO agregar operación chequear balance de un par para un trader
+    function checkBalanceTrader(bytes32 _pairId, address _trader) external view returns(PairLib.TraderBalance memory){
+        return pairs[_pairId].getTraderBalances(_trader);
+    }
+
     // TODO agregar operación retirar balance de un par para un trader
+    function withdrawBalanceTrader(bytes32 _pairId) external{
+        pairs[_pairId].withdrawBalance(msg.sender);
+    }
 
     /// @notice Checks if a trading pair exists
     /// @dev A pair is considered to exist if its baseToken is not the zero address
