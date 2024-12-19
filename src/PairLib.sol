@@ -186,11 +186,11 @@ library PairLib {
             ? (IERC20(pair.quoteToken), removedOrder.availableQuantity * removedOrder.price / PRECISION)
             : (IERC20(pair.baseToken), removedOrder.availableQuantity);
 
-        // Transfer the remaining funds back to the trader
-        token.safeTransfer(removedOrder.traderAddress, remainingFunds);
-
         // Remove the order from the order book and related data structures
         removeOrder(pair, removedOrder);
+
+        // Transfer the remaining funds back to the trader
+        token.safeTransfer(removedOrder.traderAddress, remainingFunds);
 
         // Emit an event to signal the order cancellation
         emit OrderCanceled(_orderId, pair.baseToken, pair.quoteToken, msg.sender);
