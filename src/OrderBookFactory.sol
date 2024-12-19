@@ -6,7 +6,7 @@ import "./RedBlackTreeLib.sol";
 import {PairLib} from "./PairLib.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 /**
  * @title OrderBookFactory - Main Contract for Order Book Management
@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @notice This contract manages the creation and administration of order books for trading pairs
  * @dev This contract inherits from ReentrancyGuard, Pausable, and Ownable for added security and control
  */
-contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable {
+contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable2Step {
     /// @dev Utilizes PairLib for managing trading pairs
     using PairLib for PairLib.Pair;
     /// @dev Utilizes OrderBookLib for managing individual orders
