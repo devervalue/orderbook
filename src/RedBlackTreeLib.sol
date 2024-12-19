@@ -25,8 +25,6 @@
 */
 pragma solidity ^0.8.26;
 
-import "forge-std/console.sol";
-
 /**
  * @title Red-Black Tree Implementation for Solidity
  * @dev This contract implements a red-black tree, which is a self-balancing binary search tree.

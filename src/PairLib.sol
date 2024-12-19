@@ -3,7 +3,6 @@ pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "forge-std/console.sol";
 import "./OrderBookLib.sol";
 
 /// @title PairLib - A library for managing trading pairs and order books
@@ -134,8 +133,6 @@ library PairLib {
     function withdrawBalance(Pair storage pair, address traderAddress) internal{
         uint256 quoteBalance = pair.traderBalances[traderAddress].quoteTokenBalance;
         uint256 baseBalance = pair.traderBalances[traderAddress].baseTokenBalance;
-        console.log("quoteBalance",quoteBalance);
-        console.log("baseBalance",baseBalance);
         if (quoteBalance > 0) {
             pair.traderBalances[traderAddress].quoteTokenBalance = 0;
             IERC20(pair.quoteToken).safeTransfer(traderAddress, quoteBalance);

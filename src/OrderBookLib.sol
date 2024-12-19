@@ -3,7 +3,6 @@ pragma solidity ^0.8.26;
 
 import "./QueueLib.sol";
 import "./RedBlackTreeLib.sol";
-import "forge-std/console.sol";
 
 /// @title OrderBookLib - A library for managing an order book in a decentralized exchange
 /// @dev This library uses a Red-Black Tree for efficient price level management and a Queue for order management within each price level
