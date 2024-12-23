@@ -6,8 +6,11 @@ import "../src/OrderBookFactory.sol";
 import "./MyTokenB.sol";
 import "./MyTokenA.sol";
 import "forge-std/console.sol";
+import "../src/PairLib.sol";
 
 contract OrderBookFactoryTest is Test {
+    using PairLib for PairLib.TraderBalance;
+
     OrderBookFactory factory;
 
     //ADDRESS
@@ -43,10 +46,12 @@ contract OrderBookFactoryTest is Test {
         //Aprobar el contrato para que pueda gastar tokens
         vm.startPrank(trader1); // Cambiar el contexto a trader1
         tokenA.approve(address(factory), 1000 * 10 ** 18); // Aprobar 1000 tokens
+        tokenB.approve(address(factory), 1000 * 10 ** 18); // Aprobar 1000 tokens
         vm.stopPrank();
 
         vm.startPrank(trader2); // Cambiar el contexto a trader1
         tokenB.approve(address(factory), 1000 * 10 ** 18); // Aprobar 1000 tokens
+        tokenA.approve(address(factory), 1000 * 10 ** 18); // Aprobar 1000 tokens
         vm.stopPrank();
 
         vm.startPrank(address(factory)); // Cambiar el contexto a trader1
@@ -1476,5 +1481,70 @@ contract OrderBookFactoryTest is Test {
         factory.getOrderDetailForPair(pairId, orderId);
 
         vm.stopPrank();
+    }
+
+
+    function testAddMatchingOrdersCheckAndWithdraw() public {
+        vm.startPrank(owner);
+        factory.addPair(address(tokenA), address(tokenB), 10, feeAddress);
+        vm.stopPrank();
+
+        // Obtener las claves de los libros de órdenes
+        bytes32[] memory keys = factory.getPairIds();
+
+        // Verificar que hay exactamente una clave
+        assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
+
+        // Agregar una nueva orden de compra
+        uint256 quantity = 10;
+        uint256 price = 100 * 1e18;
+        bool isBuy = true;
+
+        vm.prank(trader1);
+        factory.addNewOrder(keys[0], quantity, price, isBuy, 1);
+
+        // Add matching sell order
+        vm.prank(trader2);
+        factory.addNewOrder(keys[0], quantity, price, !isBuy, 2);
+
+        PairLib.TraderBalance memory tb1 = factory.checkBalanceTrader(keys[0], trader1);
+
+        assertEqUint(10, tb1.baseTokenBalance);
+
+        vm.prank(trader1);
+        factory.withdrawBalanceTrader(keys[0]);
+
+        assertEqUint(10,         tokenB.balanceOf(trader1));
+
+        // Now sell 5 of the 10 bought
+
+        vm.prank(trader1);
+        factory.addNewOrder(keys[0], 5, price, !isBuy, 3);
+
+        // Add matching sell order
+        vm.prank(trader2);
+        factory.addNewOrder(keys[0], 5, price, isBuy, 4);
+
+        tb1 = factory.checkBalanceTrader(keys[0], trader1);
+
+        assertEqUint(500, tb1.quoteTokenBalance);
+        uint256 prevBalanceT1 = tokenA.balanceOf(trader1);
+
+        vm.prank(trader1);
+        factory.withdrawBalanceTrader(keys[0]);
+
+        uint256 finalBalanceT1 = tokenA.balanceOf(trader1);
+
+        assertEqUint(500,         finalBalanceT1 - prevBalanceT1);
+
+        vm.expectRevert(OrderBookFactory.OBF__PairDoesNotExist.selector);
+        tb1 = factory.checkBalanceTrader("0x1", trader1);
+
+        vm.prank(trader1);
+        vm.expectRevert(OrderBookFactory.OBF__PairDoesNotExist.selector);
+        factory.withdrawBalanceTrader("0x1");
+
+
+
     }
 }

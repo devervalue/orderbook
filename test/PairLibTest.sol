@@ -259,6 +259,21 @@ contract PairLibTest is Test {
         assertEq(pair.getFirstSellOrders(), higherPrice, "Sell order should be added without execution");
     }
 
+    function testAddSellOrder_WithPartialQuantity() public {
+        vm.prank(trader2);
+        pair.addBuyBaseToken(price, 10, trader2, nonce);
+
+        vm.prank(trader1);
+        pair.addSellBaseToken(price, 5, trader1, nonce);
+
+        pair.getWithdrawBalance(trader2);
+
+        assertEq(pair.getFirstSellOrders(), 0, "Sell order should be completely matched");
+        assertEq(pair.getFirstBuyOrders(), 100 * 10 ** 18, "Remaining buy order quantity should be stored");
+        assertEq(tokenB.balanceOf(trader1), 500, "Trader1 should receive 500 tokenB");
+        assertEq(tokenA.balanceOf(trader2), 5, "Trader2 should receive 5 tokenA");
+    }
+
     function testAddSellOrder_WithPartialMatching() public {
         vm.prank(trader2);
         pair.addBuyBaseToken(price, 5, trader1, nonce);

@@ -382,7 +382,7 @@ library PairLib {
             // If it's a buy order, update the quote token balance of the maker (seller)
             pair.traderBalances[matchedOrder.traderAddress].quoteTokenBalance += takerSendAmount;
         }else{
-            // If it's a buy order, update the quote token balance of the maker (seller)
+            // If it's a sell order, update the base token balance of the maker (buyer)
             pair.traderBalances[matchedOrder.traderAddress].baseTokenBalance += takerSendAmount;
         }
 

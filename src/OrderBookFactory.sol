@@ -349,7 +349,6 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable2Step {
     /// @custom:security Implements a nonReentrant guard to prevent reentrancy attacks
     function withdrawBalanceTrader(bytes32 _pairId) external nonReentrant {
         if (!pairExists(_pairId)) revert OBF__PairDoesNotExist();
-        if (!pairs[_pairId].enabled) revert OBF__PairNotEnabled();
         pairs[_pairId].withdrawBalance(msg.sender);
     }
 
