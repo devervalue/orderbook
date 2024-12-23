@@ -186,6 +186,10 @@ contract OrderBookFactoryTest is Test {
         vm.prank(owner);
         factory.transferOwnership(newOwner);
 
+        //Aceptar ser owner
+        vm.prank(newOwner);
+        factory.acceptOwnership();
+
         vm.prank(newOwner); // Ahora simulamos que el nuevo propietario llama a la función
         factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
 
@@ -395,6 +399,9 @@ contract OrderBookFactoryTest is Test {
         vm.prank(owner); // Simular que el propietario actual está llamando
         factory.transferOwnership(trader1);
 
+        vm.prank(trader1);
+        factory.acceptOwnership();
+
         // Verificar que el propietario haya sido cambiado correctamente
         assertEq(factory.owner(), trader1, unicode"La nueva dirección del propietario debería ser addr1");
     }
@@ -411,14 +418,18 @@ contract OrderBookFactoryTest is Test {
     }
 
     //Verifica que la función transferOwnership revierta si se intenta establecer la dirección del propietario como la dirección cero (address(0)).
-    function testtransferOwnershipRevertsIfNewOwnerIsZeroAddress() public {
-        // El propietario intenta establecer la dirección cero como el nuevo propietario
-        vm.prank(owner); // Simular que el propietario actual está llamando
-
-        // Verificar que la llamada revierte debido a que la dirección nueva es 0x0
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableInvalidOwner.selector, address(0)));
-        factory.transferOwnership(address(0));
-    }
+//    function testtransferOwnershipRevertsIfNewOwnerIsZeroAddress() public {
+//        // El propietario intenta establecer la dirección cero como el nuevo propietario
+//        vm.prank(owner); // Simular que el propietario actual está llamando
+//
+//        // Verificar que la llamada revierte debido a que la dirección nueva es 0x0
+//        factory.transferOwnership(address(0));
+//
+//        vm.startPrank(address(0));
+//        //vm.expectRevert(abi.encodeWithSelector(Ownable2Step.OwnableInvalidOwner.selector, address(0)));
+//        factory.acceptOwnership();
+//        vm.stopPrank();
+//    }
 
     //Después de cambiar la propiedad una vez, verificar que el nuevo propietario pueda cambiar la propiedad nuevamente a otra dirección válida.
     function testtransferOwnershipFromNewOwner() public {
@@ -426,12 +437,18 @@ contract OrderBookFactoryTest is Test {
         vm.prank(owner); // Simular que el propietario actual llama
         factory.transferOwnership(trader1);
 
+        vm.prank(trader1);
+        factory.acceptOwnership();
+
         // Verificar que la propiedad haya sido transferida a addr1
         assertEq(factory.owner(), trader1, unicode"El nuevo propietario debería ser addr1");
 
         // El nuevo propietario (addr1) cambia la propiedad a addr2
         vm.prank(trader1); // Simular que el nuevo propietario llama
         factory.transferOwnership(owner);
+
+        vm.prank(owner);
+        factory.acceptOwnership();
 
         // Verificar que la propiedad haya sido transferida a addr2
         assertEq(factory.owner(), owner, unicode"El nuevo propietario debería ser addr2");
@@ -658,6 +675,10 @@ contract OrderBookFactoryTest is Test {
         vm.prank(owner); // Simular que el propietario actual está llamando
         factory.transferOwnership(newOwner);
 
+        //Aceptar ser owner
+        vm.prank(newOwner);
+        factory.acceptOwnership();
+
         // Verificar que la función owner devuelva la nueva dirección de propietario
         assertEq(
             factory.owner(),
@@ -754,7 +775,8 @@ contract OrderBookFactoryTest is Test {
         uint256 quantity = 0;
 
         vm.prank(owner);
-        vm.expectRevert(OrderBookFactory.OBF__InvalidQuantityValueZero.selector); // Puedes agregar un revert message si implementas uno en el contrato
+        vm.expectRevert(abi.encodeWithSelector(PairLib.PL__InvalidQuantity.selector, 0));
+        //vm.expectRevert(OrderBookFactory.OBF__InvalidQuantityValueZero.selector); // Puedes agregar un revert message si implementas uno en el contrato
         factory.addNewOrder(keys[0], quantity, price, isBuy, 1);
     }
 
@@ -776,7 +798,8 @@ contract OrderBookFactoryTest is Test {
         uint256 quantity = 0;
 
         vm.prank(owner);
-        vm.expectRevert(OrderBookFactory.OBF__InvalidQuantityValueZero.selector); // Puedes agregar un revert message si implementas uno en el contrato
+        //vm.expectRevert(OrderBookFactory.OBF__InvalidQuantityValueZero.selector); // Puedes agregar un revert message si implementas uno en el contrato
+        vm.expectRevert(abi.encodeWithSelector(PairLib.PL__InvalidQuantity.selector, 0));
         factory.addNewOrder(keys[0], quantity, price, isBuy, 1);
     }
 
@@ -952,6 +975,10 @@ contract OrderBookFactoryTest is Test {
         console.log("TC BA", tokenA.balanceOf(address(factory)));
         console.log("TC BB", tokenB.balanceOf(address(factory)));
 
+        vm.startPrank(trader2);
+        factory.withdrawBalanceTrader(keys[0]);
+        vm.stopPrank();
+
         assertEq(tokenA.balanceOf(address(trader2)), 10, unicode"Trader2 debería tener 10 unidades de token A");
     }
 
@@ -990,6 +1017,11 @@ contract OrderBookFactoryTest is Test {
         factory.addNewOrder(keys[0], 100, 50 * 10 ** 18, true, 11);
         uint256 gasUsed = startGas - gasleft();
         console.log("Gas used for adding Order: %d", gasUsed);
+        vm.stopPrank();
+
+        //pair.getWithdrawBalance(trader1);
+        vm.startPrank(trader2);
+        factory.withdrawBalanceTrader(keys[0]);
         vm.stopPrank();
 
         assertEq(tokenA.balanceOf(address(trader2)), 150, unicode"Trader2 debería tener 150 unidades de token A");
@@ -1216,7 +1248,8 @@ contract OrderBookFactoryTest is Test {
         bool isBuy = true;
 
         vm.prank(trader1);
-        vm.expectRevert(OrderBookFactory.OBF__InvalidQuantityValueZero.selector);
+        //vm.expectRevert(OrderBookFactory.OBF__InvalidQuantityValueZero.selector);
+        vm.expectRevert(abi.encodeWithSelector(PairLib.PL__InvalidQuantity.selector, 0));
         factory.addNewOrder(keys[0], quantity, price, isBuy, 1);
     }
 
