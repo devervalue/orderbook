@@ -9,6 +9,7 @@ import "./MyTokenA.sol";
 import "./MyTokenB.sol";
 
 import "./PairLibImpl.sol";
+import "../src/PairLib.sol";
 
 contract PairLibTest is Test {
     PairLibImpl pair;
@@ -766,4 +767,26 @@ contract PairLibTest is Test {
         vm.expectRevert(PairLib.PL__OrderIdAlreadyExists.selector);
         pair.createOrder(true, 100, 5);
     }
+
+    //-------------------- ADD WITHDRAW BALANCE ------------------------------
+    function testWithDrawBalance_WithMatchingSellOrder() public {
+        vm.prank(trader1);
+        pair.addSellBaseToken(price, quantity, trader2, nonce);
+
+        vm.prank(trader2);
+        pair.addBuyBaseToken(price, quantity, trader1, nonce);
+
+        pair.getWithdrawBalance(trader1);
+
+        PairLib.TraderBalance memory traderBalance = pair.getTraderBalances(trader1);
+
+        assertEq(pair.getFirstSellOrders(), 0, "Sell order should be completely matched");
+        assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be completely executed");
+        assertEq(tokenB.balanceOf(trader1), 1000, "Trader1 should receive 1000 tokenB");
+        assertEq(tokenA.balanceOf(trader2), 10, "Trader2 should receive 10 tokenA");
+        assertEq(traderBalance.quoteTokenBalance,0, "Trader1 should get 0 tokenB");
+        assertEq(traderBalance.baseTokenBalance,0, "Trader1 should get 0 tokenA");
+    }
+
+
 }

@@ -43,6 +43,14 @@ contract PairLibImpl {
         pair.withdrawBalance(trader);
     }
 
+    function getTraderBalances(address _trader) public returns (PairLib.TraderBalance memory _traderBalance) {
+        PairLib.TraderBalance memory traderBalance = pair.getTraderBalances(_trader);
+        _traderBalance =  PairLib.TraderBalance({
+            baseTokenBalance: traderBalance.baseTokenBalance,
+            quoteTokenBalance: traderBalance.quoteTokenBalance
+        });
+    }
+
     function addBuyBaseToken(uint256 _price, uint256 _quantity, address _trader, uint256 nonce) public {
         pair.addBuyOrder(_price, _quantity, nonce);
     }
