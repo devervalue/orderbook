@@ -48,8 +48,10 @@ library PairLib {
         mapping(bytes32 => uint256) index;
     }
 
-    // TODO Crear struct traderBalance que contiene baseTokenBalance y quoteTokenBalance
-    struct TraderBalance{
+    /// @dev Struct representing a trader's balance in a trading pair
+    /// @member baseTokenBalance The balance of the base token for the trader
+    /// @member quoteTokenBalance The balance of the quote token for the trader
+    struct TraderBalance {
         uint256 baseTokenBalance;
         uint256 quoteTokenBalance;
     }
@@ -79,7 +81,8 @@ library PairLib {
         /// @dev Mapping of order IDs to Order structures
         /// @notice This allows O(1) access to any order details given its ID
         mapping(bytes32 => OrderBookLib.Order) orders;
-        // TODO crear un mapping traderBalances que va de la dirección de un trader a un objeto traderBalance
+        /// @dev Mapping to store trader balances for each trading pair
+        /// @notice This mapping is accessed using the trader's address as the key
         mapping(address => TraderBalance) traderBalances;
     }
 
@@ -129,16 +132,28 @@ library PairLib {
         emit PairFeeChanged(pair.baseToken, pair.quoteToken, newFee);
     }
 
-    // TODO agregar operación interna que permita a un trader retirar su balance y actualice los balances
-    function withdrawBalance(Pair storage pair, address traderAddress) internal{
+/// @notice Allows a trader to withdraw their balance from a trading pair
+/// @dev This function updates the trader's balance and transfers tokens to their address
+/// @param pair The storage reference to the Pair struct containing trader balances
+/// @param traderAddress The address of the trader withdrawing their balance
+    function withdrawBalance(Pair storage pair, address traderAddress) internal {
+        // Retrieve the trader's current balances
         uint256 quoteBalance = pair.traderBalances[traderAddress].quoteTokenBalance;
         uint256 baseBalance = pair.traderBalances[traderAddress].baseTokenBalance;
+
+        // Withdraw quote token balance if available
         if (quoteBalance > 0) {
+            // Reset the quote token balance to prevent reentrancy
             pair.traderBalances[traderAddress].quoteTokenBalance = 0;
+            // Transfer the quote tokens to the trader
             IERC20(pair.quoteToken).safeTransfer(traderAddress, quoteBalance);
         }
+
+        // Withdraw base token balance if available
         if (baseBalance > 0) {
+            // Reset the base token balance to prevent reentrancy
             pair.traderBalances[traderAddress].baseTokenBalance = 0;
+            // Transfer the base tokens to the trader
             IERC20(pair.baseToken).safeTransfer(traderAddress, baseBalance);
         }
     }
@@ -297,14 +312,16 @@ library PairLib {
         uint256 fee = (takerReceiveAmount * pair.fee) / 10000;
         uint256 takerReceiveAmountAfterFee = takerReceiveAmount - fee;
 
-        // Transfer tokens between the taker and the maker
-        /// @dev The taker sends the full amount, while receiving the amount minus the fee
-        // TODO Registrar el balance al trader que reciba segun sea compra o venta
+        /// @notice Update the token balances of the maker based on the order type
+        /// @dev For buy orders, update quote token balance; for sell orders, update base token balance
         takerSendToken.safeTransferFrom(msg.sender, address(this), takerSendAmount);
         if(takerOrder.isBuy){
-            pair.traderBalances[matchedOrder.traderAddress].quoteTokenBalance += takerSendAmount;
+            // If it's a buy order, update the quote token balance of the maker (seller)
+        pair.traderBalances[matchedOrder.traderAddress].quoteTokenBalance += takerSendAmount;
         }else{
-            pair.traderBalances[matchedOrder.traderAddress].baseTokenBalance += takerSendAmount;
+            // If it's a sell order, update the base token balance of the maker (buyer)
+
+        pair.traderBalances[matchedOrder.traderAddress].baseTokenBalance += takerSendAmount;
         }
         takerReceiveToken.safeTransfer(msg.sender, takerReceiveAmountAfterFee);
 
@@ -358,12 +375,14 @@ library PairLib {
         uint256 fee = (takerReceiveAmount * pair.fee) / 10000;
         uint256 takerReceiveAmountAfterFee = takerReceiveAmount - fee;
 
-        // Transfer sell tokens from taker to maker (full amount)
-        // TODO Registrar el balance al trader que reciba segun sea compra o venta
+        /// @notice Update the token balances of the maker based on the order type
+        /// @dev For buy orders, update quote token balance; for sell orders, update base token balance
         takerSendToken.safeTransferFrom(msg.sender, address(this), takerSendAmount);
         if(takerOrder.isBuy){
+            // If it's a buy order, update the quote token balance of the maker (seller)
             pair.traderBalances[matchedOrder.traderAddress].quoteTokenBalance += takerSendAmount;
         }else{
+            // If it's a buy order, update the quote token balance of the maker (seller)
             pair.traderBalances[matchedOrder.traderAddress].baseTokenBalance += takerSendAmount;
         }
 
@@ -507,7 +526,11 @@ library PairLib {
         }
     }
 
-    // TODO agregar operacion de lectura checkBalance
+/// @notice Retrieves the balance of a trader for a specific trading pair
+/// @dev This function returns the current balance of base and quote tokens for a given trader
+/// @param pair The storage reference to the Pair struct containing trader balances
+/// @param _trader The address of the trader whose balance is being queried
+/// @return TraderBalance A struct containing the trader's base and quote token balances
     function getTraderBalances(Pair storage pair, address _trader) internal view returns (TraderBalance memory) {
         return pair.traderBalances[_trader];
     }

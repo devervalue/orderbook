@@ -1,8 +1,8 @@
 # OrderBookFactory
-[Git Source](https://github.com/artechsoft/orderbook/blob/d467ec6f814e6d5a69e8a8eaf6201520b0cb27a5/src/OrderBookFactory.sol)
+[Git Source](https://github.com/artechsoft/orderbook/blob/bbd55f017f77567506e5700d9133d68be9d96234/src/OrderBookFactory.sol)
 
 **Inherits:**
-ReentrancyGuard, Pausable, Ownable
+ReentrancyGuard, Pausable, Ownable2Step
 
 **Author:**
 Diego Leal / Angel García / Artech Software
@@ -422,6 +422,55 @@ function getPricePointDataForPair(bytes32 _pairId, uint256 price, bool isBuy)
 |----|----|-----------|
 |`orderCount`|`uint256`|The number of orders at the specified price|
 |`orderValue`|`uint256`|The total value of all orders at the specified price|
+
+
+### checkBalanceTrader
+
+Retrieves the balance of a trader for a specific trading pair
+
+*This function allows querying the current balance of a trader in both base and quote tokens*
+
+**Note:**
+security: This function is view-only and does not modify state
+
+
+```solidity
+function checkBalanceTrader(bytes32 _pairId, address _trader) external view returns (PairLib.TraderBalance memory);
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_pairId`|`bytes32`|The unique identifier of the trading pair|
+|`_trader`|`address`|The address of the trader whose balance is being queried|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`PairLib.TraderBalance`|PairLib.TraderBalance A struct containing the trader's balance information|
+
+
+### withdrawBalanceTrader
+
+Allows a trader to withdraw their balance from a specific trading pair
+
+*This function enables traders to withdraw their available balance (both base and quote tokens)*
+
+**Notes:**
+- security: This function is external and can be called by any address
+
+- security: Implements a nonReentrant guard to prevent reentrancy attacks
+
+
+```solidity
+function withdrawBalanceTrader(bytes32 _pairId) external nonReentrant;
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_pairId`|`bytes32`|The unique identifier of the trading pair from which to withdraw|
 
 
 ### pairExists

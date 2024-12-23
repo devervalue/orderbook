@@ -331,13 +331,25 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable2Step {
         return (p.orderCount, p.orderValue);
     }
 
-    // TODO agregar operación chequear balance de un par para un trader
-    function checkBalanceTrader(bytes32 _pairId, address _trader) external view returns(PairLib.TraderBalance memory){
+    /// @notice Retrieves the balance of a trader for a specific trading pair
+    /// @dev This function allows querying the current balance of a trader in both base and quote tokens
+    /// @param _pairId The unique identifier of the trading pair
+    /// @param _trader The address of the trader whose balance is being queried
+    /// @return PairLib.TraderBalance A struct containing the trader's balance information
+    /// @custom:security This function is view-only and does not modify state
+    function checkBalanceTrader(bytes32 _pairId, address _trader) external view returns(PairLib.TraderBalance memory) {
+        if (!pairExists(_pairId)) revert OBF__PairDoesNotExist();
         return pairs[_pairId].getTraderBalances(_trader);
     }
 
-    // TODO agregar operación retirar balance de un par para un trader
-    function withdrawBalanceTrader(bytes32 _pairId) external{
+    /// @notice Allows a trader to withdraw their balance from a specific trading pair
+    /// @dev This function enables traders to withdraw their available balance (both base and quote tokens)
+    /// @param _pairId The unique identifier of the trading pair from which to withdraw
+    /// @custom:security This function is external and can be called by any address
+    /// @custom:security Implements a nonReentrant guard to prevent reentrancy attacks
+    function withdrawBalanceTrader(bytes32 _pairId) external nonReentrant {
+        if (!pairExists(_pairId)) revert OBF__PairDoesNotExist();
+        if (!pairs[_pairId].enabled) revert OBF__PairNotEnabled();
         pairs[_pairId].withdrawBalance(msg.sender);
     }
 

@@ -121,14 +121,27 @@ forge coverage
  ```
 
 ### Deployment
-To deploy the contracts to a local network:
+To deploy the contracts to a local network, first set up your environment variables:
+```bash
+export PRIVATE_KEY_LOCAL=your_private_key
+export RPC_LOCAL_URL=your_rpc_url
+export PRIVATE_KEY_TOKEN_A=token_A_deployer_private_key
+export PRIVATE_KEY_TOKEN_B=token_B_deployer_private_key
+export FEE_LOCAL=100 (amount in basis points - 100 is 1%)
+export FEE_ADDRESS_LOCAL=address_that_will_be_receiving_the_pair_fees
+ ```
+Then run de local deployment script:
 ```bash
 ./script/deploy_local.sh
  ```
 To deploy to a testnet or mainnet, first set up your environment variables:
 ```bash
-export PRIVATE_KEY=your_private_key
-export RPC_URL=your_rpc_url
+export PRIVATE_KEY_MAINNET=your_private_key
+export RPC_MAINNET_URL=your_rpc_url
+export ADDRESS_WBTC=WBTC_TOKEN_ADDRESS
+export ADDRESS_EVA=EVA_TOKEN_ADDRESS
+export FEE_MAINNET=100 (amount in basis points - 100 is 1%)
+export FEE_ADDRESS_MAINNET=address_that_will_be_receiving_the_pair_fees
  ```
 Then run the deployment script:
 ```bash

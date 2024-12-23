@@ -1,5 +1,5 @@
 # PairLib
-[Git Source](https://github.com/artechsoft/orderbook/blob/d467ec6f814e6d5a69e8a8eaf6201520b0cb27a5/src/PairLib.sol)
+[Git Source](https://github.com/artechsoft/orderbook/blob/bbd55f017f77567506e5700d9133d68be9d96234/src/PairLib.sol)
 
 This library provides functionality for creating, canceling, and matching orders in a decentralized exchange
 
@@ -60,6 +60,24 @@ function changePairFee(Pair storage pair, uint256 newFee) internal;
 |----|----|-----------|
 |`pair`|`Pair`|The storage reference to the Pair struct|
 |`newFee`|`uint256`|The new fee to be set (in basis points)|
+
+
+### withdrawBalance
+
+Allows a trader to withdraw their balance from a trading pair
+
+*This function updates the trader's balance and transfers tokens to their address*
+
+
+```solidity
+function withdrawBalance(Pair storage pair, address traderAddress) internal;
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`pair`|`Pair`|The storage reference to the Pair struct containing trader balances|
+|`traderAddress`|`address`|The address of the trader withdrawing their balance|
 
 
 ### addBuyOrder
@@ -197,11 +215,13 @@ function fillOrder(Pair storage pair, OrderBookLib.Order storage matchedOrder, O
 
 ### partiallyFillOrder
 
+Update the token balances of the maker based on the order type
+
 Partially fills a matched order
 
 *The fee is calculated in basis points (1/100 of a percent)*
 
-*The taker sends the full amount, while receiving the amount minus the fee*
+*For buy orders, update quote token balance; for sell orders, update base token balance*
 
 *This function handles the token transfers, fee calculation, and order updates when a partial match is found*
 
@@ -224,11 +244,15 @@ function partiallyFillOrder(
 
 ### matchOrder
 
+Update the token balances of the maker based on the order type
+
 Matches a new order against existing orders in the order book
 
 *The calculation depends on whether the taker order is a buy or sell order*
 
 *The fee is calculated in basis points (1/100 of a percent)*
+
+*For buy orders, update quote token balance; for sell orders, update base token balance*
 
 *This updates the volume at the price point in the order book*
 
@@ -277,6 +301,30 @@ function createOrder(Pair storage pair, bool isBuy, uint256 _price, uint256 _qua
 |`_price`|`uint256`|The price at which the order is placed|
 |`_quantity`|`uint256`|The quantity of tokens to be traded|
 |`timestamp`|`uint256`|The timestamp of the order creation|
+
+
+### getTraderBalances
+
+Retrieves the balance of a trader for a specific trading pair
+
+*This function returns the current balance of base and quote tokens for a given trader*
+
+
+```solidity
+function getTraderBalances(Pair storage pair, address _trader) internal view returns (TraderBalance memory);
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`pair`|`Pair`|The storage reference to the Pair struct containing trader balances|
+|`_trader`|`address`|The address of the trader whose balance is being queried|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`TraderBalance`|TraderBalance A struct containing the trader's base and quote token balances|
 
 
 ### getTraderOrders
@@ -681,6 +729,17 @@ struct TraderOrderRegistry {
 }
 ```
 
+### TraderBalance
+*Struct representing a trader's balance in a trading pair*
+
+
+```solidity
+struct TraderBalance {
+    uint256 baseTokenBalance;
+    uint256 quoteTokenBalance;
+}
+```
+
 ### Pair
 This structure encapsulates all data and functionality related to a specific trading pair
 
@@ -699,6 +758,7 @@ struct Pair {
     OrderBookLib.Book sellOrders;
     mapping(address => TraderOrderRegistry) traderOrderRegistry;
     mapping(bytes32 => OrderBookLib.Order) orders;
+    mapping(address => TraderBalance) traderBalances;
 }
 ```
 
