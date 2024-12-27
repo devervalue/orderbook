@@ -22,7 +22,6 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable2Step {
     /// @dev Utilizes OrderBookLib for managing price points
     using OrderBookLib for OrderBookLib.PricePoint;
 
-
     /**
      * @dev Maximum fee in basis points (2%)
      * This constant limits the maximum fee that can be set for a trading pair
@@ -228,6 +227,7 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable2Step {
     /// @param _price The price at which to place the order
     /// @param _isBuy A boolean indicating whether this is a buy (true) or sell (false) order
     /// @param _timestamp The timestamp of when the order was created
+
     function addNewOrder(bytes32 _pairId, uint256 _quantity, uint256 _price, bool _isBuy, uint256 _timestamp)
         external
         onlyEnabledPair(_pairId)
@@ -337,7 +337,11 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable2Step {
     /// @param _trader The address of the trader whose balance is being queried
     /// @return PairLib.TraderBalance A struct containing the trader's balance information
     /// @custom:security This function is view-only and does not modify state
-    function checkBalanceTrader(bytes32 _pairId, address _trader) external view returns(PairLib.TraderBalance memory) {
+    function checkBalanceTrader(bytes32 _pairId, address _trader)
+        external
+        view
+        returns (PairLib.TraderBalance memory)
+    {
         if (!pairExists(_pairId)) revert OBF__PairDoesNotExist();
         return pairs[_pairId].getTraderBalances(_trader);
     }
@@ -345,11 +349,12 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable2Step {
     /// @notice Allows a trader to withdraw their balance from a specific trading pair
     /// @dev This function enables traders to withdraw their available balance (both base and quote tokens)
     /// @param _pairId The unique identifier of the trading pair from which to withdraw
+    /// @param baseTokenWithdrawal if true withdraws base token's balance, if false withdraws quote token's balance
     /// @custom:security This function is external and can be called by any address
     /// @custom:security Implements a nonReentrant guard to prevent reentrancy attacks
-    function withdrawBalanceTrader(bytes32 _pairId) external nonReentrant {
+    function withdrawBalanceTrader(bytes32 _pairId, bool baseTokenWithdrawal) external nonReentrant {
         if (!pairExists(_pairId)) revert OBF__PairDoesNotExist();
-        pairs[_pairId].withdrawBalance(msg.sender);
+        pairs[_pairId].withdrawBalance(msg.sender, baseTokenWithdrawal);
     }
 
     /// @notice Checks if a trading pair exists

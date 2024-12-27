@@ -86,7 +86,6 @@ library PairLib {
         mapping(address => TraderBalance) traderBalances;
     }
 
-
     /// @notice Emitted when a new order is created
     /// @param id The unique identifier of the created order
     /// @param baseToken The address of the base token in the trading pair
@@ -132,29 +131,27 @@ library PairLib {
         emit PairFeeChanged(pair.baseToken, pair.quoteToken, newFee);
     }
 
-/// @notice Allows a trader to withdraw their balance from a trading pair
-/// @dev This function updates the trader's balance and transfers tokens to their address
-/// @param pair The storage reference to the Pair struct containing trader balances
-/// @param traderAddress The address of the trader withdrawing their balance
-    function withdrawBalance(Pair storage pair, address traderAddress) internal {
+    /// @notice Allows a trader to withdraw their balance from a trading pair
+    /// @dev This function updates the trader's balance and transfers tokens to their address
+    /// @param pair The storage reference to the Pair struct containing trader balances
+    /// @param traderAddress The address of the trader withdrawing their balance
+    /// @param baseTokenWithdrawal if true withdraws base token's balance, if false withdraws quote token's balance
+    function withdrawBalance(Pair storage pair, address traderAddress, bool baseTokenWithdrawal) internal {
         // Retrieve the trader's current balances
-        uint256 quoteBalance = pair.traderBalances[traderAddress].quoteTokenBalance;
-        uint256 baseBalance = pair.traderBalances[traderAddress].baseTokenBalance;
+        (uint256 withdrawBalance, IERC20 withdrawToken) = baseTokenWithdrawal
+            ? (pair.traderBalances[traderAddress].baseTokenBalance, IERC20(pair.baseToken))
+            : (pair.traderBalances[traderAddress].quoteTokenBalance, IERC20(pair.quoteToken));
 
-        // Withdraw quote token balance if available
-        if (quoteBalance > 0) {
-            // Reset the quote token balance to prevent reentrancy
-            pair.traderBalances[traderAddress].quoteTokenBalance = 0;
-            // Transfer the quote tokens to the trader
-            IERC20(pair.quoteToken).safeTransfer(traderAddress, quoteBalance);
-        }
-
-        // Withdraw base token balance if available
-        if (baseBalance > 0) {
-            // Reset the base token balance to prevent reentrancy
-            pair.traderBalances[traderAddress].baseTokenBalance = 0;
-            // Transfer the base tokens to the trader
-            IERC20(pair.baseToken).safeTransfer(traderAddress, baseBalance);
+        // Withdraw token balance if available
+        if (withdrawBalance > 0) {
+            // Reset the token balance to prevent reentrancy
+            if (baseTokenWithdrawal) {
+                pair.traderBalances[traderAddress].baseTokenBalance = 0;
+            } else {
+                pair.traderBalances[traderAddress].quoteTokenBalance = 0;
+            }
+            // Transfer the tokens to the trader
+            IERC20(withdrawToken).safeTransfer(traderAddress, withdrawBalance);
         }
     }
 
@@ -315,13 +312,13 @@ library PairLib {
         /// @notice Update the token balances of the maker based on the order type
         /// @dev For buy orders, update quote token balance; for sell orders, update base token balance
         takerSendToken.safeTransferFrom(msg.sender, address(this), takerSendAmount);
-        if(takerOrder.isBuy){
+        if (takerOrder.isBuy) {
             // If it's a buy order, update the quote token balance of the maker (seller)
-        pair.traderBalances[matchedOrder.traderAddress].quoteTokenBalance += takerSendAmount;
-        }else{
+            pair.traderBalances[matchedOrder.traderAddress].quoteTokenBalance += takerSendAmount;
+        } else {
             // If it's a sell order, update the base token balance of the maker (buyer)
 
-        pair.traderBalances[matchedOrder.traderAddress].baseTokenBalance += takerSendAmount;
+            pair.traderBalances[matchedOrder.traderAddress].baseTokenBalance += takerSendAmount;
         }
         takerReceiveToken.safeTransfer(msg.sender, takerReceiveAmountAfterFee);
 
@@ -378,10 +375,10 @@ library PairLib {
         /// @notice Update the token balances of the maker based on the order type
         /// @dev For buy orders, update quote token balance; for sell orders, update base token balance
         takerSendToken.safeTransferFrom(msg.sender, address(this), takerSendAmount);
-        if(takerOrder.isBuy){
+        if (takerOrder.isBuy) {
             // If it's a buy order, update the quote token balance of the maker (seller)
             pair.traderBalances[matchedOrder.traderAddress].quoteTokenBalance += takerSendAmount;
-        }else{
+        } else {
             // If it's a sell order, update the base token balance of the maker (buyer)
             pair.traderBalances[matchedOrder.traderAddress].baseTokenBalance += takerSendAmount;
         }
@@ -526,11 +523,11 @@ library PairLib {
         }
     }
 
-/// @notice Retrieves the balance of a trader for a specific trading pair
-/// @dev This function returns the current balance of base and quote tokens for a given trader
-/// @param pair The storage reference to the Pair struct containing trader balances
-/// @param _trader The address of the trader whose balance is being queried
-/// @return TraderBalance A struct containing the trader's base and quote token balances
+    /// @notice Retrieves the balance of a trader for a specific trading pair
+    /// @dev This function returns the current balance of base and quote tokens for a given trader
+    /// @param pair The storage reference to the Pair struct containing trader balances
+    /// @param _trader The address of the trader whose balance is being queried
+    /// @return TraderBalance A struct containing the trader's base and quote token balances
     function getTraderBalances(Pair storage pair, address _trader) internal view returns (TraderBalance memory) {
         return pair.traderBalances[_trader];
     }
@@ -627,5 +624,4 @@ library PairLib {
         // An order exists if its ID in the orders mapping is not the zero bytes32
         return pair.orders[_orderId].id != bytes32(0);
     }
-
 }

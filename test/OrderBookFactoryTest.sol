@@ -423,18 +423,18 @@ contract OrderBookFactoryTest is Test {
     }
 
     //Verifica que la función transferOwnership revierta si se intenta establecer la dirección del propietario como la dirección cero (address(0)).
-//    function testtransferOwnershipRevertsIfNewOwnerIsZeroAddress() public {
-//        // El propietario intenta establecer la dirección cero como el nuevo propietario
-//        vm.prank(owner); // Simular que el propietario actual está llamando
-//
-//        // Verificar que la llamada revierte debido a que la dirección nueva es 0x0
-//        factory.transferOwnership(address(0));
-//
-//        vm.startPrank(address(0));
-//        //vm.expectRevert(abi.encodeWithSelector(Ownable2Step.OwnableInvalidOwner.selector, address(0)));
-//        factory.acceptOwnership();
-//        vm.stopPrank();
-//    }
+    //    function testtransferOwnershipRevertsIfNewOwnerIsZeroAddress() public {
+    //        // El propietario intenta establecer la dirección cero como el nuevo propietario
+    //        vm.prank(owner); // Simular que el propietario actual está llamando
+    //
+    //        // Verificar que la llamada revierte debido a que la dirección nueva es 0x0
+    //        factory.transferOwnership(address(0));
+    //
+    //        vm.startPrank(address(0));
+    //        //vm.expectRevert(abi.encodeWithSelector(Ownable2Step.OwnableInvalidOwner.selector, address(0)));
+    //        factory.acceptOwnership();
+    //        vm.stopPrank();
+    //    }
 
     //Después de cambiar la propiedad una vez, verificar que el nuevo propietario pueda cambiar la propiedad nuevamente a otra dirección válida.
     function testtransferOwnershipFromNewOwner() public {
@@ -981,7 +981,7 @@ contract OrderBookFactoryTest is Test {
         console.log("TC BB", tokenB.balanceOf(address(factory)));
 
         vm.startPrank(trader2);
-        factory.withdrawBalanceTrader(keys[0]);
+        factory.withdrawBalanceTrader(keys[0], false);
         vm.stopPrank();
 
         assertEq(tokenA.balanceOf(address(trader2)), 10, unicode"Trader2 debería tener 10 unidades de token A");
@@ -1026,7 +1026,7 @@ contract OrderBookFactoryTest is Test {
 
         //pair.getWithdrawBalance(trader1);
         vm.startPrank(trader2);
-        factory.withdrawBalanceTrader(keys[0]);
+        factory.withdrawBalanceTrader(keys[0], false);
         vm.stopPrank();
 
         assertEq(tokenA.balanceOf(address(trader2)), 150, unicode"Trader2 debería tener 150 unidades de token A");
@@ -1483,7 +1483,6 @@ contract OrderBookFactoryTest is Test {
         vm.stopPrank();
     }
 
-
     function testAddMatchingOrdersCheckAndWithdraw() public {
         vm.startPrank(owner);
         factory.addPair(address(tokenA), address(tokenB), 10, feeAddress);
@@ -1512,9 +1511,9 @@ contract OrderBookFactoryTest is Test {
         assertEqUint(10, tb1.baseTokenBalance);
 
         vm.prank(trader1);
-        factory.withdrawBalanceTrader(keys[0]);
+        factory.withdrawBalanceTrader(keys[0], true);
 
-        assertEqUint(10,         tokenB.balanceOf(trader1));
+        assertEqUint(10, tokenB.balanceOf(trader1));
 
         // Now sell 5 of the 10 bought
 
@@ -1531,20 +1530,17 @@ contract OrderBookFactoryTest is Test {
         uint256 prevBalanceT1 = tokenA.balanceOf(trader1);
 
         vm.prank(trader1);
-        factory.withdrawBalanceTrader(keys[0]);
+        factory.withdrawBalanceTrader(keys[0], false);
 
         uint256 finalBalanceT1 = tokenA.balanceOf(trader1);
 
-        assertEqUint(500,         finalBalanceT1 - prevBalanceT1);
+        assertEqUint(500, finalBalanceT1 - prevBalanceT1);
 
         vm.expectRevert(OrderBookFactory.OBF__PairDoesNotExist.selector);
         tb1 = factory.checkBalanceTrader("0x1", trader1);
 
         vm.prank(trader1);
         vm.expectRevert(OrderBookFactory.OBF__PairDoesNotExist.selector);
-        factory.withdrawBalanceTrader("0x1");
-
-
-
+        factory.withdrawBalanceTrader("0x1", false);
     }
 }

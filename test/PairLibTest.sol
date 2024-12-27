@@ -86,7 +86,8 @@ contract PairLibTest is Test {
         vm.prank(trader2);
         pair.addBuyBaseToken(price, quantity, trader1, nonce);
 
-        pair.getWithdrawBalance(trader1);
+        pair.withdrawBalance(trader1, true);
+        pair.withdrawBalance(trader1, false);
 
         assertEq(pair.getFirstSellOrders(), 0, "Sell order should be completely matched");
         assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be completely executed");
@@ -104,8 +105,7 @@ contract PairLibTest is Test {
         vm.prank(trader2);
         pair.addBuyBaseToken(price, 15, trader1, nonce);
 
-        pair.getWithdrawBalance(trader1);
-
+        pair.withdrawBalance(trader1, false);
 
         assertEq(pair.getFirstSellOrders(), 0, "All sell orders should be completely matched");
         assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be completely executed");
@@ -120,7 +120,7 @@ contract PairLibTest is Test {
         vm.prank(trader2);
         pair.addBuyBaseToken(price, quantity, trader1, nonce);
 
-        pair.getWithdrawBalance(trader1);
+        pair.withdrawBalance(trader1, false);
 
         assertEq(pair.lastTradePrice(), 90 * 10 ** 18, "Last trade price should be 90");
         assertEq(pair.getFirstSellOrders(), 0, "Sell order should be completely matched");
@@ -136,7 +136,7 @@ contract PairLibTest is Test {
         vm.prank(trader2);
         pair.addBuyBaseToken(price, quantity, trader1, nonce);
 
-        pair.getWithdrawBalance(trader1);
+        pair.withdrawBalance(trader1, false);
 
         assertEq(pair.getFirstSellOrders(), 110 * 10 ** 18, "Sell order should not be matched");
         assertEq(pair.getFirstBuyOrders(), 100 * 10 ** 18, "Buy order should be stored");
@@ -149,7 +149,7 @@ contract PairLibTest is Test {
         vm.prank(trader2);
         pair.addBuyBaseToken(price, quantity, trader1, nonce);
 
-        pair.getWithdrawBalance(trader1);
+        pair.withdrawBalance(trader1, false);
 
         assertEq(pair.getFirstSellOrders(), 0, "Sell order should be completely matched");
         assertEq(pair.getFirstBuyOrders(), 100 * 10 ** 18, "Remaining buy order quantity should be stored");
@@ -164,7 +164,7 @@ contract PairLibTest is Test {
         vm.prank(trader2);
         pair.addBuyBaseToken(price, quantity, trader1, nonce);
 
-        pair.getWithdrawBalance(trader1);
+        pair.withdrawBalance(trader1, false);
 
         assertEq(pair.getFirstSellOrders(), price, "Remaining sell order should be stored at the same price");
         assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be completely executed");
@@ -179,7 +179,7 @@ contract PairLibTest is Test {
         vm.prank(trader2);
         pair.addBuyBaseToken(price, quantity, trader1, nonce);
 
-        pair.getWithdrawBalance(trader1);
+        pair.withdrawBalance(trader1, false);
 
         assertEq(pair.getFirstSellOrders(), 0, "All sell orders should be matched");
         assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be completely executed");
@@ -205,7 +205,7 @@ contract PairLibTest is Test {
         vm.prank(trader1);
         pair.addSellBaseToken(price, quantity, trader2, nonce);
 
-        pair.getWithdrawBalance(trader2);
+        pair.withdrawBalance(trader2, true);
 
         assertEq(pair.getFirstSellOrders(), 0, "Sell order should be fully matched");
         assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be fully executed");
@@ -223,7 +223,7 @@ contract PairLibTest is Test {
         vm.prank(trader1);
         pair.addSellBaseToken(price, 15, trader2, nonce);
 
-        pair.getWithdrawBalance(trader2);
+        pair.withdrawBalance(trader2, true);
 
         assertEq(pair.getFirstSellOrders(), 0, "Sell order should be fully matched");
         assertEq(pair.getFirstBuyOrders(), 0, "All buy orders should be fully executed");
@@ -239,7 +239,7 @@ contract PairLibTest is Test {
         vm.prank(trader1);
         pair.addSellBaseToken(lowerPrice, quantity, trader2, nonce);
 
-        pair.getWithdrawBalance(trader2);
+        pair.withdrawBalance(trader2, true);
 
         assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be fully executed");
         assertEq(pair.getFirstSellOrders(), 0, "No pending sell orders should remain");
@@ -253,7 +253,7 @@ contract PairLibTest is Test {
         vm.prank(trader1);
         pair.addSellBaseToken(higherPrice, quantity, trader2, nonce);
 
-        pair.getWithdrawBalance(trader2);
+        pair.withdrawBalance(trader2, true);
 
         assertEq(pair.getFirstBuyOrders(), 90, "Buy order should remain unmatched");
         assertEq(pair.getFirstSellOrders(), higherPrice, "Sell order should be added without execution");
@@ -266,7 +266,7 @@ contract PairLibTest is Test {
         vm.prank(trader1);
         pair.addSellBaseToken(price, 5, trader1, nonce);
 
-        pair.getWithdrawBalance(trader2);
+        pair.withdrawBalance(trader2, true);
 
         assertEq(pair.getFirstSellOrders(), 0, "Sell order should be completely matched");
         assertEq(pair.getFirstBuyOrders(), 100 * 10 ** 18, "Remaining buy order quantity should be stored");
@@ -281,7 +281,7 @@ contract PairLibTest is Test {
         vm.prank(trader1);
         pair.addSellBaseToken(price, 10, trader2, nonce);
 
-        pair.getWithdrawBalance(trader2);
+        pair.withdrawBalance(trader2, true);
 
         assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be fully executed");
         assertEq(pair.getFirstSellOrders(), price, "Remaining sell order should be added");
@@ -480,7 +480,7 @@ contract PairLibTest is Test {
         vm.prank(trader2);
         pair.addBuyBaseToken(10 * 10 ** 18, 50, trader2, nonce);
 
-        pair.getWithdrawBalance(trader1);
+        pair.withdrawBalance(trader1, false);
 
         assertEq(pair.getFirstSellOrders(), 0, "Sell order should be fully matched");
         assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be fully executed");
@@ -496,7 +496,7 @@ contract PairLibTest is Test {
         pair.addSellBaseToken(10 * 10 ** 18, 50, trader1, nonce);
         vm.stopPrank();
 
-        pair.getWithdrawBalance(trader2);
+        pair.withdrawBalance(trader2, true);
 
         assertEq(pair.getFirstSellOrders(), 0, "Sell order should be fully matched");
         assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be fully executed");
@@ -512,7 +512,7 @@ contract PairLibTest is Test {
         vm.prank(trader2);
         pair.addBuyBaseToken(0.1 * 10 ** 18, 50, trader2, nonce);
 
-        pair.getWithdrawBalance(trader1);
+        pair.withdrawBalance(trader1, false);
 
         assertEq(pair.getFirstSellOrders(), 0, "Sell order should be fully matched");
         assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be fully executed");
@@ -528,7 +528,7 @@ contract PairLibTest is Test {
         pair.addSellBaseToken(0.1 * 10 ** 18, 50, trader1, nonce);
         vm.stopPrank();
 
-        pair.getWithdrawBalance(trader2);
+        pair.withdrawBalance(trader2, true);
 
         assertEq(pair.getFirstSellOrders(), 0, "Sell order should be fully matched");
         assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be fully executed");
@@ -791,7 +791,7 @@ contract PairLibTest is Test {
         vm.prank(trader2);
         pair.addBuyBaseToken(price, quantity, trader1, nonce);
 
-        pair.getWithdrawBalance(trader1);
+        pair.withdrawBalance(trader1, false);
 
         PairLib.TraderBalance memory traderBalance = pair.getTraderBalances(trader1);
 
@@ -799,9 +799,7 @@ contract PairLibTest is Test {
         assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be completely executed");
         assertEq(tokenB.balanceOf(trader1), 1000, "Trader1 should receive 1000 tokenB");
         assertEq(tokenA.balanceOf(trader2), 10, "Trader2 should receive 10 tokenA");
-        assertEq(traderBalance.quoteTokenBalance,0, "Trader1 should get 0 tokenB");
-        assertEq(traderBalance.baseTokenBalance,0, "Trader1 should get 0 tokenA");
+        assertEq(traderBalance.quoteTokenBalance, 0, "Trader1 should get 0 tokenB");
+        assertEq(traderBalance.baseTokenBalance, 0, "Trader1 should get 0 tokenA");
     }
-
-
 }

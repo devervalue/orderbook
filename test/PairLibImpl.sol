@@ -39,13 +39,13 @@ contract PairLibImpl {
         }
     }
 
-    function getWithdrawBalance(address trader) public {
-        pair.withdrawBalance(trader);
+    function withdrawBalance(address trader, bool baseTokenWithdrawal) public {
+        pair.withdrawBalance(trader, baseTokenWithdrawal);
     }
 
     function getTraderBalances(address _trader) public returns (PairLib.TraderBalance memory _traderBalance) {
         PairLib.TraderBalance memory traderBalance = pair.getTraderBalances(_trader);
-        _traderBalance =  PairLib.TraderBalance({
+        _traderBalance = PairLib.TraderBalance({
             baseTokenBalance: traderBalance.baseTokenBalance,
             quoteTokenBalance: traderBalance.quoteTokenBalance
         });
