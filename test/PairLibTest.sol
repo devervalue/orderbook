@@ -172,7 +172,7 @@ contract PairLibTest is Test {
 
     function testAddBuyOrder_WithMultipleSellOrdersAtDifferentPrices() public {
         vm.startPrank(trader1);
-        pair.addSellBaseToken(90, 5, trader2, nonce);
+        pair.addSellBaseToken(90 * 1e18, 5, trader2, nonce);
         pair.addSellBaseToken(price, 5, trader2, nonce + 1);
         vm.stopPrank();
 
@@ -183,6 +183,32 @@ contract PairLibTest is Test {
 
         assertEq(pair.getFirstSellOrders(), 0, "All sell orders should be matched");
         assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be completely executed");
+    }
+
+    function testAddBuyOrder_WithMultipleSellOrdersAtDifferentPricesRevertInvalidPaymentAmount() public {
+        vm.startPrank(trader1);
+        pair.addSellBaseToken(90, 5, trader2, nonce);
+        pair.addSellBaseToken(price, 5, trader2, nonce + 1);
+        vm.stopPrank();
+
+        vm.prank(trader2);
+        vm.expectRevert(PairLib.PL__InvalidPaymentAmount.selector);
+        pair.addBuyBaseToken(price, quantity, trader1, nonce);
+
+        pair.withdrawBalance(trader1, false);
+    }
+
+
+    function testAddBuyOrderPartial_WithMultipleSellOrdersAtDifferentPricesRevertInvalidPaymentAmount() public {
+        vm.startPrank(trader1);
+        pair.addSellBaseToken(100, 10, trader2, nonce + 1);
+        vm.stopPrank();
+
+        vm.prank(trader2);
+        vm.expectRevert(PairLib.PL__InvalidPaymentAmount.selector);
+        pair.addBuyBaseToken(100, 5, trader1, nonce + 2);
+
+        pair.withdrawBalance(trader1, false);
     }
     // -------------------- ADD SELL ORDER TESTS ------------------------------
 

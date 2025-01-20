@@ -1109,41 +1109,14 @@ contract OrderBookFactoryTest is Test {
         // Verificar que hay exactamente una clave
         assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
 
-        console.log("T1 BA INICIO", tokenA.balanceOf(address(trader1)));
-        console.log("T1 BB INICIO", tokenB.balanceOf(address(trader1)));
-
-        console.log("T2 BA INICIO", tokenA.balanceOf(address(trader2)));
-        console.log("T2 BB INICIO", tokenB.balanceOf(address(trader2)));
-
-        console.log("TC BA INICIO", tokenA.balanceOf(address(factory)));
-        console.log("TC BB INICIO", tokenB.balanceOf(address(factory)));
-
         vm.startPrank(trader2);
-        factory.addNewOrder(keys[0], 10, 50, false, 5);
+        factory.addNewOrder(keys[0], 10, 50 * 1e18, false, 5);
         vm.stopPrank();
-
-        console.log("T1 BA MEDIO", tokenA.balanceOf(address(trader1)));
-        console.log("T1 BB MEDIO", tokenB.balanceOf(address(trader1)));
-
-        console.log("T2 BA MEDIO", tokenA.balanceOf(address(trader2)));
-        console.log("T2 BB MEDIO", tokenB.balanceOf(address(trader2)));
-
-        console.log("TC BA MEDIO", tokenA.balanceOf(address(factory)));
-        console.log("TC BB MEDIO", tokenB.balanceOf(address(factory)));
 
         vm.startPrank(trader1);
-        factory.addNewOrder(keys[0], 10, 50, true, 11);
+        factory.addNewOrder(keys[0], 10, 50 * 1e18, true, 11);
         vm.stopPrank();
 
-        console.log("T1 BA", tokenA.balanceOf(address(trader1)));
-        console.log("T1 BB", tokenB.balanceOf(address(trader1)));
-
-        console.log("T2 BA", tokenA.balanceOf(address(trader2)));
-        console.log("T2 BB", tokenB.balanceOf(address(trader2)));
-
-        console.log("TC BA", tokenA.balanceOf(address(factory)));
-        console.log("TC BB", tokenB.balanceOf(address(factory)));
-        //        assertEq(tokenA.balanceOf(address(trader2)), 10, unicode"Trader2 debería tener 10 unidades de token A");
     }
 
     function testSupuestamenteCorrecta2() public {

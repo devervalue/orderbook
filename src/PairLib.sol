@@ -18,6 +18,8 @@ library PairLib {
     error PL__OrderDoesNotBelongToCurrentTrader();
     /// @notice Thrown when an order ID does not exist
     error PL__OrderIdDoesNotExist();
+    /// @notice Thrown when an amount is invalid
+    error PL__InvalidPaymentAmount();
     /// @notice Thrown when an order ID already exists
     error PL__OrderIdAlreadyExists();
     /// @notice Thrown when an invalid price is provided
@@ -304,6 +306,11 @@ library PairLib {
                 matchedOrder.availableQuantity
             );
 
+        // Validate non-zero payment
+        if (takerSendAmount == 0) {
+            revert PL__InvalidPaymentAmount();
+        }
+
         // Calculate the fee based on the amount the taker receives
         /// @dev The fee is calculated in basis points (1/100 of a percent)
         uint256 fee = (takerReceiveAmount * pair.fee) / 10000;
@@ -366,6 +373,11 @@ library PairLib {
                 IERC20(pair.baseToken),
                 takerOrder.quantity
             );
+
+        // Validate non-zero payment
+        if (takerSendAmount == 0) {
+            revert PL__InvalidPaymentAmount();
+        }
 
         // Calculate fee (on the buy token amount, which is what the taker receives)
         /// @dev The fee is calculated in basis points (1/100 of a percent)
