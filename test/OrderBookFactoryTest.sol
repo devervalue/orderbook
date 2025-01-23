@@ -35,13 +35,13 @@ contract OrderBookFactoryTest is Test {
         factory = new OrderBookFactory();
 
         //Creando token como suministro inicial
-        tokenA = new MyTokenA(1000 * 10 ** 18); //Crear un nuevo token con suministro inicial
-        tokenB = new MyTokenB(1000 * 10 ** 18); //Crear un nuevo token con suministro inicial
+        tokenA = new MyTokenA(1000000 * 10 ** 18); //Crear un nuevo token con suministro inicial
+        tokenB = new MyTokenB(1000000 * 10 ** 18); //Crear un nuevo token con suministro inicial
         //        console.log(address(factory));
         //        console.log(msg.sender);
 
-        tokenA.transfer(trader1, 1500);
-        tokenB.transfer(trader2, 1500);
+        tokenA.transfer(trader1, 1500000);
+        tokenB.transfer(trader2, 1500000);
 
         //Aprobar el contrato para que pueda gastar tokens
         vm.startPrank(trader1); // Cambiar el contexto a trader1
@@ -708,7 +708,7 @@ contract OrderBookFactoryTest is Test {
 
         // Agregar una nueva orden de compra
         uint256 quantity = 10;
-        uint256 price = 100;
+        uint256 price = 100 * 1e18;
         bool isBuy = true;
 
         vm.prank(trader1);
@@ -897,7 +897,7 @@ contract OrderBookFactoryTest is Test {
 
         // Agregar una nueva orden de compra
         uint256 quantity = 10;
-        uint256 price = 100;
+        uint256 price = 100 * 1e18;
         bool isBuy = true;
 
         vm.prank(trader1);
@@ -1066,7 +1066,7 @@ contract OrderBookFactoryTest is Test {
             //            factory.addNewOrder(keys[0], quantity, 10, isBuy, i + 2, i+1);
             //            factory.addNewOrder(keys[0], quantity, 20, isBuy, i + 3, i+1);
             //            factory.addNewOrder(keys[0], quantity, 30, isBuy, i + 4, i+1);
-            factory.addNewOrder(keys[0], quantity, 50, isBuy, i + 5);
+            factory.addNewOrder(keys[0], quantity, 50 * 1e18, isBuy, i + 5);
         }
 
         vm.stopPrank();
@@ -1082,7 +1082,7 @@ contract OrderBookFactoryTest is Test {
 
         vm.startPrank(trader2);
         uint256 startGas = gasleft();
-        factory.addNewOrder(keys[0], 10, 1, false, 11);
+        factory.addNewOrder(keys[0], 10, 1 * 1e18, false, 11);
         uint256 gasUsed = startGas - gasleft();
         console.log("Gas used for adding Order: %d", gasUsed);
         vm.stopPrank();
@@ -1140,7 +1140,7 @@ contract OrderBookFactoryTest is Test {
         console.log("TC BB INICIO", tokenB.balanceOf(address(factory)));
 
         vm.startPrank(trader1);
-        factory.addNewOrder(keys[0], 10, 50, true, 5);
+        factory.addNewOrder(keys[0], 10, 50 * 1e18, true, 5);
         vm.stopPrank();
 
         console.log("T1 BA MEDIO", tokenA.balanceOf(address(trader1)));
@@ -1153,7 +1153,7 @@ contract OrderBookFactoryTest is Test {
         console.log("TC BB MEDIO", tokenB.balanceOf(address(factory)));
 
         vm.startPrank(trader2);
-        factory.addNewOrder(keys[0], 10, 50, false, 11);
+        factory.addNewOrder(keys[0], 10, 50 * 1e18, false, 11);
         vm.stopPrank();
 
         console.log("T1 BA", tokenA.balanceOf(address(trader1)));
@@ -1258,7 +1258,7 @@ contract OrderBookFactoryTest is Test {
 
         // Agregar una nueva orden de compra
         uint256 quantity = 1;
-        uint256 price = 100;
+        uint256 price = 100 * 1e18;
         bool isBuy = true;
 
         vm.prank(trader1);
@@ -1321,9 +1321,9 @@ contract OrderBookFactoryTest is Test {
         factory.unpause();
         assertFalse(factory.paused());
         vm.stopPrank();
-        vm.prank(trader2);
+        vm.prank(trader1);
         // Verify that operations can be performed after unpausing
-        factory.addNewOrder(pairId, 100, 1000, true, block.timestamp);
+        factory.addNewOrder(pairId, 100, 1000 * 1e18, true, block.timestamp);
     }
 
     function testGetPairFee() public {
@@ -1345,12 +1345,12 @@ contract OrderBookFactoryTest is Test {
 
         bytes32 pairId = keys[0];
         // Add some orders for user1
-        vm.startPrank(trader2);
-        factory.addNewOrder(pairId, 10, 100, true, block.timestamp);
-        factory.addNewOrder(pairId, 20, 110, true, block.timestamp);
+        vm.startPrank(trader1);
+        factory.addNewOrder(pairId, 10, 100 * 1e18, true, block.timestamp);
+        factory.addNewOrder(pairId, 20, 110 * 1e18, true, block.timestamp);
         vm.stopPrank();
 
-        bytes32[] memory orders = factory.getTraderOrdersForPair(pairId, trader2);
+        bytes32[] memory orders = factory.getTraderOrdersForPair(pairId, trader1);
         assertEq(orders.length, 2);
     }
 
@@ -1363,16 +1363,16 @@ contract OrderBookFactoryTest is Test {
         bytes32 pairId = keys[0];
 
         // Add an order
-        vm.startPrank(trader2);
-        factory.addNewOrder(pairId, 10, 100, true, block.timestamp);
+        vm.startPrank(trader1);
+        factory.addNewOrder(pairId, 10, 100 * 1e18, true, block.timestamp);
         vm.stopPrank();
 
-        bytes32[] memory orders = factory.getTraderOrdersForPair(pairId, trader2);
+        bytes32[] memory orders = factory.getTraderOrdersForPair(pairId, trader1);
         require(orders.length > 0, "No orders found");
 
         OrderBookLib.Order memory order = factory.getOrderDetailForPair(pairId, orders[0]);
         assertEq(order.quantity, 10);
-        assertEq(order.price, 100);
+        assertEq(order.price, 100 * 1e18);
         assertTrue(order.isBuy);
     }
 
@@ -1384,16 +1384,16 @@ contract OrderBookFactoryTest is Test {
 
         bytes32 pairId = keys[0];
         // Add some buy orders
-        vm.startPrank(trader2);
-        factory.addNewOrder(pairId, 10, 100, true, block.timestamp);
-        factory.addNewOrder(pairId, 10, 110, true, block.timestamp);
-        factory.addNewOrder(pairId, 10, 120, true, block.timestamp);
-        factory.addNewOrder(pairId, 10, 90, true, block.timestamp);
+        vm.startPrank(trader1);
+        factory.addNewOrder(pairId, 10, 100 * 1e18, true, block.timestamp);
+        factory.addNewOrder(pairId, 10, 110 * 1e18, true, block.timestamp);
+        factory.addNewOrder(pairId, 10, 120 * 1e18, true, block.timestamp);
+        factory.addNewOrder(pairId, 10, 90 * 1e18, true, block.timestamp);
         vm.stopPrank();
         uint256[3] memory topPrices = factory.getTop3BuyPricesForPair(pairId);
-        assertEq(topPrices[0], 120);
-        assertEq(topPrices[1], 110);
-        assertEq(topPrices[2], 100);
+        assertEq(topPrices[0], 120 * 1e18);
+        assertEq(topPrices[1], 110 * 1e18);
+        assertEq(topPrices[2], 100 * 1e18);
     }
 
     function testGetTop3SellPricesForPair() public {
@@ -1424,11 +1424,11 @@ contract OrderBookFactoryTest is Test {
 
         bytes32 pairId = keys[0];
         // Add some buy orders at the same price
-        vm.startPrank(trader2);
-        factory.addNewOrder(pairId, 10, 100, true, block.timestamp);
-        factory.addNewOrder(pairId, 20, 100, true, block.timestamp + 1);
+        vm.startPrank(trader1);
+        factory.addNewOrder(pairId, 10, 100 * 1e18, true, block.timestamp);
+        factory.addNewOrder(pairId, 20, 100 * 1e18, true, block.timestamp + 1);
         vm.stopPrank();
-        (uint256 orderCount, uint256 orderValue) = factory.getPricePointDataForPair(pairId, 100, true);
+        (uint256 orderCount, uint256 orderValue) = factory.getPricePointDataForPair(pairId, 100 * 1e18, true);
         assertEq(orderCount, 2);
         assertEq(orderValue, 30);
     }

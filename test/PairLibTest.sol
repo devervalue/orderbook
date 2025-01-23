@@ -24,9 +24,9 @@ contract PairLibTest is Test {
     address trader3;
 
     // Constants
-    uint256 constant INITIAL_SUPPLY = 1000 * 1e18;
-    uint256 constant INITIAL_TRANSFER = 1500;
-    uint256 constant APPROVAL_AMOUNT = 1000 * 1e18;
+    uint256 constant INITIAL_SUPPLY = 1000000 * 1e18;
+    uint256 constant INITIAL_TRANSFER = 1500000;
+    uint256 constant APPROVAL_AMOUNT = 1000000 * 1e18;
 
     // Test data
     uint256 price;
@@ -259,9 +259,9 @@ contract PairLibTest is Test {
 
     function testAddSellOrder_WithLowerPriceMatchingBuyOrder() public {
         vm.prank(trader2);
-        pair.addBuyBaseToken(110, quantity, trader1, nonce);
+        pair.addBuyBaseToken(110 * 1e18, quantity, trader1, nonce);
 
-        uint256 lowerPrice = 100;
+        uint256 lowerPrice = 100 * 1e18;
         vm.prank(trader1);
         pair.addSellBaseToken(lowerPrice, quantity, trader2, nonce);
 
@@ -273,15 +273,15 @@ contract PairLibTest is Test {
 
     function testAddSellOrder_WithHigherPriceNoMatching() public {
         vm.prank(trader2);
-        pair.addBuyBaseToken(90, quantity, trader1, nonce);
+        pair.addBuyBaseToken(90 * 1e18, quantity, trader1, nonce);
 
-        uint256 higherPrice = 100;
+        uint256 higherPrice = 100 * 1e18;
         vm.prank(trader1);
         pair.addSellBaseToken(higherPrice, quantity, trader2, nonce);
 
         pair.withdrawBalance(trader2, true);
 
-        assertEq(pair.getFirstBuyOrders(), 90, "Buy order should remain unmatched");
+        assertEq(pair.getFirstBuyOrders(), 90 * 1e18, "Buy order should remain unmatched");
         assertEq(pair.getFirstSellOrders(), higherPrice, "Sell order should be added without execution");
     }
 
@@ -572,60 +572,60 @@ contract PairLibTest is Test {
 
     function testOnePrice() public {
         vm.prank(trader2);
-        pair.createOrder(true, 100, 10);
+        pair.createOrder(true, 100 * 1e18, 10);
         vm.prank(trader1);
-        pair.createOrder(false, 110, 10);
+        pair.createOrder(false, 110 * 1e18, 10);
 
         uint256[3] memory topBuyPrices = pair.getTop3BuyPrices();
         uint256[3] memory topSellPrices = pair.getTop3SellPrices();
 
-        assertEqualArrays(topBuyPrices, [uint256(100), 0, 0]);
-        assertEqualArrays(topSellPrices, [uint256(110), 0, 0]);
+        assertEqualArrays(topBuyPrices, [uint256(100) * 1e18, 0, 0]);
+        assertEqualArrays(topSellPrices, [uint256(110) * 1e18, 0, 0]);
     }
 
     function testTwoPrices() public {
         vm.startPrank(trader2);
-        pair.createOrder(true, 100, 10);
-        pair.createOrder(true, 90, 10);
+        pair.createOrder(true, 100 * 1e18, 10);
+        pair.createOrder(true, 90 * 1e18, 10);
         vm.stopPrank();
         vm.startPrank(trader1);
-        pair.createOrder(false, 110, 10);
-        pair.createOrder(false, 120, 10);
+        pair.createOrder(false, 110 * 1e18, 10);
+        pair.createOrder(false, 120 * 1e18, 10);
         vm.stopPrank();
 
         uint256[3] memory topBuyPrices = pair.getTop3BuyPrices();
         uint256[3] memory topSellPrices = pair.getTop3SellPrices();
 
-        assertEqualArrays(topBuyPrices, [uint256(100), 90, 0]);
-        assertEqualArrays(topSellPrices, [uint256(110), 120, 0]);
+        assertEqualArrays(topBuyPrices, [uint256(100) * 1e18, 90 * 1e18, 0 * 1e18]);
+        assertEqualArrays(topSellPrices, [uint256(110) * 1e18, 120 * 1e18, 0 * 1e18]);
     }
 
     function testThreeOrMorePrices() public {
         vm.startPrank(trader2);
-        pair.createOrder(true, 100, 10);
-        pair.createOrder(true, 90, 10);
-        pair.createOrder(true, 95, 10);
-        pair.createOrder(true, 85, 10);
+        pair.createOrder(true, 100 * 1e18, 10);
+        pair.createOrder(true, 90 * 1e18, 10);
+        pair.createOrder(true, 95 * 1e18, 10);
+        pair.createOrder(true, 85 * 1e18, 10);
         vm.stopPrank();
         vm.startPrank(trader1);
-        pair.createOrder(false, 110, 10);
-        pair.createOrder(false, 120, 10);
-        pair.createOrder(false, 115, 10);
-        pair.createOrder(false, 125, 10);
+        pair.createOrder(false, 110 * 1e18, 10);
+        pair.createOrder(false, 120 * 1e18, 10);
+        pair.createOrder(false, 115 * 1e18, 10);
+        pair.createOrder(false, 125 * 1e18, 10);
         vm.stopPrank();
 
         uint256[3] memory topBuyPrices = pair.getTop3BuyPrices();
         uint256[3] memory topSellPrices = pair.getTop3SellPrices();
 
-        assertEqualArrays(topBuyPrices, [uint256(100), 95, 90]);
-        assertEqualArrays(topSellPrices, [uint256(110), 115, 120]);
+        assertEqualArrays(topBuyPrices, [uint256(100) * 1e18, 95 * 1e18, 90 * 1e18]);
+        assertEqualArrays(topSellPrices, [uint256(110) * 1e18, 115 * 1e18, 120 * 1e18]);
     }
 
     function testBuyOrdersDescendingOrder() public {
         vm.startPrank(trader2);
-        pair.createOrder(true, 100, 10);
-        pair.createOrder(true, 90, 10);
-        pair.createOrder(true, 95, 10);
+        pair.createOrder(true, 100 * 1e18, 10);
+        pair.createOrder(true, 90 * 1e18, 10);
+        pair.createOrder(true, 95 * 1e18, 10);
         vm.stopPrank();
 
         uint256[3] memory topBuyPrices = pair.getTop3BuyPrices();
@@ -650,16 +650,16 @@ contract PairLibTest is Test {
     function testLargeNumberOfOrders() public {
         for (uint256 i = 1; i <= 100; i++) {
             vm.prank(trader2);
-            pair.createOrder(true, i * 10, 10);
+            pair.createOrder(true, (i * 10) * 1e18, 10);
             vm.prank(trader1);
-            pair.createOrder(false, 1000 + i * 10, 10);
+            pair.createOrder(false, (1000 + i * 10) * 1e18, 10);
         }
 
         uint256[3] memory topBuyPrices = pair.getTop3BuyPrices();
         uint256[3] memory topSellPrices = pair.getTop3SellPrices();
 
-        assertEqualArrays(topBuyPrices, [uint256(1000), 990, 980]);
-        assertEqualArrays(topSellPrices, [uint256(1010), 1020, 1030]);
+        assertEqualArrays(topBuyPrices, [uint256(1000) * 1e18, 990 * 1e18, 980 * 1e18]);
+        assertEqualArrays(topSellPrices, [uint256(1010) * 1e18, 1020 * 1e18, 1030 * 1e18]);
     }
 
     function testEdgeCases() public {
@@ -680,54 +680,54 @@ contract PairLibTest is Test {
 
     function testDuplicatePrices() public {
         vm.startPrank(trader2);
-        pair.createOrder(true, 100, 10);
-        pair.createOrder(true, 100, 20);
-        pair.createOrder(true, 90, 30);
+        pair.createOrder(true, 100 * 1e18, 10);
+        pair.createOrder(true, 100 * 1e18, 20);
+        pair.createOrder(true, 90 * 1e18, 30);
         vm.stopPrank();
         vm.startPrank(trader1);
-        pair.createOrder(false, 110, 10);
-        pair.createOrder(false, 110, 20);
-        pair.createOrder(false, 120, 30);
+        pair.createOrder(false, 110 * 1e18, 10);
+        pair.createOrder(false, 110 * 1e18, 20);
+        pair.createOrder(false, 120 * 1e18, 30);
         vm.stopPrank();
 
         uint256[3] memory topBuyPrices = pair.getTop3BuyPrices();
         uint256[3] memory topSellPrices = pair.getTop3SellPrices();
 
-        assertEqualArrays(topBuyPrices, [uint256(100), 90, 0]);
-        assertEqualArrays(topSellPrices, [uint256(110), 120, 0]);
+        assertEqualArrays(topBuyPrices, [uint256(100 * 1e18), 90 * 1e18, 0]);
+        assertEqualArrays(topSellPrices, [uint256(110 * 1e18), 120 * 1e18, 0]);
     }
 
     function testUpdatedOrderBook() public {
         vm.startPrank(trader2);
-        pair.createOrder(true, 100, 10);
-        pair.createOrder(true, 90, 10);
+        pair.createOrder(true, 100 * 1e18, 10);
+        pair.createOrder(true, 90 * 1e18, 10);
         vm.stopPrank();
         vm.startPrank(trader1);
-        pair.createOrder(false, 110, 10);
-        pair.createOrder(false, 120, 10);
+        pair.createOrder(false, 110 * 1e18, 10);
+        pair.createOrder(false, 120 * 1e18, 10);
         vm.stopPrank();
 
         uint256[3] memory topBuyPrices = pair.getTop3BuyPrices();
         uint256[3] memory topSellPrices = pair.getTop3SellPrices();
 
-        assertEqualArrays(topBuyPrices, [uint256(100), 90, 0]);
-        assertEqualArrays(topSellPrices, [uint256(110), 120, 0]);
+        assertEqualArrays(topBuyPrices, [uint256(100) * 1e18, 90 * 1e18, 0]);
+        assertEqualArrays(topSellPrices, [uint256(110) * 1e18, 120 * 1e18, 0]);
 
         vm.prank(trader2);
-        pair.createOrder(true, 95, 10);
+        pair.createOrder(true, 95 * 1e18, 10);
         vm.prank(trader1);
-        pair.createOrder(false, 115, 10);
+        pair.createOrder(false, 115 * 1e18, 10);
 
         topBuyPrices = pair.getTop3BuyPrices();
         topSellPrices = pair.getTop3SellPrices();
 
-        assertEqualArrays(topBuyPrices, [uint256(100), 95, 90]);
-        assertEqualArrays(topSellPrices, [uint256(110), 115, 120]);
+        assertEqualArrays(topBuyPrices, [uint256(100) * 1e18, 95 * 1e18, 90 * 1e18]);
+        assertEqualArrays(topSellPrices, [uint256(110) * 1e18, 115 * 1e18, 120 * 1e18]);
     }
 
     function testGetPrice() public {
         // 1. Empty order book
-        (uint256 emptyValue, uint256 emptyCount) = pair.getPrice(100, true);
+        (uint256 emptyValue, uint256 emptyCount) = pair.getPrice(100 * 1e18, true);
         assertEq(emptyValue, 0);
         assertEq(emptyCount, 0);
 
@@ -735,37 +735,37 @@ contract PairLibTest is Test {
         addMockOrders();
 
         // 2. Price point exists with orders (buy order)
-        (uint256 buyValue, uint256 buyCount) = pair.getPrice(95, true);
+        (uint256 buyValue, uint256 buyCount) = pair.getPrice(95 * 1e18, true);
         assertEq(buyValue, 100);
         assertEq(buyCount, 1);
 
         // 3. Price point does not exist
-        (uint256 nonExistentValue, uint256 nonExistentCount) = pair.getPrice(99, true);
+        (uint256 nonExistentValue, uint256 nonExistentCount) = pair.getPrice(99 * 1e18, true);
         assertEq(nonExistentValue, 0);
         assertEq(nonExistentCount, 0);
 
         // 4. Price point is the first (highest for buy)
-        (uint256 highestBuyValue, uint256 highestBuyCount) = pair.getPrice(100, true);
+        (uint256 highestBuyValue, uint256 highestBuyCount) = pair.getPrice(100 * 1e18, true);
         assertEq(highestBuyValue, 201);
         assertEq(highestBuyCount, 2);
 
         // 5. Price point is in the middle of the order book
-        (uint256 middleSellValue, uint256 middleSellCount) = pair.getPrice(105, false);
+        (uint256 middleSellValue, uint256 middleSellCount) = pair.getPrice(105 * 1e18, false);
         assertEq(middleSellValue, 150);
         assertEq(middleSellCount, 1);
 
         // 6. Price point is the last (lowest for sell)
-        (uint256 lowestSellValue, uint256 lowestSellCount) = pair.getPrice(102, false);
+        (uint256 lowestSellValue, uint256 lowestSellCount) = pair.getPrice(102 * 1e18, false);
         assertEq(lowestSellValue, 100);
         assertEq(lowestSellCount, 1);
 
         // 7. Querying for buy orders
-        (uint256 buyOrderValue, uint256 buyOrderCount) = pair.getPrice(95, true);
+        (uint256 buyOrderValue, uint256 buyOrderCount) = pair.getPrice(95 * 1e18, true);
         assertEq(buyOrderValue, 100);
         assertEq(buyOrderCount, 1);
 
         // 8. Querying for sell orders
-        (uint256 sellOrderValue, uint256 sellOrderCount) = pair.getPrice(110, false);
+        (uint256 sellOrderValue, uint256 sellOrderCount) = pair.getPrice(110 * 1e18, false);
         assertEq(sellOrderValue, 201);
         assertEq(sellOrderCount, 2);
     }
@@ -773,18 +773,18 @@ contract PairLibTest is Test {
     function addMockOrders() internal {
         // Add buy orders
         vm.startPrank(trader2);
-        pair.createOrder(true, 100, 100);
-        pair.createOrder(true, 100, 101);
-        pair.createOrder(true, 95, 100);
-        pair.createOrder(true, 90, 150);
+        pair.createOrder(true, 100 * 1e18, 100);
+        pair.createOrder(true, 100 * 1e18, 101);
+        pair.createOrder(true, 95 * 1e18, 100);
+        pair.createOrder(true, 90 * 1e18, 150);
         vm.stopPrank();
 
         // Add sell orders
         vm.startPrank(trader1);
-        pair.createOrder(false, 102, 100);
-        pair.createOrder(false, 105, 150);
-        pair.createOrder(false, 110, 100);
-        pair.createOrder(false, 110, 101);
+        pair.createOrder(false, 102 * 1e18, 100);
+        pair.createOrder(false, 105 * 1e18, 150);
+        pair.createOrder(false, 110 * 1e18, 100);
+        pair.createOrder(false, 110 * 1e18, 101);
         vm.stopPrank();
     }
 
@@ -798,15 +798,20 @@ contract PairLibTest is Test {
 
     function testInvalidQuantity() public {
         vm.expectRevert(abi.encodeWithSelector(PairLib.PL__InvalidQuantity.selector, 0));
-        pair.createOrder(true, 100, 0);
+        pair.createOrder(true, 100 * 1e18, 0);
+    }
+
+    function testInvalidPaymentAmount() public {
+        vm.expectRevert(abi.encodeWithSelector(PairLib.PL__InvalidPaymentAmount.selector));
+        pair.createOrder(true, 1, 10);
     }
 
     function testDuplicateId() public {
         vm.prank(trader2);
-        pair.createOrder(true, 100, 5);
+        pair.createOrder(true, 100 * 1e18, 5);
         vm.prank(trader2);
         vm.expectRevert(PairLib.PL__OrderIdAlreadyExists.selector);
-        pair.createOrder(true, 100, 5);
+        pair.createOrder(true, 100 * 1e18, 5);
     }
 
     //-------------------- ADD WITHDRAW BALANCE ------------------------------

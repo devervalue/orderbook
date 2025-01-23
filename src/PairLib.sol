@@ -251,6 +251,11 @@ library PairLib {
             ? (IERC20(pair.quoteToken), newOrder.quantity * newOrder.price / PRECISION, pair.buyOrders)
             : (IERC20(pair.baseToken), newOrder.quantity, pair.sellOrders);
 
+        // Validate non-zero payment
+        if (transferAmount == 0) {
+            revert PL__InvalidPaymentAmount();
+        }
+
         // Transfer the required funds from the trader to the contract
         token.safeTransferFrom(msg.sender, address(this), transferAmount);
 
