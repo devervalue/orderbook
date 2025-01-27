@@ -312,7 +312,7 @@ library PairLib {
             );
 
         // Validate non-zero payment
-        if (takerSendAmount == 0) {
+        if (takerSendAmount == 0 || takerReceiveAmount == 0) {
             revert PL__InvalidPaymentAmount();
         }
 
@@ -359,8 +359,6 @@ library PairLib {
         OrderBookLib.Order storage matchedOrder,
         OrderBookLib.Order memory takerOrder
     ) private {
-        // Update the last trade price for the pair
-        pair.lastTradePrice = matchedOrder.price;
 
         // Determine which tokens are being received and sent by the taker, and their amounts
         /// @dev The calculation depends on whether the taker order is a buy or sell order
@@ -380,9 +378,15 @@ library PairLib {
             );
 
         // Validate non-zero payment
-        if (takerSendAmount == 0) {
-            revert PL__InvalidPaymentAmount();
+        if (takerSendAmount == 0 || takerReceiveAmount == 0) {
+            addOrder(pair, takerOrder);
+            // Set quantity to 0 as order has been added to the book and no need for additional matching
+            takerOrder.quantity = 0;
+            return;
         }
+
+        // Update the last trade price for the pair
+        pair.lastTradePrice = matchedOrder.price;
 
         // Calculate fee (on the buy token amount, which is what the taker receives)
         /// @dev The fee is calculated in basis points (1/100 of a percent)

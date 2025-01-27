@@ -833,4 +833,19 @@ contract PairLibTest is Test {
         assertEq(traderBalance.quoteTokenBalance, 0, "Trader1 should get 0 tokenB");
         assertEq(traderBalance.baseTokenBalance, 0, "Trader1 should get 0 tokenA");
     }
+
+    //------------------------- Test partial fill rounding error -----
+    function testTakerSendAmountIsZero() public {
+        vm.startPrank(trader2);
+        pair.addBuyBaseToken(0.2 * 10 ** 18, 50, trader2, nonce);
+        pair.addBuyBaseToken(0.2 * 10 ** 18, 40, trader2, nonce + 1);
+        pair.addBuyBaseToken(0.2 * 10 ** 18, 20, trader2, nonce + 2);
+        vm.stopPrank();
+
+        vm.prank(trader1);
+        pair.addSellBaseToken(0.2 * 10 ** 18, 94, trader1, nonce + 3);
+
+
+        assertEq(pair.getFirstSellOrders(), 0.2 * 10 ** 18, "Sell order should not be matched");
+    }
 }
