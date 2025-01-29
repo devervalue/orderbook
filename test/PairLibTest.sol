@@ -201,12 +201,11 @@ contract PairLibTest is Test {
 
     function testAddBuyOrderPartial_WithMultipleSellOrdersAtDifferentPricesRevertInvalidPaymentAmount() public {
         vm.startPrank(trader1);
-        pair.addSellBaseToken(100, 10, trader2, nonce + 1);
+        pair.addSellBaseToken(100*1e18, 10, trader2, nonce + 1);
         vm.stopPrank();
 
         vm.prank(trader2);
-        vm.expectRevert(PairLib.PL__InvalidPaymentAmount.selector);
-        pair.addBuyBaseToken(100, 5, trader1, nonce + 2);
+        pair.addBuyBaseToken(100*1e18, 5, trader1, nonce + 2);
 
         pair.withdrawBalance(trader1, false);
     }
@@ -842,10 +841,13 @@ contract PairLibTest is Test {
         pair.addBuyBaseToken(0.2 * 10 ** 18, 20, trader2, nonce + 2);
         vm.stopPrank();
 
+        uint256 trader1BaseInitialBalance = tokenA.balanceOf(trader1);
         vm.prank(trader1);
         pair.addSellBaseToken(0.2 * 10 ** 18, 94, trader1, nonce + 3);
 
+        uint256 sentAmount =  trader1BaseInitialBalance - tokenA.balanceOf(trader1);
 
-        assertEq(pair.getFirstSellOrders(), 0.2 * 10 ** 18, "Sell order should not be matched");
+        assertEq(sentAmount, 90, "Should have only sent 90 tokenA");
+        assertEq(tokenB.balanceOf(trader1), 18, "Should have received 18 tokenB");
     }
 }

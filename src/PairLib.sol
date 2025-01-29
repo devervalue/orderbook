@@ -379,8 +379,7 @@ library PairLib {
 
         // Validate non-zero payment
         if (takerSendAmount == 0 || takerReceiveAmount == 0) {
-            addOrder(pair, takerOrder);
-            // Set quantity to 0 as order has been added to the book and no need for additional matching
+            // Set quantity to 0 as to skip the remaining amount, and consider the taker order as filled
             takerOrder.quantity = 0;
             return;
         }
