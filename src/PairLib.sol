@@ -341,6 +341,7 @@ library PairLib {
 
         // Update the taker's order quantity
         takerOrder.quantity -= matchedOrder.availableQuantity;
+        takerOrder.availableQuantity -= matchedOrder.availableQuantity;
 
         // Emit events for the filled orders
         emit OrderFilled(matchedOrder.id, pair.baseToken, pair.quoteToken, matchedOrder.traderAddress);
@@ -381,6 +382,7 @@ library PairLib {
         if (takerSendAmount == 0 || takerReceiveAmount == 0) {
             // Set quantity to 0 as to skip the remaining amount, and consider the taker order as filled
             takerOrder.quantity = 0;
+            takerOrder.availableQuantity = 0;
             return;
         }
 
@@ -421,6 +423,7 @@ library PairLib {
 
         // Set the taker order quantity to 0 as it has been fully filled
         takerOrder.quantity = 0;
+        takerOrder.availableQuantity = 0;
 
         // Emit an event for the filled taker order
         emit OrderFilled(takerOrder.id, pair.baseToken, pair.quoteToken, msg.sender);
