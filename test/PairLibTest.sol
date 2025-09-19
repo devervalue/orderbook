@@ -25,7 +25,7 @@ contract PairLibTest is Test {
 
     // Constants
     uint256 constant INITIAL_SUPPLY = 1000000 * 1e18;
-    uint256 constant INITIAL_TRANSFER = 1500000;
+    uint256 constant INITIAL_TRANSFER = 55000000000000000000;
     uint256 constant APPROVAL_AMOUNT = 1000000 * 1e18;
 
     // Test data
@@ -187,13 +187,13 @@ contract PairLibTest is Test {
 
     function testAddBuyOrder_WithMultipleSellOrdersAtDifferentPricesRevertInvalidPaymentAmount() public {
         vm.startPrank(trader1);
-        pair.addSellBaseToken(90, 5, trader2, nonce);
-        pair.addSellBaseToken(price, 5, trader2, nonce + 1);
+        pair.addSellBaseToken(90e18, 10, trader2, nonce);
+        pair.addSellBaseToken(price, 10, trader2, nonce + 1);
         vm.stopPrank();
 
         vm.prank(trader2);
-        vm.expectRevert(PairLib.PL__InvalidPaymentAmount.selector);
-        pair.addBuyBaseToken(price, quantity, trader1, nonce);
+        vm.expectRevert(PairLib.PL__OrderBelowMinimum.selector);
+        pair.addBuyBaseToken(100, 8, trader1, nonce);
 
         pair.withdrawBalance(trader1, false);
     }
@@ -214,7 +214,7 @@ contract PairLibTest is Test {
     function testAddSellOrder_WithoutBuyOrders() public {
         assertEq(pair.getLastBuyOrders(), 0, "Buy orders tree should be empty initially");
 
-        uint256 price = 100;
+        uint256 price = 100e18;
         uint256 quantity = 10;
 
         vm.prank(trader1);
@@ -635,9 +635,9 @@ contract PairLibTest is Test {
 
     function testSellOrdersAscendingOrder() public {
         vm.startPrank(trader1);
-        pair.createOrder(false, 110, 10);
-        pair.createOrder(false, 120, 10);
-        pair.createOrder(false, 115, 10);
+        pair.createOrder(false, 110e18, 10e18);
+        pair.createOrder(false, 120e18, 10e18);
+        pair.createOrder(false, 115e18, 10e18);
         vm.stopPrank();
 
         uint256[3] memory topSellPrices = pair.getTop3SellPrices();
@@ -664,13 +664,13 @@ contract PairLibTest is Test {
     function testEdgeCases() public {
         vm.startPrank(trader2);
         vm.expectRevert(stdError.arithmeticError);
-        pair.createOrder(true, type(uint256).max, 10);
+        pair.createOrder(true, type(uint256).max, 10e12);
         vm.expectRevert(stdError.arithmeticError);
-        pair.createOrder(true, type(uint256).max - 1, 10);
+        pair.createOrder(true, type(uint256).max - 1, 10e12);
         vm.stopPrank();
         vm.startPrank(trader1);
-        pair.createOrder(false, 1, 10);
-        pair.createOrder(false, 2, 10);
+        pair.createOrder(false, 1e10, 10e12);
+        pair.createOrder(false, 2e10, 10e12);
         vm.stopPrank();
 
         uint256[3] memory topBuyPrices = pair.getTop3BuyPrices();
@@ -801,7 +801,7 @@ contract PairLibTest is Test {
     }
 
     function testInvalidPaymentAmount() public {
-        vm.expectRevert(abi.encodeWithSelector(PairLib.PL__InvalidPaymentAmount.selector));
+        vm.expectRevert(abi.encodeWithSelector(PairLib.PL__OrderBelowMinimum.selector));
         pair.createOrder(true, 1, 10);
     }
 
