@@ -30,6 +30,10 @@ library PairLib {
     error PL__InvalidQuantity(uint256 quantity);
     /// @notice Thrown when attempting to interact with a disabled pair
     error PL__PairDisabled();
+    /// @notice Thrown when attempting to create an order with a price or quantity
+    ///         that does not satisfy the minimum requirements (price > 1e18/quantity
+    ///         and quantity > 1e18/price).
+    error PL__OrderBelowMinimum();
 
     /// @dev Precision factor for price calculations
     uint256 private constant PRECISION = 1e18;
@@ -493,6 +497,7 @@ library PairLib {
         // Validate input parameters
         if (_price == 0) revert PL__InvalidPrice(_price);
         if (_quantity == 0) revert PL__InvalidQuantity(_quantity);
+        if (_quantity <= 1e18 / _price || _price <= 1e18 / _quantity ) revert PL__OrderBelowMinimum();
 
         // Determine the current best price point to start matching
         uint256 currentPricePoint = isBuy ? pair.sellOrders.getLowestPrice() : pair.buyOrders.getHighestPrice();
