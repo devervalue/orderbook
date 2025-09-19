@@ -339,7 +339,7 @@ library PairLib {
         takerReceiveToken.safeTransfer(msg.sender, takerReceiveAmountAfterFee);
 
         // Transfer the fee to the designated fee address, if set
-        if (pair.feeAddress != address(0)) {
+        if (pair.feeAddress != address(0) || pair.fee > 0 ) {
             takerReceiveToken.safeTransfer(pair.feeAddress, fee);
         }
 
@@ -413,27 +413,53 @@ library PairLib {
         takerReceiveToken.safeTransfer(msg.sender, takerReceiveAmountAfterFee);
 
         // Transfer fee to fee address if set, otherwise it stays in the contract
-        if (pair.feeAddress != address(0)) {
+        if (pair.feeAddress != address(0) || pair.fee > 0 ) {
             takerReceiveToken.safeTransfer(pair.feeAddress, fee);
         }
 
         // Update the matched order by reducing its available quantity
-        matchedOrder.availableQuantity = matchedOrder.availableQuantity - takerOrder.quantity;
-        matchedOrder.status = ORDER_PARTIALLY_FILLED;
+        uint256 remainingAmount = matchedOrder.availableQuantity - takerOrder.quantity;
+        if(remainingAmount <= 1e18 / matchedOrder.price || matchedOrder.price <= 1e18 / remainingAmount ){
+            if (matchedOrder.isBuy) {
+                // If it's a buy order, update the quote token balance of the maker (seller)
+                pair.traderBalances[matchedOrder.traderAddress].quoteTokenBalance += remainingAmount;
+            } else {
+                // If it's a sell order, update the base token balance of the maker (buyer)
+                pair.traderBalances[matchedOrder.traderAddress].baseTokenBalance += remainingAmount;
+            }
 
-        // Update the order book to reflect the partial fill
-        /// @dev This updates the volume at the price point in the order book
-        (matchedOrder.isBuy ? pair.buyOrders : pair.sellOrders).update(matchedOrder.price, takerOrder.quantity);
+            // Set the taker order quantity to 0 as it has been fully filled
+            takerOrder.quantity = 0;
+            takerOrder.availableQuantity = 0;
 
-        // Set the taker order quantity to 0 as it has been fully filled
-        takerOrder.quantity = 0;
-        takerOrder.availableQuantity = 0;
+            // Emit an event for the filled taker order
+            emit OrderFilled(takerOrder.id, pair.baseToken, pair.quoteToken, msg.sender);
 
-        // Emit an event for the filled taker order
-        emit OrderFilled(takerOrder.id, pair.baseToken, pair.quoteToken, msg.sender);
+            // Emit events for the filled orders
+            emit OrderFilled(matchedOrder.id, pair.baseToken, pair.quoteToken, matchedOrder.traderAddress);
 
-        // Emit an event for the partially filled matched order
-        emit OrderPartiallyFilled(matchedOrder.id, pair.baseToken, pair.quoteToken, matchedOrder.traderAddress);
+            // Remove the fully matched order from the order book
+            removeOrder(pair, matchedOrder);
+        }else{
+            matchedOrder.availableQuantity = remainingAmount;
+            matchedOrder.status = ORDER_PARTIALLY_FILLED;
+
+            // Update the order book to reflect the partial fill
+            /// @dev This updates the volume at the price point in the order book
+            (matchedOrder.isBuy ? pair.buyOrders : pair.sellOrders).update(matchedOrder.price, takerOrder.quantity);
+
+            // Set the taker order quantity to 0 as it has been fully filled
+            takerOrder.quantity = 0;
+            takerOrder.availableQuantity = 0;
+
+            // Emit an event for the filled taker order
+            emit OrderFilled(takerOrder.id, pair.baseToken, pair.quoteToken, msg.sender);
+
+            // Emit an event for the partially filled matched order
+            emit OrderPartiallyFilled(matchedOrder.id, pair.baseToken, pair.quoteToken, matchedOrder.traderAddress);
+        }
+
+
     }
 
     /// @notice Matches a new order against existing orders in the order book
