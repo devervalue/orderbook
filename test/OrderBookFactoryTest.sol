@@ -35,28 +35,28 @@ contract OrderBookFactoryTest is Test {
         factory = new OrderBookFactory();
 
         //Creando token como suministro inicial
-        tokenA = new MyTokenA(1000000 * 10 ** 18); //Crear un nuevo token con suministro inicial
-        tokenB = new MyTokenB(1000000 * 10 ** 18); //Crear un nuevo token con suministro inicial
+        tokenA = new MyTokenA(100000000000 * 10 ** 18); //Crear un nuevo token con suministro inicial
+        tokenB = new MyTokenB(100000000000 * 10 ** 18); //Crear un nuevo token con suministro inicial
         //        console.log(address(factory));
         //        console.log(msg.sender);
 
-        tokenA.transfer(trader1, 1500000);
-        tokenB.transfer(trader2, 1500000);
+        tokenA.transfer(trader1, 150000e18);
+        tokenB.transfer(trader2, 150000e18);
 
         //Aprobar el contrato para que pueda gastar tokens
         vm.startPrank(trader1); // Cambiar el contexto a trader1
-        tokenA.approve(address(factory), 1000 * 10 ** 18); // Aprobar 1000 tokens
-        tokenB.approve(address(factory), 1000 * 10 ** 18); // Aprobar 1000 tokens
+        tokenA.approve(address(factory), 150000 * 10 ** 18); // Aprobar 1000 tokens
+        tokenB.approve(address(factory), 150000 * 10 ** 18); // Aprobar 1000 tokens
         vm.stopPrank();
 
         vm.startPrank(trader2); // Cambiar el contexto a trader1
-        tokenB.approve(address(factory), 1000 * 10 ** 18); // Aprobar 1000 tokens
-        tokenA.approve(address(factory), 1000 * 10 ** 18); // Aprobar 1000 tokens
+        tokenB.approve(address(factory), 150000 * 10 ** 18); // Aprobar 1000 tokens
+        tokenA.approve(address(factory), 150000 * 10 ** 18); // Aprobar 1000 tokens
         vm.stopPrank();
 
         vm.startPrank(address(factory)); // Cambiar el contexto a trader1
-        tokenB.approve(address(factory), 1000 * 10 ** 18); // Aprobar 1000 tokens
-        tokenA.approve(address(factory), 1000 * 10 ** 18); // Aprobar 1000 tokens
+        tokenB.approve(address(factory), 150000 * 10 ** 18); // Aprobar 1000 tokens
+        tokenA.approve(address(factory), 150000 * 10 ** 18); // Aprobar 1000 tokens
         vm.stopPrank();
     }
 
@@ -735,8 +735,8 @@ contract OrderBookFactoryTest is Test {
         assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
 
         // Agregar una nueva orden de venta
-        uint256 quantity = 10;
-        uint256 price = 100;
+        uint256 quantity = 10e18;
+        uint256 price = 100e18;
         bool isBuy = false;
 
         vm.prank(trader2);
@@ -938,7 +938,7 @@ contract OrderBookFactoryTest is Test {
 
         vm.startPrank(trader2);
         // Agregar ventas
-        uint256 quantity = 1;
+        uint256 quantity = 1e18;
         bool isBuy = false;
 
         for (uint256 i = 1; i <= 10; i++) {
@@ -966,7 +966,7 @@ contract OrderBookFactoryTest is Test {
 
         vm.startPrank(trader1);
         uint256 startGas = gasleft();
-        factory.addNewOrder(keys[0], 10, 50 * 10 ** 18, true, 11);
+        factory.addNewOrder(keys[0], 10e18, 50 * 10 ** 18, true, 11);
         uint256 gasUsed = startGas - gasleft();
         console.log("Gas used for adding Order: %d", gasUsed);
         vm.stopPrank();
@@ -984,7 +984,7 @@ contract OrderBookFactoryTest is Test {
         factory.withdrawBalanceTrader(keys[0], false);
         vm.stopPrank();
 
-        assertEq(tokenA.balanceOf(address(trader2)), 10, unicode"Trader2 debería tener 10 unidades de token A");
+        assertEq(tokenA.balanceOf(address(trader2)), 10e18, unicode"Trader2 debería tener 10 unidades de token A");
     }
 
     function testOneBuy100Sells() public {
@@ -1000,7 +1000,7 @@ contract OrderBookFactoryTest is Test {
 
         vm.startPrank(trader2);
         // Agregar ventas
-        uint256 quantity = 1;
+        uint256 quantity = 1e18;
         bool isBuy = false;
 
         for (uint256 i = 1; i <= 50; i++) {
@@ -1019,7 +1019,7 @@ contract OrderBookFactoryTest is Test {
 
         vm.startPrank(trader1);
         uint256 startGas = gasleft();
-        factory.addNewOrder(keys[0], 100, 50 * 10 ** 18, true, 11);
+        factory.addNewOrder(keys[0], 100e18, 50 * 10 ** 18, true, 11);
         uint256 gasUsed = startGas - gasleft();
         console.log("Gas used for adding Order: %d", gasUsed);
         vm.stopPrank();
@@ -1029,7 +1029,7 @@ contract OrderBookFactoryTest is Test {
         factory.withdrawBalanceTrader(keys[0], false);
         vm.stopPrank();
 
-        assertEq(tokenA.balanceOf(address(trader2)), 150, unicode"Trader2 debería tener 150 unidades de token A");
+        assertEq(tokenA.balanceOf(address(trader2)), 150e18, unicode"Trader2 debería tener 150 unidades de token A");
     }
 
     function testOneSell10Buys() public {
@@ -1405,15 +1405,15 @@ contract OrderBookFactoryTest is Test {
         bytes32 pairId = keys[0];
         // Add some sell orders
         vm.startPrank(trader2);
-        factory.addNewOrder(pairId, 10, 10, false, block.timestamp);
-        factory.addNewOrder(pairId, 10, 11, false, block.timestamp);
-        factory.addNewOrder(pairId, 10, 12, false, block.timestamp);
-        factory.addNewOrder(pairId, 10, 9, false, block.timestamp);
+        factory.addNewOrder(pairId, 10e18, 10e18, false, block.timestamp);
+        factory.addNewOrder(pairId, 10e18, 11e18, false, block.timestamp);
+        factory.addNewOrder(pairId, 10e18, 12e18, false, block.timestamp);
+        factory.addNewOrder(pairId, 10e18, 9e18, false, block.timestamp);
         vm.stopPrank();
         uint256[3] memory topPrices = factory.getTop3SellPricesForPair(pairId);
-        assertEq(topPrices[0], 9);
-        assertEq(topPrices[1], 10);
-        assertEq(topPrices[2], 11);
+        assertEq(topPrices[0], 9e18);
+        assertEq(topPrices[1], 10e18);
+        assertEq(topPrices[2], 11e18);
     }
 
     function testGetPricePointDataForPair() public {
