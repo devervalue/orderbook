@@ -122,6 +122,15 @@ library PairLib {
         bytes32 indexed id, address indexed baseToken, address indexed quoteToken, address trader
     );
 
+    /// @notice Emitted when an order is partially filled (partially executed)
+    /// @param id The unique identifier of the refund order
+    /// @param token The address of the token in the trading pair
+    /// @param quantityRefund Quantity of token refund
+    /// @param trader The address of the trader whose order was refund
+    event OrderRefund(
+        bytes32 indexed id, address indexed token, uint256 quantityRefund, address trader
+    );
+
     /// @notice Emitted when the fee for a trading pair is changed
     /// @param baseToken The address of the base token in the trading pair
     /// @param quoteToken The address of the quote token in the trading pair
@@ -364,6 +373,9 @@ library PairLib {
         OrderBookLib.Order storage matchedOrder,
         OrderBookLib.Order memory takerOrder
     ) private {
+        bytes32 matchedOrderId = matchedOrder.id;
+        address matchedTraderAddress = matchedOrder.traderAddress;
+        uint256 matchedPrice = matchedOrder.price;
 
         // Determine which tokens are being received and sent by the taker, and their amounts
         /// @dev The calculation depends on whether the taker order is a buy or sell order
@@ -373,11 +385,11 @@ library PairLib {
                 IERC20(pair.baseToken),
                 takerOrder.quantity,
                 IERC20(pair.quoteToken),
-                takerOrder.quantity * matchedOrder.price / PRECISION
+                takerOrder.quantity * matchedPrice / PRECISION
             )
             : (
                 IERC20(pair.quoteToken),
-                takerOrder.quantity * matchedOrder.price / PRECISION,
+                takerOrder.quantity * matchedPrice / PRECISION,
                 IERC20(pair.baseToken),
                 takerOrder.quantity
             );
@@ -391,7 +403,7 @@ library PairLib {
         }
 
         // Update the last trade price for the pair
-        pair.lastTradePrice = matchedOrder.price;
+        pair.lastTradePrice = matchedPrice;
 
         // Calculate fee (on the buy token amount, which is what the taker receives)
         /// @dev The fee is calculated in basis points (1/100 of a percent)
@@ -403,10 +415,10 @@ library PairLib {
         takerSendToken.safeTransferFrom(msg.sender, address(this), takerSendAmount);
         if (takerOrder.isBuy) {
             // If it's a buy order, update the quote token balance of the maker (seller)
-            pair.traderBalances[matchedOrder.traderAddress].quoteTokenBalance += takerSendAmount;
+            pair.traderBalances[matchedTraderAddress].quoteTokenBalance += takerSendAmount;
         } else {
             // If it's a sell order, update the base token balance of the maker (buyer)
-            pair.traderBalances[matchedOrder.traderAddress].baseTokenBalance += takerSendAmount;
+            pair.traderBalances[matchedTraderAddress].baseTokenBalance += takerSendAmount;
         }
 
         // Transfer buy tokens from maker to taker (minus fee)
@@ -419,13 +431,17 @@ library PairLib {
 
         // Update the matched order by reducing its available quantity
         uint256 remainingAmount = matchedOrder.availableQuantity - takerOrder.quantity;
-        if(remainingAmount <= 1e18 / matchedOrder.price || matchedOrder.price <= 1e18 / remainingAmount ){
+        if(remainingAmount <= 1e18 / matchedPrice || matchedPrice <= 1e18 / remainingAmount ){
             if (matchedOrder.isBuy) {
                 // If it's a buy order, update the quote token balance of the maker (seller)
-                pair.traderBalances[matchedOrder.traderAddress].quoteTokenBalance += remainingAmount;
+                pair.traderBalances[matchedTraderAddress].quoteTokenBalance += remainingAmount;
+                //Emit event refund
+                emit OrderRefund(matchedOrderId,pair.quoteToken,remainingAmount,matchedTraderAddress);
             } else {
                 // If it's a sell order, update the base token balance of the maker (buyer)
-                pair.traderBalances[matchedOrder.traderAddress].baseTokenBalance += remainingAmount;
+                pair.traderBalances[matchedTraderAddress].baseTokenBalance += remainingAmount;
+                //Emit event refund
+                emit OrderRefund(matchedOrderId,pair.baseToken,remainingAmount,matchedTraderAddress);
             }
 
             // Set the taker order quantity to 0 as it has been fully filled
@@ -436,7 +452,7 @@ library PairLib {
             emit OrderFilled(takerOrder.id, pair.baseToken, pair.quoteToken, msg.sender);
 
             // Emit events for the filled orders
-            emit OrderFilled(matchedOrder.id, pair.baseToken, pair.quoteToken, matchedOrder.traderAddress);
+            emit OrderPartiallyFilled(matchedOrderId, pair.baseToken, pair.quoteToken, matchedTraderAddress);
 
             // Remove the fully matched order from the order book
             removeOrder(pair, matchedOrder);
@@ -446,7 +462,7 @@ library PairLib {
 
             // Update the order book to reflect the partial fill
             /// @dev This updates the volume at the price point in the order book
-            (matchedOrder.isBuy ? pair.buyOrders : pair.sellOrders).update(matchedOrder.price, takerOrder.quantity);
+            (matchedOrder.isBuy ? pair.buyOrders : pair.sellOrders).update(matchedPrice, takerOrder.quantity);
 
             // Set the taker order quantity to 0 as it has been fully filled
             takerOrder.quantity = 0;
@@ -456,7 +472,7 @@ library PairLib {
             emit OrderFilled(takerOrder.id, pair.baseToken, pair.quoteToken, msg.sender);
 
             // Emit an event for the partially filled matched order
-            emit OrderPartiallyFilled(matchedOrder.id, pair.baseToken, pair.quoteToken, matchedOrder.traderAddress);
+            emit OrderPartiallyFilled(matchedOrderId, pair.baseToken, pair.quoteToken, matchedTraderAddress);
         }
 
 
