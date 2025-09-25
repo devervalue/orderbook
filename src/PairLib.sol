@@ -431,7 +431,7 @@ library PairLib {
 
         // Update the matched order by reducing its available quantity
         uint256 remainingAmount = matchedOrder.availableQuantity - takerOrder.quantity;
-        if(remainingAmount <= 1e18 / matchedPrice || matchedPrice <= 1e18 / remainingAmount ){
+        if(remainingAmount * matchedPrice <= 1e18){
             if (matchedOrder.isBuy) {
                 // If it's a buy order, update the quote token balance of the maker (seller)
                 pair.traderBalances[matchedTraderAddress].quoteTokenBalance += remainingAmount;
@@ -539,7 +539,7 @@ library PairLib {
         // Validate input parameters
         if (_price == 0) revert PL__InvalidPrice(_price);
         if (_quantity == 0) revert PL__InvalidQuantity(_quantity);
-        if (_quantity <= 1e18 / _price || _price <= 1e18 / _quantity ) revert PL__OrderBelowMinimum();
+        if (_quantity * _price <= 1e18) revert PL__OrderBelowMinimum();
 
         // Determine the current best price point to start matching
         uint256 currentPricePoint = isBuy ? pair.sellOrders.getLowestPrice() : pair.buyOrders.getHighestPrice();
