@@ -348,7 +348,7 @@ library PairLib {
         takerReceiveToken.safeTransfer(msg.sender, takerReceiveAmountAfterFee);
 
         // Transfer the fee to the designated fee address, if set
-        if (pair.feeAddress != address(0) || pair.fee > 0 ) {
+        if (pair.feeAddress != address(0) && pair.fee > 0 ) {
             takerReceiveToken.safeTransfer(pair.feeAddress, fee);
         }
 
@@ -425,7 +425,7 @@ library PairLib {
         takerReceiveToken.safeTransfer(msg.sender, takerReceiveAmountAfterFee);
 
         // Transfer fee to fee address if set, otherwise it stays in the contract
-        if (pair.feeAddress != address(0) || pair.fee > 0 ) {
+        if (pair.feeAddress != address(0) && pair.fee > 0 ) {
             takerReceiveToken.safeTransfer(pair.feeAddress, fee);
         }
 
