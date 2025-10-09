@@ -234,6 +234,7 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable2Step {
         nonReentrant
         whenNotPaused
     {
+        // TODO Tentativo agregar multiplicación por precisión y ajuste de Fixed-Point Scaling
         if (_isBuy) {
             pairs[_pairId].addBuyOrder(_price, _quantity, _timestamp);
         } else {
