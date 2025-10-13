@@ -234,7 +234,6 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable2Step {
         nonReentrant
         whenNotPaused
     {
-        // TODO Tentativo agregar multiplicación por precisión y ajuste de Fixed-Point Scaling
         if (_isBuy) {
             pairs[_pairId].addBuyOrder(_price, _quantity, _timestamp);
         } else {
@@ -356,6 +355,17 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable2Step {
     function withdrawBalanceTrader(bytes32 _pairId, bool baseTokenWithdrawal) external nonReentrant {
         if (!pairExists(_pairId)) revert OBF__PairDoesNotExist();
         pairs[_pairId].withdrawBalance(msg.sender, baseTokenWithdrawal);
+    }
+
+    /// @notice Allows a owner to withdraw their fee balance from a specific trading pair
+    /// @dev This function enables owner to withdraw their available fee balance (both base and quote tokens)
+    /// @param _pairId The unique identifier of the trading pair from which to withdraw
+    /// @param baseTokenWithdrawal if true withdraws base token's balance, if false withdraws quote token's balance
+    /// @custom:security This function is external and can be called by any address
+    /// @custom:security Implements a nonReentrant guard to prevent reentrancy attacks
+    function withdrawFeeBalanceOwner(bytes32 _pairId, bool baseTokenWithdrawal) external nonReentrant onlyOwner {
+        if (!pairExists(_pairId)) revert OBF__PairDoesNotExist();
+        pairs[_pairId].withdrawFeeBalance(baseTokenWithdrawal);
     }
 
     /// @notice Checks if a trading pair exists
