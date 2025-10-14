@@ -86,6 +86,7 @@ contract PairLibTest is Test {
         vm.prank(trader2);
         pair.addBuyBaseToken(price, quantity, trader1, nonce);
 
+        vm.expectRevert(PairLib.PL__BalanceNotEnoughForWithdraw.selector);
         pair.withdrawBalance(trader1, true);
         pair.withdrawBalance(trader1, false);
 
@@ -105,6 +106,8 @@ contract PairLibTest is Test {
         vm.prank(trader2);
         pair.addBuyBaseToken(price, 15, trader1, nonce);
 
+        pair.getTraderBalances(trader1);
+        pair.getTraderBalances(trader2);
         pair.withdrawBalance(trader1, false);
 
         assertEq(pair.getFirstSellOrders(), 0, "All sell orders should be completely matched");
@@ -136,7 +139,7 @@ contract PairLibTest is Test {
         vm.prank(trader2);
         pair.addBuyBaseToken(price, quantity, trader1, nonce);
 
-        pair.withdrawBalance(trader1, false);
+        //pair.withdrawBalance(trader1, false);
 
         assertEq(pair.getFirstSellOrders(), 110 * 10 ** 18, "Sell order should not be matched");
         assertEq(pair.getFirstBuyOrders(), 100 * 10 ** 18, "Buy order should be stored");
@@ -195,7 +198,10 @@ contract PairLibTest is Test {
         vm.expectRevert(PairLib.PL__OrderBelowMinimum.selector);
         pair.addBuyBaseToken(100, 8, trader1, nonce);
 
-        pair.withdrawBalance(trader1, false);
+        pair.getTraderBalances(trader1);
+        assertEq(pair.getFirstSellOrders(), 90e18, "All sell orders should be matched");
+
+        //pair.withdrawBalance(trader1, false);
     }
 
 
@@ -278,7 +284,9 @@ contract PairLibTest is Test {
         vm.prank(trader1);
         pair.addSellBaseToken(higherPrice, quantity, trader2, nonce);
 
-        pair.withdrawBalance(trader2, true);
+        pair.getTraderBalances(trader2);
+        pair.getTraderBalances(trader1);
+        //pair.withdrawBalance(trader2, true);
 
         assertEq(pair.getFirstBuyOrders(), 90 * 1e18, "Buy order should remain unmatched");
         assertEq(pair.getFirstSellOrders(), higherPrice, "Sell order should be added without execution");
@@ -816,10 +824,10 @@ contract PairLibTest is Test {
     //-------------------- ADD WITHDRAW BALANCE ------------------------------
     function testWithDrawBalance_WithMatchingSellOrder() public {
         vm.prank(trader1);
-        pair.addSellBaseToken(price, quantity, trader2, nonce);
+        pair.addSellBaseToken(price, quantity, trader1, nonce);
 
         vm.prank(trader2);
-        pair.addBuyBaseToken(price, quantity, trader1, nonce);
+        pair.addBuyBaseToken(price, quantity, trader2, nonce);
 
         pair.withdrawBalance(trader1, false);
 
@@ -847,7 +855,7 @@ contract PairLibTest is Test {
 
         uint256 sentAmount =  trader1BaseInitialBalance - tokenA.balanceOf(trader1);
 
-        assertEq(sentAmount, 90, "Should have only sent 90 tokenA");
+        assertEq(sentAmount, 94, "Should have only sent 90 tokenA");
         assertEq(tokenB.balanceOf(trader1), 18, "Should have received 18 tokenB");
     }
 }

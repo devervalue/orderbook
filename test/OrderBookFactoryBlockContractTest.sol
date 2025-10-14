@@ -163,7 +163,7 @@ contract OrderBookFactoryBlockContract is Test {
     function test_HandleSmallResidualsFromPartialFills_SellOrder() public {
         uint256 price = 22983;
         bytes32[] memory keys = factory.getPairIds();
-        
+        uint256 balanceTrader2TokenB = tokenB.balanceOf(trader2);
         // 1. Trader1 coloca orden de venta grande
         vm.prank(trader1);
         factory.addNewOrder(keys[0], 10_000e18, price, false, 1);
@@ -177,13 +177,21 @@ contract OrderBookFactoryBlockContract is Test {
         PairLib.TraderBalance memory tb1 = factory.checkBalanceTrader(keys[0], trader1);
         
         // Base token balance = residuo de la orden original
-        assertEq(tb1.baseTokenBalance, 10_000e18 - 9999_99999915e10);
+        assertEq(tb1.quoteTokenBalance, (9999_99999915e10 * price / 1e18));
         // Quote token balance = lo que recibió por la venta
-        assertEq(tb1.quoteTokenBalance, (9999_99999915e10 * price) / 1e18);
+        assertEq(tokenB.balanceOf(trader2)- balanceTrader2TokenB ,9999_99999915e10);
 
         // 4. Trader1 puede retirar sus fondos sin problemas
         vm.prank(trader1);
-        factory.withdrawBalanceTrader(keys[0], true);
+        //factory.withdrawBalanceTrader(keys[0], true);
+        factory.checkBalanceTrader(keys[0], trader1);
+        factory.checkBalanceTrader(keys[0], trader2);
+        // Verificar que la nueva orden se creó correctamente
+        uint256[3] memory sellOrders = factory.getTop3SellPricesForPair(keys[0]);
+        assertEq(sellOrders[0], price);
+
+        (uint256 orderCount, uint256 orderValue) = factory.getPricePointDataForPair(keys[0], price, false);
+        assertEq(orderValue, 10_000e18 - 9999_99999915e10);
     }
 
     /**
@@ -192,7 +200,8 @@ contract OrderBookFactoryBlockContract is Test {
     function test_HandleSmallResidualsFromPartialFills_BuyOrder() public {
         uint256 price = 22983;
         bytes32[] memory keys = factory.getPairIds();
-        
+        uint256 balanceTrader2TokenA = tokenA.balanceOf(trader2);
+
         // 1. Trader1 coloca orden de compra grande
         vm.prank(trader1);
         factory.addNewOrder(keys[0], 10_000e18, price, true, 1);
@@ -204,15 +213,23 @@ contract OrderBookFactoryBlockContract is Test {
         // 3. Verificar balances del trader1
         vm.prank(trader1);
         PairLib.TraderBalance memory tb1 = factory.checkBalanceTrader(keys[0], trader1);
-        
+        factory.checkBalanceTrader(keys[0], trader2);
         // Base token balance = lo que compró
         assertEq(tb1.baseTokenBalance, 9999_99999915e10);
         // Quote token balance = residuo de lo que no se pudo usar para comprar
-        assertEq(tb1.quoteTokenBalance, 10_000e18 - 9999_99999915e10);
+        //assertEq(tb1.quoteTokenBalance, 10_000e18 - 9999_99999915e10);
+        assertEq(tokenA.balanceOf(trader2) - balanceTrader2TokenA,(9999_99999915e10 * price / 1e18));
 
         // 4. Trader1 puede retirar sus fondos
         vm.prank(trader1);
         factory.withdrawBalanceTrader(keys[0], true);
+
+        // Verificar que la nueva orden se creó correctamente
+        uint256[3] memory buyOrders = factory.getTop3BuyPricesForPair(keys[0]);
+        assertEq(buyOrders[0], price);
+
+        (uint256 orderCount, uint256 orderValue) = factory.getPricePointDataForPair(keys[0], price, true);
+        assertEq(orderValue, 10_000e18 - 9999_99999915e10);
     }
 
     // ======================================

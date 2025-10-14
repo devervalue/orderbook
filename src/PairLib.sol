@@ -356,8 +356,9 @@ library PairLib {
     /// @param pair The storage reference to the Pair struct
     /// @param matchedOrder The storage reference to the existing order that is being filled
     /// @param takerOrder The memory reference to the new order that is filling the matched order
-    function fillOrder(Pair storage pair, OrderBookLib.Order storage matchedOrder, OrderBookLib.Order memory takerOrder, uint256 totalReceiveAmount)
-        private
+    /// @return uint256 The updated value receive taker
+    function fillOrder(Pair storage pair, OrderBookLib.Order storage matchedOrder, OrderBookLib.Order memory takerOrder)
+        private returns (uint256)
     {
         // Update the last trade price for the pair
         pair.lastTradePrice = matchedOrder.price;
@@ -421,7 +422,7 @@ library PairLib {
         /// @dev For buy orders, update base token balance; for sell orders, update quote token balance
         // TODO en vez de transferir, acumulo cuanto va recibiendo el taker
         //takerReceiveToken.safeTransfer(msg.sender, takerReceiveAmountAfterFee);
-        totalReceiveAmount += takerReceiveAmountAfterFee;
+        //uint256 takerAmountReceive += takerReceiveAmountAfterFee;
 
 //        // Transfer the fee to the designated fee address, if set
 //        // En vez de transferir el fee acumulo cuanto fee debe pagar el taker
@@ -438,6 +439,8 @@ library PairLib {
 
         // Remove the fully matched order from the order book
         removeOrder(pair, matchedOrder);
+
+        return takerReceiveAmountAfterFee;
     }
 
     /// @notice Partially fills a matched order
@@ -445,12 +448,12 @@ library PairLib {
     /// @param pair The storage reference to the Pair struct
     /// @param matchedOrder The storage reference to the existing order that is being partially filled
     /// @param takerOrder The memory reference to the new order that is partially filling the matched order
+    /// @return uint256 The updated value receive taker
     function partiallyFillOrder(
         Pair storage pair,
         OrderBookLib.Order storage matchedOrder,
-        OrderBookLib.Order memory takerOrder,
-        uint256 totalReceiveAmount
-    ) private {
+        OrderBookLib.Order memory takerOrder
+    ) private returns (uint256) {
         bytes32 matchedOrderId = matchedOrder.id;
         address matchedTraderAddress = matchedOrder.traderAddress;
         uint256 matchedPrice = matchedOrder.price;
@@ -521,7 +524,7 @@ library PairLib {
         // Transfer buy tokens from maker to taker (minus fee)
         // TODO Acumulo cuanto recibe el taker en vez de transferir
         //takerReceiveToken.safeTransfer(msg.sender, takerReceiveAmountAfterFee);
-        totalReceiveAmount += takerReceiveAmountAfterFee;
+        //takerAmountReceive += takerReceiveAmountAfterFee;
 
 //        // Transfer fee to fee address if set, otherwise it stays in the contract
 //        if (pair.feeAddress != address(0) || pair.fee > 0 ) {
@@ -591,6 +594,8 @@ library PairLib {
 
         // Emit an event for the partially filled matched order
         emit OrderPartiallyFilled(matchedOrderId, pair.baseToken, pair.quoteToken, matchedTraderAddress);
+
+        return takerReceiveAmountAfterFee;
     }
 
     /// @notice Matches a new order against existing orders in the order book
@@ -600,9 +605,10 @@ library PairLib {
     /// @param newOrder The new order to be matched against existing orders
     /// @return uint256 The remaining quantity of the new order after matching
     /// @return uint256 The updated count of orders processed in this matching session
-    function matchOrder(Pair storage pair, uint256 orderCount, OrderBookLib.Order memory newOrder, uint256 takerReceiveAmount)
+    /// @return uint256 The updated value receive taker
+    function matchOrder(Pair storage pair, uint256 orderCount, OrderBookLib.Order memory newOrder, uint256 takerAmountReceive)
         private
-        returns (uint256, uint256)
+        returns (uint256, uint256, uint256)
     {
         // Determine the first matching order ID based on whether the new order is a buy or sell
         bytes32 matchingOrderId = newOrder.isBuy
@@ -616,22 +622,22 @@ library PairLib {
             // Check if the new order can fully fill the matching order
             if (newOrder.quantity >= matchingOrder.availableQuantity) {
                 // Fully fill the matching order
-                fillOrder(pair, matchingOrder, newOrder, takerReceiveAmount);
+                takerAmountReceive += fillOrder(pair, matchingOrder, newOrder);
                 // Check if there are more orders at the same price
                 /// @dev We use the appropriate order book (sell for buy orders, buy for sell orders)
                 matchingOrderId =
                     (newOrder.isBuy ? pair.sellOrders : pair.buyOrders).getNextOrderIdAtPrice(matchingOrder.price);
             } else {
                 // Partially fill the matching order
-                partiallyFillOrder(pair, matchingOrder, newOrder, takerReceiveAmount);
+                takerAmountReceive += partiallyFillOrder(pair, matchingOrder, newOrder);
                 // Return as the new order has been fully filled
-                return (newOrder.quantity, orderCount);
+                return (newOrder.quantity, orderCount, takerAmountReceive);
             }
 
             // Check if the new order has been fully filled
             if (newOrder.quantity == 0) {
                 emit OrderFilled(newOrder.id, pair.baseToken, pair.quoteToken, newOrder.traderAddress);
-                return (newOrder.quantity, orderCount);
+                return (newOrder.quantity, orderCount,takerAmountReceive);
             }
 
             // Increment the order count to keep track of how many orders have been processed
@@ -639,7 +645,7 @@ library PairLib {
         } while (matchingOrderId != 0 && orderCount < MAX_NUMBER_ORDERS_FILLED);
 
         // Return the remaining quantity of the new order and the updated order count
-        return (newOrder.quantity, orderCount);
+        return (newOrder.quantity, orderCount, takerAmountReceive);
     }
 
     /// @notice Creates a new order in the order book
@@ -680,10 +686,10 @@ library PairLib {
         uint256 orderCount;
 
         // Amount receive of taker
-        uint256 takerReceiveAmount;
+        uint256 takerAmountReceive;
 
         // Attempt to match the new order against existing orders
-        while (_quantity > 0 && orderCount < MAX_NUMBER_ORDERS_FILLED) {
+        while (newOrder.quantity > 0 && orderCount < MAX_NUMBER_ORDERS_FILLED) {
             // If there are no more orders to match against, exit the loop
             if (currentPricePoint == 0) {
                 break;
@@ -694,7 +700,7 @@ library PairLib {
 
             if (shouldMatch) {
                 // Match the order and update remaining quantity
-                (newOrder.quantity, orderCount) = matchOrder(pair, orderCount, newOrder,takerReceiveAmount);
+                (newOrder.quantity, orderCount, takerAmountReceive) = matchOrder(pair, orderCount, newOrder,takerAmountReceive);
                 //newOrder.quantity = _quantity;
                 // Update the current price point for the next iteration
                 currentPricePoint = isBuy ? pair.sellOrders.getLowestPrice() : pair.buyOrders.getHighestPrice();
@@ -715,18 +721,18 @@ library PairLib {
             // If it's a buy order, update the quote token balance of the new order (creator order)
             IERC20(pair.quoteToken).safeTransferFrom(msg.sender, address(this), _quantity * _price / PRECISION);
             //Taker receive base token
-            if(takerReceiveAmount != 0){
-                IERC20(pair.baseToken).safeTransfer(msg.sender,takerReceiveAmount);
+            if(takerAmountReceive != 0){
+                IERC20(pair.baseToken).safeTransfer(msg.sender,takerAmountReceive);
             }
         } else {
             IERC20(pair.baseToken).safeTransferFrom(msg.sender, address(this), _quantity);
-            if(takerReceiveAmount != 0){
-                if(takerReceiveAmount / PRECISION == 0){
+            if(takerAmountReceive != 0){
+                if(takerAmountReceive / PRECISION == 0){
                     //Acumulation quote token
-                    pair.traderBalances[msg.sender].quoteTokenBalance += takerReceiveAmount;
+                    pair.traderBalances[msg.sender].quoteTokenBalance += takerAmountReceive;
                 }else{
                     //Taker receive quote token
-                    IERC20(pair.quoteToken).safeTransfer(msg.sender,takerReceiveAmount / PRECISION);
+                    IERC20(pair.quoteToken).safeTransfer(msg.sender,takerAmountReceive / PRECISION);
                 }
             }
         }
