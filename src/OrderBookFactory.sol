@@ -299,20 +299,20 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable2Step {
         return pairs[_pairId].getOrderDetail(_orderId);
     }
 
-    /// @notice Retrieves the top 3 buy prices for a specific pair
-    /// @dev This function returns the highest 3 prices in the buy order book
+    /// @notice Retrieves the top 50 buy prices for a specific pair
+    /// @dev This function returns the highest 50 prices in the buy order book
     /// @param pairId The unique identifier of the trading pair
-    /// @return An array of 3 uint256 values representing the top buy prices
-    function getTop3BuyPricesForPair(bytes32 pairId) external view returns (uint256[3] memory) {
-        return pairs[pairId].getTop3BuyPrices();
+    /// @return An array of 50 uint256 values representing the top buy prices
+    function getTop50BuyPricesForPair(bytes32 pairId) external view returns (uint256[50] memory) {
+        return pairs[pairId].getTop50BuyPrices();
     }
 
-    /// @notice Retrieves the top 3 sell prices for a specific pair
-    /// @dev This function returns the lowest 3 prices in the sell order book
+    /// @notice Retrieves the top 50 sell prices for a specific pair
+    /// @dev This function returns the lowest 50 prices in the sell order book
     /// @param pairId The unique identifier of the trading pair
-    /// @return An array of 3 uint256 values representing the top sell prices
-    function getTop3SellPricesForPair(bytes32 pairId) external view returns (uint256[3] memory) {
-        return pairs[pairId].getTop3SellPrices();
+    /// @return An array of 50 uint256 values representing the top sell prices
+    function getTop50SellPricesForPair(bytes32 pairId) external view returns (uint256[50] memory) {
+        return pairs[pairId].getTop50SellPrices();
     }
 
     /// @notice Retrieves data for a specific price point in the order book

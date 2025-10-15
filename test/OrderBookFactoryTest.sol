@@ -1376,7 +1376,7 @@ contract OrderBookFactoryTest is Test {
         assertTrue(order.isBuy);
     }
 
-    function testGetTop3BuyPricesForPair() public {
+    function testGetTop50BuyPricesForPair() public {
         vm.prank(owner);
         factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
 
@@ -1390,13 +1390,13 @@ contract OrderBookFactoryTest is Test {
         factory.addNewOrder(pairId, 10, 120 * 1e18, true, block.timestamp);
         factory.addNewOrder(pairId, 10, 90 * 1e18, true, block.timestamp);
         vm.stopPrank();
-        uint256[3] memory topPrices = factory.getTop3BuyPricesForPair(pairId);
+        uint256[50] memory topPrices = factory.getTop50BuyPricesForPair(pairId);
         assertEq(topPrices[0], 120 * 1e18);
         assertEq(topPrices[1], 110 * 1e18);
         assertEq(topPrices[2], 100 * 1e18);
     }
 
-    function testGetTop3SellPricesForPair() public {
+    function testGetTop50SellPricesForPair() public {
         vm.prank(owner);
         factory.addPair(address(tokenA), address(tokenB), 5, feeAddress);
 
@@ -1410,7 +1410,7 @@ contract OrderBookFactoryTest is Test {
         factory.addNewOrder(pairId, 10e18, 12e18, false, block.timestamp);
         factory.addNewOrder(pairId, 10e18, 9e18, false, block.timestamp);
         vm.stopPrank();
-        uint256[3] memory topPrices = factory.getTop3SellPricesForPair(pairId);
+        uint256[50] memory topPrices = factory.getTop50SellPricesForPair(pairId);
         assertEq(topPrices[0], 9e18);
         assertEq(topPrices[1], 10e18);
         assertEq(topPrices[2], 11e18);

@@ -130,15 +130,6 @@ library PairLib {
         bytes32 indexed id, address indexed baseToken, address indexed quoteToken, address trader
     );
 
-    /// @notice Emitted when an order is partially filled (partially executed)
-    /// @param id The unique identifier of the refund order
-    /// @param token The address of the token in the trading pair
-    /// @param quantityRefund Quantity of token refund
-    /// @param trader The address of the trader whose order was refund
-    event OrderRefund(
-        bytes32 indexed id, address indexed token, uint256 quantityRefund, address trader
-    );
-
     /// @notice Emitted when the fee for a trading pair is changed
     /// @param baseToken The address of the base token in the trading pair
     /// @param quoteToken The address of the quote token in the trading pair
@@ -673,20 +664,20 @@ library PairLib {
         return pair.buyOrders.getNextOrderIdAtPrice(price);
     }
 
-    /// @notice Retrieves the top 3 buy prices in the order book
-    /// @dev This function returns an array of the 3 highest buy prices
+    /// @notice Retrieves the top 50 buy prices in the order book
+    /// @dev This function returns an array of the 50 highest buy prices
     /// @param pair The storage reference to the Pair struct
-    /// @return uint256[3] memory An array containing the top 3 buy prices, sorted in descending order
-    function getTop3BuyPrices(Pair storage pair) internal view returns (uint256[3] memory) {
-        return pair.buyOrders.get3Prices(true);
+    /// @return uint256[50] memory An array containing the top 50 buy prices, sorted in descending order
+    function getTop50BuyPrices(Pair storage pair) internal view returns (uint256[50] memory) {
+        return pair.buyOrders.get50Prices(true);
     }
 
-    /// @notice Retrieves the top 3 sell prices in the order book
-    /// @dev This function returns an array of the 3 lowest sell prices
+    /// @notice Retrieves the top 50 sell prices in the order book
+    /// @dev This function returns an array of the 50 lowest sell prices
     /// @param pair The storage reference to the Pair struct
-    /// @return uint256[3] memory An array containing the top 3 sell prices, sorted in ascending order
-    function getTop3SellPrices(Pair storage pair) internal view returns (uint256[3] memory) {
-        return pair.sellOrders.get3Prices(false);
+    /// @return uint256[50] memory An array containing the top 50 sell prices, sorted in ascending order
+    function getTop50SellPrices(Pair storage pair) internal view returns (uint256[50] memory) {
+        return pair.sellOrders.get50Prices(false);
     }
 
     /// @notice Retrieves the PricePoint data for a specific price in either the buy or sell order book

@@ -471,15 +471,15 @@ function getNextBuyOrderId(Pair storage pair, uint256 price) internal view retur
 |`<none>`|`bytes32`|bytes32 The ID of the next buy order at the specified price, or 0 if none exists|
 
 
-### getTop3BuyPrices
+### getTop50BuyPrices
 
-Retrieves the top 3 buy prices in the order book
+Retrieves the top 50 buy prices in the order book
 
-*This function returns an array of the 3 highest buy prices*
+*This function returns an array of the 50 highest buy prices*
 
 
 ```solidity
-function getTop3BuyPrices(Pair storage pair) internal view returns (uint256[3] memory);
+function getTop50BuyPrices(Pair storage pair) internal view returns (uint256[50] memory);
 ```
 **Parameters**
 
@@ -489,20 +489,20 @@ function getTop3BuyPrices(Pair storage pair) internal view returns (uint256[3] m
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint256[3]`|uint256[3] memory An array containing the top 3 buy prices, sorted in descending order|
+|Name|Type| Description                                                                              |
+|----|----|------------------------------------------------------------------------------------------|
+|`<none>`|`uint256[50]`| uint256[50] memory An array containing the top 50 buy prices, sorted in descending order |
 
 
-### getTop3SellPrices
+### getTop50SellPrices
 
-Retrieves the top 3 sell prices in the order book
+Retrieves the top 50 sell prices in the order book
 
-*This function returns an array of the 3 lowest sell prices*
+*This function returns an array of the 50 lowest sell prices*
 
 
 ```solidity
-function getTop3SellPrices(Pair storage pair) internal view returns (uint256[3] memory);
+function getTop50SellPrices(Pair storage pair) internal view returns (uint256[50] memory);
 ```
 **Parameters**
 
@@ -512,9 +512,9 @@ function getTop3SellPrices(Pair storage pair) internal view returns (uint256[3] 
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint256[3]`|uint256[3] memory An array containing the top 3 sell prices, sorted in ascending order|
+|Name|Type| Description                                                                              |
+|----|----|------------------------------------------------------------------------------------------|
+|`<none>`|`uint256[50]`| uint256[50] memory An array containing the top 50 sell prices, sorted in ascending order |
 
 
 ### getPrice

@@ -105,12 +105,12 @@ contract PairLibImpl {
         });
     }
 
-    function getTop3BuyPrices() public view returns (uint256[3] memory) {
-        return pair.getTop3BuyPrices();
+    function getTop50BuyPrices() public view returns (uint256[50] memory) {
+        return pair.getTop50BuyPrices();
     }
 
-    function getTop3SellPrices() public view returns (uint256[3] memory) {
-        return pair.getTop3SellPrices();
+    function getTop50SellPrices() public view returns (uint256[50] memory) {
+        return pair.getTop50SellPrices();
     }
 
     function getPrice(uint256 price, bool isBuy) public view returns (uint256, uint256) {

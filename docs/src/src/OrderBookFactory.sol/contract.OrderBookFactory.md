@@ -349,15 +349,15 @@ function getOrderDetailForPair(bytes32 _pairId, bytes32 _orderId) external view 
 |`<none>`|`OrderBookLib.Order`|An OrderBookLib.Order struct containing all details of the order|
 
 
-### getTop3BuyPricesForPair
+### getTop50BuyPricesForPair
 
-Retrieves the top 3 buy prices for a specific pair
+Retrieves the top 50 buy prices for a specific pair
 
-*This function returns the highest 3 prices in the buy order book*
+*This function returns the highest 50 prices in the buy order book*
 
 
 ```solidity
-function getTop3BuyPricesForPair(bytes32 pairId) external view returns (uint256[3] memory);
+function getTop50BuyPricesForPair(bytes32 pairId) external view returns (uint256[50] memory);
 ```
 **Parameters**
 
@@ -367,20 +367,20 @@ function getTop3BuyPricesForPair(bytes32 pairId) external view returns (uint256[
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint256[3]`|An array of 3 uint256 values representing the top buy prices|
+|Name|Type| Description                                                   |
+|----|----|---------------------------------------------------------------|
+|`<none>`|`uint256[50]`| An array of 50 uint256 values representing the top buy prices |
 
 
-### getTop3SellPricesForPair
+### getTop50SellPricesForPair
 
-Retrieves the top 3 sell prices for a specific pair
+Retrieves the top 50 sell prices for a specific pair
 
-*This function returns the lowest 3 prices in the sell order book*
+*This function returns the lowest 50 prices in the sell order book*
 
 
 ```solidity
-function getTop3SellPricesForPair(bytes32 pairId) external view returns (uint256[3] memory);
+function getTop50SellPricesForPair(bytes32 pairId) external view returns (uint256[50] memory);
 ```
 **Parameters**
 
@@ -390,9 +390,9 @@ function getTop3SellPricesForPair(bytes32 pairId) external view returns (uint256
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint256[3]`|An array of 3 uint256 values representing the top sell prices|
+|Name|Type| Description                                                    |
+|----|----|----------------------------------------------------------------|
+|`<none>`|`uint256[50]`| An array of 50 uint256 values representing the top sell prices |
 
 
 ### getPricePointDataForPair

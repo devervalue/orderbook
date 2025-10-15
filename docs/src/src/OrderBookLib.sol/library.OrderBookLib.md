@@ -104,7 +104,7 @@ Gets the three highest or lowest prices in the order book
 
 
 ```solidity
-function get3Prices(Book storage b, bool highest) internal view returns (uint256[3] memory);
+function get3Prices(Book storage b, bool highest) internal view returns (uint256[50] memory);
 ```
 **Parameters**
 
@@ -117,7 +117,7 @@ function get3Prices(Book storage b, bool highest) internal view returns (uint256
 
 |Name|Type|Description|
 |----|----|-----------|
-|`<none>`|`uint256[3]`|An array of the three prices|
+|`<none>`|`uint256[50]`|An array of the three prices|
 
 
 ### getNextOrderIdAtPrice

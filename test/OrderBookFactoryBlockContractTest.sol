@@ -85,7 +85,7 @@ contract OrderBookFactoryBlockContract is Test {
         factory.addNewOrder(keys[0], 70000000000, price, false, 1); // Cantidad que antes causaba problemas
 
         // Verificar que no se creó ninguna orden
-        uint256[3] memory sellOrders = factory.getTop3SellPricesForPair(keys[0]);
+        uint256[50] memory sellOrders = factory.getTop50SellPricesForPair(keys[0]);
         assertEq(sellOrders[0], 0);
     }
 
@@ -103,7 +103,7 @@ contract OrderBookFactoryBlockContract is Test {
         factory.addNewOrder(keys[0], 70000000000, price, true, 1);
 
         // Verificar que no se creó ninguna orden
-        uint256[3] memory buyOrders = factory.getTop3BuyPricesForPair(keys[0]);
+        uint256[50] memory buyOrders = factory.getTop50BuyPricesForPair(keys[0]);
         assertEq(buyOrders[0], 0);
     }
 
@@ -119,7 +119,7 @@ contract OrderBookFactoryBlockContract is Test {
         factory.addNewOrder(keys[0], 1e18, price, true, 1); // 1 token a precio bajo = transferAmount > 0
 
         // Verificar que la orden se creó correctamente
-        uint256[3] memory buyOrders = factory.getTop3BuyPricesForPair(keys[0]);
+        uint256[50] memory buyOrders = factory.getTop50BuyPricesForPair(keys[0]);
         assertEq(buyOrders[0], price);
         
         (uint256 orderCount, uint256 orderValue) = factory.getPricePointDataForPair(keys[0], price, true);
@@ -187,7 +187,7 @@ contract OrderBookFactoryBlockContract is Test {
         factory.checkBalanceTrader(keys[0], trader1);
         factory.checkBalanceTrader(keys[0], trader2);
         // Verificar que la nueva orden se creó correctamente
-        uint256[3] memory sellOrders = factory.getTop3SellPricesForPair(keys[0]);
+        uint256[50] memory sellOrders = factory.getTop50SellPricesForPair(keys[0]);
         assertEq(sellOrders[0], price);
 
         (uint256 orderCount, uint256 orderValue) = factory.getPricePointDataForPair(keys[0], price, false);
@@ -225,7 +225,7 @@ contract OrderBookFactoryBlockContract is Test {
         factory.withdrawBalanceTrader(keys[0], true);
 
         // Verificar que la nueva orden se creó correctamente
-        uint256[3] memory buyOrders = factory.getTop3BuyPricesForPair(keys[0]);
+        uint256[50] memory buyOrders = factory.getTop50BuyPricesForPair(keys[0]);
         assertEq(buyOrders[0], price);
 
         (uint256 orderCount, uint256 orderValue) = factory.getPricePointDataForPair(keys[0], price, true);

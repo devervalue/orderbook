@@ -92,12 +92,12 @@ library OrderBookLib {
     /// @param b The order book to query
     /// @param highest If true, get the highest prices; if false, get the lowest prices
     /// @return An array of the three prices
-    function get3Prices(Book storage b, bool highest) internal view returns (uint256[3] memory) {
-        uint256[3] memory prices;
+    function get50Prices(Book storage b, bool highest) internal view returns (uint256[50] memory) {
+        uint256[50] memory prices;
         uint256 price = highest ? b.tree.last() : b.tree.first();
 
         // Iterate through the tree to get up to 3 prices
-        for (uint256 i = 0; i < 3 && price != 0; i++) {
+        for (uint256 i = 0; i < 50 && price != 0; i++) {
             prices[i] = price;
             price = highest ? b.tree.prev(price) : b.tree.next(price);
         }

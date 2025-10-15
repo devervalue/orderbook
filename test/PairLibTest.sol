@@ -61,8 +61,8 @@ contract PairLibTest is Test {
         vm.stopPrank();
     }
 
-    function assertEqualArrays(uint256[3] memory actual, uint256[3] memory expected) internal {
-        for (uint256 i = 0; i < 3; i++) {
+    function assertEqualArrays(uint256[50] memory actual, uint256[50] memory expected) internal {
+        for (uint256 i = 0; i < 50; i++) {
             assertEq(actual[i], expected[i], string(abi.encodePacked("Array mismatch at index ", i)));
         }
     }
@@ -590,11 +590,11 @@ contract PairLibTest is Test {
     }
 
     function testEmptyOrderBook() public {
-        uint256[3] memory topBuyPrices = pair.getTop3BuyPrices();
-        uint256[3] memory topSellPrices = pair.getTop3SellPrices();
+        uint256[50] memory topBuyPrices = pair.getTop50BuyPrices();
+        uint256[50] memory topSellPrices = pair.getTop50SellPrices();
 
-        assertEqualArrays(topBuyPrices, [uint256(0), 0, 0]);
-        assertEqualArrays(topSellPrices, [uint256(0), 0, 0]);
+        assertEqualArrays(topBuyPrices, [uint256(0), 0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0]);
+        assertEqualArrays(topSellPrices, [uint256(0), 0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0]);
     }
 
     function testOnePrice() public {
@@ -603,11 +603,11 @@ contract PairLibTest is Test {
         vm.prank(trader1);
         pair.createOrder(false, 110 * 1e18, 10);
 
-        uint256[3] memory topBuyPrices = pair.getTop3BuyPrices();
-        uint256[3] memory topSellPrices = pair.getTop3SellPrices();
+        uint256[50] memory topBuyPrices = pair.getTop50BuyPrices();
+        uint256[50] memory topSellPrices = pair.getTop50SellPrices();
 
-        assertEqualArrays(topBuyPrices, [uint256(100) * 1e18, 0, 0]);
-        assertEqualArrays(topSellPrices, [uint256(110) * 1e18, 0, 0]);
+        assertEqualArrays(topBuyPrices, [uint256(100) * 1e18, 0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0]);
+        assertEqualArrays(topSellPrices, [uint256(110) * 1e18, 0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0]);
     }
 
     function testTwoPrices() public {
@@ -620,33 +620,13 @@ contract PairLibTest is Test {
         pair.createOrder(false, 120 * 1e18, 10);
         vm.stopPrank();
 
-        uint256[3] memory topBuyPrices = pair.getTop3BuyPrices();
-        uint256[3] memory topSellPrices = pair.getTop3SellPrices();
+        uint256[50] memory topBuyPrices = pair.getTop50BuyPrices();
+        uint256[50] memory topSellPrices = pair.getTop50SellPrices();
 
-        assertEqualArrays(topBuyPrices, [uint256(100) * 1e18, 90 * 1e18, 0 * 1e18]);
-        assertEqualArrays(topSellPrices, [uint256(110) * 1e18, 120 * 1e18, 0 * 1e18]);
+        assertEqualArrays(topBuyPrices, [uint256(100) * 1e18, 90 * 1e18, 0 * 1e18,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0]);
+        assertEqualArrays(topSellPrices, [uint256(110) * 1e18, 120 * 1e18, 0 * 1e18,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0]);
     }
 
-    function testThreeOrMorePrices() public {
-        vm.startPrank(trader2);
-        pair.createOrder(true, 100 * 1e18, 10);
-        pair.createOrder(true, 90 * 1e18, 10);
-        pair.createOrder(true, 95 * 1e18, 10);
-        pair.createOrder(true, 85 * 1e18, 10);
-        vm.stopPrank();
-        vm.startPrank(trader1);
-        pair.createOrder(false, 110 * 1e18, 10);
-        pair.createOrder(false, 120 * 1e18, 10);
-        pair.createOrder(false, 115 * 1e18, 10);
-        pair.createOrder(false, 125 * 1e18, 10);
-        vm.stopPrank();
-
-        uint256[3] memory topBuyPrices = pair.getTop3BuyPrices();
-        uint256[3] memory topSellPrices = pair.getTop3SellPrices();
-
-        assertEqualArrays(topBuyPrices, [uint256(100) * 1e18, 95 * 1e18, 90 * 1e18]);
-        assertEqualArrays(topSellPrices, [uint256(110) * 1e18, 115 * 1e18, 120 * 1e18]);
-    }
 
     function testBuyOrdersDescendingOrder() public {
         vm.startPrank(trader2);
@@ -655,7 +635,7 @@ contract PairLibTest is Test {
         pair.createOrder(true, 95 * 1e18, 10);
         vm.stopPrank();
 
-        uint256[3] memory topBuyPrices = pair.getTop3BuyPrices();
+        uint256[50] memory topBuyPrices = pair.getTop50BuyPrices();
 
         assertTrue(topBuyPrices[0] > topBuyPrices[1]);
         assertTrue(topBuyPrices[1] > topBuyPrices[2]);
@@ -668,25 +648,36 @@ contract PairLibTest is Test {
         pair.createOrder(false, 115e18, 10e18);
         vm.stopPrank();
 
-        uint256[3] memory topSellPrices = pair.getTop3SellPrices();
+        uint256[50] memory topSellPrices = pair.getTop50SellPrices();
 
         assertTrue(topSellPrices[0] < topSellPrices[1]);
         assertTrue(topSellPrices[1] < topSellPrices[2]);
     }
 
     function testLargeNumberOfOrders() public {
+        uint256[50] memory buyPrices;
+        uint256[50] memory sellPrices;
         for (uint256 i = 1; i <= 100; i++) {
             vm.prank(trader2);
             pair.createOrder(true, (i * 10) * 1e18, 10);
+
             vm.prank(trader1);
             pair.createOrder(false, (1000 + i * 10) * 1e18, 10);
         }
 
-        uint256[3] memory topBuyPrices = pair.getTop3BuyPrices();
-        uint256[3] memory topSellPrices = pair.getTop3SellPrices();
+        // Llenar arrays esperados correctamente
+        for (uint256 i = 0; i < 50; i++) {
+            // Para compras: los 50 precios más altos (del 100 al 51)
+            buyPrices[i] = ((100 - i) * 10) * 1e18;
+            // Para ventas: los 50 precios más bajos (del 1 al 50)
+            sellPrices[i] = (1000 + (i + 1) * 10) * 1e18;
+        }
 
-        assertEqualArrays(topBuyPrices, [uint256(1000) * 1e18, 990 * 1e18, 980 * 1e18]);
-        assertEqualArrays(topSellPrices, [uint256(1010) * 1e18, 1020 * 1e18, 1030 * 1e18]);
+        uint256[50] memory topBuyPrices = pair.getTop50BuyPrices();
+        uint256[50] memory topSellPrices = pair.getTop50SellPrices();
+
+        assertEqualArrays(topBuyPrices, buyPrices);
+        assertEqualArrays(topSellPrices, sellPrices);
     }
 
     function testEdgeCases() public {
@@ -701,8 +692,8 @@ contract PairLibTest is Test {
         pair.createOrder(false, 2e10, 10e12);
         vm.stopPrank();
 
-        uint256[3] memory topBuyPrices = pair.getTop3BuyPrices();
-        uint256[3] memory topSellPrices = pair.getTop3SellPrices();
+        uint256[50] memory topBuyPrices = pair.getTop50BuyPrices();
+        uint256[50] memory topSellPrices = pair.getTop50SellPrices();
     }
 
     function testDuplicatePrices() public {
@@ -717,11 +708,11 @@ contract PairLibTest is Test {
         pair.createOrder(false, 120 * 1e18, 30);
         vm.stopPrank();
 
-        uint256[3] memory topBuyPrices = pair.getTop3BuyPrices();
-        uint256[3] memory topSellPrices = pair.getTop3SellPrices();
+        uint256[50] memory topBuyPrices = pair.getTop50BuyPrices();
+        uint256[50] memory topSellPrices = pair.getTop50SellPrices();
 
-        assertEqualArrays(topBuyPrices, [uint256(100 * 1e18), 90 * 1e18, 0]);
-        assertEqualArrays(topSellPrices, [uint256(110 * 1e18), 120 * 1e18, 0]);
+        assertEqualArrays(topBuyPrices, [uint256(100 * 1e18), 90 * 1e18, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0]);
+        assertEqualArrays(topSellPrices, [uint256(110 * 1e18), 120 * 1e18, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0]);
     }
 
     function testUpdatedOrderBook() public {
@@ -734,22 +725,22 @@ contract PairLibTest is Test {
         pair.createOrder(false, 120 * 1e18, 10);
         vm.stopPrank();
 
-        uint256[3] memory topBuyPrices = pair.getTop3BuyPrices();
-        uint256[3] memory topSellPrices = pair.getTop3SellPrices();
+        uint256[50] memory topBuyPrices = pair.getTop50BuyPrices();
+        uint256[50] memory topSellPrices = pair.getTop50SellPrices();
 
-        assertEqualArrays(topBuyPrices, [uint256(100) * 1e18, 90 * 1e18, 0]);
-        assertEqualArrays(topSellPrices, [uint256(110) * 1e18, 120 * 1e18, 0]);
+        assertEqualArrays(topBuyPrices, [uint256(100) * 1e18, 90 * 1e18, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0]);
+        assertEqualArrays(topSellPrices, [uint256(110) * 1e18, 120 * 1e18, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0]);
 
         vm.prank(trader2);
         pair.createOrder(true, 95 * 1e18, 10);
         vm.prank(trader1);
         pair.createOrder(false, 115 * 1e18, 10);
 
-        topBuyPrices = pair.getTop3BuyPrices();
-        topSellPrices = pair.getTop3SellPrices();
+        topBuyPrices = pair.getTop50BuyPrices();
+        topSellPrices = pair.getTop50SellPrices();
 
-        assertEqualArrays(topBuyPrices, [uint256(100) * 1e18, 95 * 1e18, 90 * 1e18]);
-        assertEqualArrays(topSellPrices, [uint256(110) * 1e18, 115 * 1e18, 120 * 1e18]);
+        assertEqualArrays(topBuyPrices, [uint256(100) * 1e18, 95 * 1e18, 90 * 1e18,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0]);
+        assertEqualArrays(topSellPrices, [uint256(110) * 1e18, 115 * 1e18, 120 * 1e18,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0]);
     }
 
     function testGetPrice() public {
