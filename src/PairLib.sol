@@ -145,6 +145,7 @@ library PairLib {
     /// @param newFee The new fee value for the trading pair
     event PairFeeChanged(address indexed baseToken, address indexed quoteToken, uint256 newFee);
 
+
     /// @notice Changes the fee for a trading pair
     /// @dev This function can only be called internally, typically by the contract owner
     /// @param pair The storage reference to the Pair struct
@@ -166,16 +167,15 @@ library PairLib {
             : (pair.traderBalances[traderAddress].quoteTokenBalance / PRECISION, IERC20(pair.quoteToken));
 
         // Withdraw token balance if available
-        // TODO ajuste de Fixed-Point Scaling (Validar si es mayor a la escala)
-         if (withdrawBalance > 0) {
-            // Reset the token balance to prevent reentrancy
-            if (baseTokenWithdrawal) {
-                pair.traderBalances[traderAddress].baseTokenBalance = 0;
-            } else {
-                pair.traderBalances[traderAddress].quoteTokenBalance = 0;
-            }
-            // Transfer the tokens to the trader
-            IERC20(withdrawToken).safeTransfer(traderAddress, withdrawBalance);
+             if (withdrawBalance > 0) {
+                // Reset the token balance to prevent reentrancy
+                if (baseTokenWithdrawal) {
+                    pair.traderBalances[traderAddress].baseTokenBalance = 0;
+                } else {
+                    pair.traderBalances[traderAddress].quoteTokenBalance = 0;
+                }
+                // Transfer the tokens to the trader
+                IERC20(withdrawToken).safeTransfer(traderAddress, withdrawBalance);
         }else{
             revert PL__BalanceNotEnoughForWithdraw();
         }
@@ -193,7 +193,6 @@ library PairLib {
             : (pair.quoteFeeBalance / PRECISION, IERC20(pair.quoteToken));
 
         // Withdraw token balance if available
-        // TODO ajuste de Fixed-Point Scaling (Validar si es mayor a la escala)
         if (withdrawFeeBalance > 0) {
             // Reset the token balance to prevent reentrancy
             if (baseTokenWithdrawal) {
@@ -252,9 +251,8 @@ library PairLib {
             ? (IERC20(pair.quoteToken), removedOrder.availableQuantity * removedOrder.price)
             : (IERC20(pair.baseToken), removedOrder.availableQuantity);
 
-
-        if(removedOrder.isBuy){
-            if(remainingFunds / PRECISION == 0){
+    if(removedOrder.isBuy){
+        if(remainingFunds / PRECISION == 0){
                 pair.traderBalances[removedOrder.traderAddress].quoteTokenBalance += remainingFunds;
             }
             remainingFunds = remainingFunds / PRECISION;
@@ -313,19 +311,6 @@ library PairLib {
             ? (IERC20(pair.quoteToken), pair.buyOrders)
             : (IERC20(pair.baseToken), pair.sellOrders);
 
-//        // Determine the token to collect, the amount to transfer, and the order book to use
-//        (IERC20 token, uint256 transferAmount, OrderBookLib.Book storage book) = newOrder.isBuy
-//            ? (IERC20(pair.quoteToken), newOrder.quantity * newOrder.price / PRECISION, pair.buyOrders)
-//            : (IERC20(pair.baseToken), newOrder.quantity, pair.sellOrders);
-//
-//        // Validate non-zero payment
-//        if (transferAmount == 0) {
-//            revert PL__InvalidPaymentAmount();
-//        }
-
-        // Transfer the required funds from the trader to the contract
-        //token.safeTransferFrom(msg.sender, address(this), transferAmount);
-
         // Insert the new order into the appropriate order book
         book.insert(newOrder.id, newOrder.price, newOrder.quantity);
 
@@ -364,7 +349,6 @@ library PairLib {
         pair.lastTradePrice = matchedOrder.price;
 
         // Determine which tokens are being received and sent by the taker, and their amounts
-        // TODO ajuste de Fixed-Point Scaling (Validar si es menor a la escala, acumular)
         (IERC20 takerReceiveToken, uint256 takerReceiveAmount, IERC20 takerSendToken, uint256 takerSendAmount) =
             takerOrder.isBuy
                 ? (
@@ -379,56 +363,16 @@ library PairLib {
                 IERC20(pair.baseToken),
                 matchedOrder.availableQuantity
             );
-//        (IERC20 takerReceiveToken, uint256 takerReceiveAmount, IERC20 takerSendToken, uint256 takerSendAmount) =
-//        takerOrder.isBuy
-//            ? (
-//                IERC20(pair.baseToken),
-//                matchedOrder.availableQuantity,
-//                IERC20(pair.quoteToken),
-//                matchedOrder.availableQuantity * matchedOrder.price / PRECISION
-//            )
-//            : (
-//                IERC20(pair.quoteToken),
-//                matchedOrder.availableQuantity * matchedOrder.price / PRECISION,
-//                IERC20(pair.baseToken),
-//                matchedOrder.availableQuantity
-//            );
-//
-//        // Validate non-zero payment
-//        if (takerSendAmount == 0 || takerReceiveAmount == 0) {
-//            revert PL__InvalidPaymentAmount();
-//        }
-
-        // Calculate the fee based on the amount the taker receives
-        /// @dev The fee is calculated in basis points (1/100 of a percent)
-        uint256 fee = (takerReceiveAmount * pair.fee) / 10000;
-        uint256 takerReceiveAmountAfterFee = takerReceiveAmount - fee;
 
         /// @notice Update the token balances of the maker based on the order type
         /// @dev For buy orders, update quote token balance; for sell orders, update base token balance
-        // TODO eliminar esta transferencia porque se hace completa desde afura
-        //takerSendToken.safeTransferFrom(msg.sender, address(this), takerSendAmount);
         if (takerOrder.isBuy) {
             // If it's a buy order, update the quote token balance of the maker (seller)
             pair.traderBalances[matchedOrder.traderAddress].quoteTokenBalance += takerSendAmount;
-            pair.baseFeeBalance += fee;
         } else {
             // If it's a sell order, update the base token balance of the maker (buyer)
             pair.traderBalances[matchedOrder.traderAddress].baseTokenBalance += takerSendAmount;
-            pair.quoteFeeBalance += fee;
         }
-
-        /// @notice Update the receive token balances of the taker based on the order type
-        /// @dev For buy orders, update base token balance; for sell orders, update quote token balance
-        // TODO en vez de transferir, acumulo cuanto va recibiendo el taker
-        //takerReceiveToken.safeTransfer(msg.sender, takerReceiveAmountAfterFee);
-        //uint256 takerAmountReceive += takerReceiveAmountAfterFee;
-
-//        // Transfer the fee to the designated fee address, if set
-//        // En vez de transferir el fee acumulo cuanto fee debe pagar el taker
-//        if (pair.feeAddress != address(0) || pair.fee > 0 ) {
-//            takerReceiveToken.safeTransfer(pair.feeAddress, fee);
-//        }
 
         // Update the taker's order quantity
         takerOrder.quantity -= matchedOrder.availableQuantity;
@@ -440,7 +384,7 @@ library PairLib {
         // Remove the fully matched order from the order book
         removeOrder(pair, matchedOrder);
 
-        return takerReceiveAmountAfterFee;
+        return takerReceiveAmount;
     }
 
     /// @notice Partially fills a matched order
@@ -460,7 +404,6 @@ library PairLib {
 
         // Determine which tokens are being received and sent by the taker, and their amounts
         /// @dev The calculation depends on whether the taker order is a buy or sell order
-        // TODO ajuste de Fixed-Point Scaling (Validar si es menor a la escala, acumular)
         (IERC20 takerReceiveToken, uint256 takerReceiveAmount, IERC20 takerSendToken, uint256 takerSendAmount) =
             takerOrder.isBuy
                 ? (
@@ -476,107 +419,19 @@ library PairLib {
                 takerOrder.quantity
             );
 
-//    (IERC20 takerReceiveToken, uint256 takerReceiveAmount, IERC20 takerSendToken, uint256 takerSendAmount) =
-//        takerOrder.isBuy
-//            ? (
-//                IERC20(pair.baseToken),
-//                takerOrder.quantity,
-//                IERC20(pair.quoteToken),
-//                takerOrder.quantity * matchedPrice / PRECISION
-//            )
-//            : (
-//                IERC20(pair.quoteToken),
-//                takerOrder.quantity * matchedPrice / PRECISION,
-//                IERC20(pair.baseToken),
-//                takerOrder.quantity
-//            );
-//
-//        // Validate non-zero payment
-//        if (takerSendAmount == 0 || takerReceiveAmount == 0) {
-//            // Set quantity to 0 as to skip the remaining amount, and consider the taker order as filled
-//            takerOrder.quantity = 0;
-//            takerOrder.availableQuantity = 0;
-//            return;
-//        }
-
         // Update the last trade price for the pair
         pair.lastTradePrice = matchedPrice;
 
-        // Calculate fee (on the buy token amount, which is what the taker receives)
-        /// @dev The fee is calculated in basis points (1/100 of a percent)
-        uint256 fee = (takerReceiveAmount * pair.fee) / 10000;
-        uint256 takerReceiveAmountAfterFee = takerReceiveAmount - fee;
 
         /// @notice Update the token balances of the maker based on the order type
         /// @dev For buy orders, update quote token balance; for sell orders, update base token balance
-        // TODO eliminar esta transferencia porque se hace completa desde afura
-        //takerSendToken.safeTransferFrom(msg.sender, address(this), takerSendAmount);
         if (takerOrder.isBuy) {
             // If it's a buy order, update the quote token balance of the maker (seller)
             pair.traderBalances[matchedTraderAddress].quoteTokenBalance += takerSendAmount;
-            pair.baseFeeBalance += fee;
         } else {
             // If it's a sell order, update the base token balance of the maker (buyer)
             pair.traderBalances[matchedTraderAddress].baseTokenBalance += takerSendAmount;
-            pair.quoteFeeBalance += fee;
         }
-
-        // Transfer buy tokens from maker to taker (minus fee)
-        // TODO Acumulo cuanto recibe el taker en vez de transferir
-        //takerReceiveToken.safeTransfer(msg.sender, takerReceiveAmountAfterFee);
-        //takerAmountReceive += takerReceiveAmountAfterFee;
-
-//        // Transfer fee to fee address if set, otherwise it stays in the contract
-//        if (pair.feeAddress != address(0) || pair.fee > 0 ) {
-//            // TODO acumulo el fee a pagar por el taker
-//            takerReceiveToken.safeTransfer(pair.feeAddress, fee);
-//        }
-
-//        // Update the matched order by reducing its available quantity
-//        uint256 remainingAmount = matchedOrder.availableQuantity - takerOrder.quantity;
-//        if(remainingAmount * matchedPrice <= 1e18){
-//            if (matchedOrder.isBuy) {
-//                // If it's a buy order, update the quote token balance of the maker (seller)
-//                pair.traderBalances[matchedTraderAddress].quoteTokenBalance += remainingAmount;
-//                //Emit event refund
-//                emit OrderRefund(matchedOrderId,pair.quoteToken,remainingAmount,matchedTraderAddress);
-//            } else {
-//                // If it's a sell order, update the base token balance of the maker (buyer)
-//                pair.traderBalances[matchedTraderAddress].baseTokenBalance += remainingAmount;
-//                //Emit event refund
-//                emit OrderRefund(matchedOrderId,pair.baseToken,remainingAmount,matchedTraderAddress);
-//            }
-//
-//            // Set the taker order quantity to 0 as it has been fully filled
-//            takerOrder.quantity = 0;
-//            takerOrder.availableQuantity = 0;
-//
-//            // Emit an event for the filled taker order
-//            emit OrderFilled(takerOrder.id, pair.baseToken, pair.quoteToken, msg.sender);
-//
-//            // Emit events for the filled orders
-//            emit OrderPartiallyFilled(matchedOrderId, pair.baseToken, pair.quoteToken, matchedTraderAddress);
-//
-//            // Remove the fully matched order from the order book
-//            removeOrder(pair, matchedOrder);
-//        }else{
-//            matchedOrder.availableQuantity = remainingAmount;
-//            matchedOrder.status = ORDER_PARTIALLY_FILLED;
-//
-//            // Update the order book to reflect the partial fill
-//            /// @dev This updates the volume at the price point in the order book
-//            (matchedOrder.isBuy ? pair.buyOrders : pair.sellOrders).update(matchedPrice, takerOrder.quantity);
-//
-//            // Set the taker order quantity to 0 as it has been fully filled
-//            takerOrder.quantity = 0;
-//            takerOrder.availableQuantity = 0;
-//
-//            // Emit an event for the filled taker order
-//            emit OrderFilled(takerOrder.id, pair.baseToken, pair.quoteToken, msg.sender);
-//
-//            // Emit an event for the partially filled matched order
-//            emit OrderPartiallyFilled(matchedOrderId, pair.baseToken, pair.quoteToken, matchedTraderAddress);
-//        }
 
         matchedOrder.availableQuantity = matchedOrder.availableQuantity - takerOrder.quantity;
         matchedOrder.status = ORDER_PARTIALLY_FILLED;
@@ -595,7 +450,7 @@ library PairLib {
         // Emit an event for the partially filled matched order
         emit OrderPartiallyFilled(matchedOrderId, pair.baseToken, pair.quoteToken, matchedTraderAddress);
 
-        return takerReceiveAmountAfterFee;
+        return takerReceiveAmount;
     }
 
     /// @notice Matches a new order against existing orders in the order book
@@ -715,24 +570,33 @@ library PairLib {
             addOrder(pair, newOrder);
         }
 
-        // TODO hacer 3 transferencias 1. Envio de tokens desde el taker 2. Envio de tokens acumulados hacia el taker 3. Envio del fee acumulado
         //Send Transfer Amount
         if (newOrder.isBuy) {
             // If it's a buy order, update the quote token balance of the new order (creator order)
             IERC20(pair.quoteToken).safeTransferFrom(msg.sender, address(this), _quantity * _price / PRECISION);
             //Taker receive base token
             if(takerAmountReceive != 0){
-                IERC20(pair.baseToken).safeTransfer(msg.sender,takerAmountReceive);
+                // Calculate fee (on the buy token amount, which is what the taker receives)
+                /// @dev The fee is calculated in basis points (1/100 of a percent)
+                uint256 fee = (takerAmountReceive * pair.fee) / 10000;
+                pair.baseFeeBalance += fee;
+                uint256 takerReceiveAmountAfterFee = takerAmountReceive - fee;
+                IERC20(pair.baseToken).safeTransfer(msg.sender,takerReceiveAmountAfterFee);
             }
         } else {
             IERC20(pair.baseToken).safeTransferFrom(msg.sender, address(this), _quantity);
             if(takerAmountReceive != 0){
-                if(takerAmountReceive / PRECISION == 0){
+                // Calculate fee (on the buy token amount, which is what the taker receives)
+                /// @dev The fee is calculated in basis points (1/100 of a percent)
+                uint256 fee = (takerAmountReceive * pair.fee) / 10000;
+                pair.quoteFeeBalance += fee;
+                uint256 takerReceiveAmountAfterFee = takerAmountReceive - fee;
+            if(takerReceiveAmountAfterFee / PRECISION == 0){
                     //Acumulation quote token
-                    pair.traderBalances[msg.sender].quoteTokenBalance += takerAmountReceive;
+                    pair.traderBalances[msg.sender].quoteTokenBalance += takerReceiveAmountAfterFee;
                 }else{
                     //Taker receive quote token
-                    IERC20(pair.quoteToken).safeTransfer(msg.sender,takerAmountReceive / PRECISION);
+                    IERC20(pair.quoteToken).safeTransfer(msg.sender,takerReceiveAmountAfterFee / PRECISION);
                 }
             }
         }
@@ -746,7 +610,14 @@ library PairLib {
     function getTraderBalances(Pair storage pair, address _trader) internal view returns (TraderBalance memory tb) {
         tb = pair.traderBalances[_trader];
         tb.quoteTokenBalance = tb.quoteTokenBalance / PRECISION;
-        return tb;
+    }
+
+    /// @notice Retrieves the balance of fee a owner for a specific trading pair
+    /// @dev This function returns the current fee balance of base and quote tokens for a given owner
+    /// @param pair The storage reference to the Pair struct containing trader balances
+    /// @return tb TraderBalance A struct containing the trader's base and quote token balances
+    function getFeeBalances(Pair storage pair) internal view returns (uint256, uint256) {
+        return (pair.baseFeeBalance, pair.quoteFeeBalance);
     }
 
     /// @notice Retrieves all order IDs for a specific trader

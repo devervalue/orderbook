@@ -346,6 +346,20 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable2Step {
         return pairs[_pairId].getTraderBalances(_trader);
     }
 
+    /// @notice Retrieves the balance fee of a owner for a specific trading pair
+    /// @dev This function allows querying the current balance fee of a owner in both base and quote tokens
+    /// @param _pairId The unique identifier of the trading pair
+    /// @return PairLib.TraderBalance A struct containing the trader's balance information
+    /// @custom:security This function is view-only and does not modify state
+    function checkBalanceFeeTrader(bytes32 _pairId)
+    external onlyOwner
+    view
+    returns (uint256, uint256)
+    {
+        if (!pairExists(_pairId)) revert OBF__PairDoesNotExist();
+        return pairs[_pairId].getFeeBalances();
+    }
+
     /// @notice Allows a trader to withdraw their balance from a specific trading pair
     /// @dev This function enables traders to withdraw their available balance (both base and quote tokens)
     /// @param _pairId The unique identifier of the trading pair from which to withdraw

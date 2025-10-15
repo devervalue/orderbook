@@ -24,9 +24,9 @@ contract PairLibTest is Test {
     address trader3;
 
     // Constants
-    uint256 constant INITIAL_SUPPLY = 1000000 * 1e18;
-    uint256 constant INITIAL_TRANSFER = 55000000000000000000;
-    uint256 constant APPROVAL_AMOUNT = 1000000 * 1e18;
+    uint256 constant INITIAL_SUPPLY = 100000000000000000000 * 1e18;
+    uint256 constant INITIAL_TRANSFER = 1000000000000000000000000000000;
+    uint256 constant APPROVAL_AMOUNT = 100000000000000000000 * 1e18;
 
     // Test data
     uint256 price;
@@ -240,7 +240,7 @@ contract PairLibTest is Test {
 
         assertEq(pair.getFirstSellOrders(), 0, "Sell order should be fully matched");
         assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be fully executed");
-        assertEq(tokenB.balanceOf(trader1), 1000, "Trader1's tokenB balance should be correct");
+        assertEq(tokenB.balanceOf(trader1), 990, "Trader1's tokenB balance should be correct");
         assertEq(tokenA.balanceOf(trader2), 10, "Trader2's tokenA balance should be correct");
     }
 
@@ -258,7 +258,7 @@ contract PairLibTest is Test {
 
         assertEq(pair.getFirstSellOrders(), 0, "Sell order should be fully matched");
         assertEq(pair.getFirstBuyOrders(), 0, "All buy orders should be fully executed");
-        assertEq(tokenB.balanceOf(trader1), 1500, "Trader1's tokenB balance should be correct");
+        assertEq(tokenB.balanceOf(trader1), 1485, "Trader1's tokenB balance should be correct");
         assertEq(tokenA.balanceOf(trader2), 15, "Trader2's tokenA balance should be correct");
     }
 
@@ -303,7 +303,7 @@ contract PairLibTest is Test {
 
         assertEq(pair.getFirstSellOrders(), 0, "Sell order should be completely matched");
         assertEq(pair.getFirstBuyOrders(), 100 * 10 ** 18, "Remaining buy order quantity should be stored");
-        assertEq(tokenB.balanceOf(trader1), 500, "Trader1 should receive 500 tokenB");
+        assertEq(tokenB.balanceOf(trader1), 495, "Trader1 should receive 500 tokenB");
         assertEq(tokenA.balanceOf(trader2), 5, "Trader2 should receive 5 tokenA");
     }
 
@@ -318,7 +318,7 @@ contract PairLibTest is Test {
 
         assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be fully executed");
         assertEq(pair.getFirstSellOrders(), price, "Remaining sell order should be added");
-        assertEq(tokenB.balanceOf(trader1), 500, "Trader1's tokenB balance should be correct");
+        assertEq(tokenB.balanceOf(trader1), 495, "Trader1's tokenB balance should be correct");
         assertEq(tokenA.balanceOf(trader2), 5, "Trader2's tokenA balance should be correct");
         assertEq(tokenA.balanceOf(address(pair)), 5, "Contract's tokenA balance should be correct");
     }
@@ -398,6 +398,26 @@ contract PairLibTest is Test {
             pair.getFirstOrderBuyByPrice(price), orderId, "Order should still exist after failed cancellation attempt"
         );
     }
+
+    function testCancelQuoteBuyOrder() public {
+        uint256 _price = 22983;
+        uint256 initial_balance = tokenB.balanceOf(trader2);
+        vm.prank(trader2);
+        pair.addBuyBaseToken(_price, 10_000e18, trader2, nonce);
+
+        vm.prank(trader1);
+        pair.addSellBaseToken(_price, 9999_99999915e10, trader1, nonce);
+
+        bytes32 _orderId = keccak256(abi.encodePacked(trader2, "buy", _price, nonce));
+
+        pair.getOrderById(_orderId);
+
+        vm.prank(trader2);
+        pair.getCancelOrder(_orderId);
+
+        assertEq(pair.getFirstBuyOrders(), 0, "Buy order should have been removed");
+    }
+
     //-------------------- GET TRADER ORDERS ------------------------------
 
     function testGetTraderOrdersWithMultipleOrders() public {
@@ -533,7 +553,7 @@ contract PairLibTest is Test {
 
         assertEq(pair.getFirstSellOrders(), 0, "Sell order should be fully matched");
         assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be fully executed");
-        assertEq(tokenB.balanceOf(trader1), 500, "Trader1 should receive 500 tokenB");
+        assertEq(tokenB.balanceOf(trader1), 495, "Trader1 should receive 500 tokenB");
         assertEq(tokenA.balanceOf(trader2), 50, "Trader2 should receive 50 tokenA");
     }
 
@@ -565,7 +585,7 @@ contract PairLibTest is Test {
 
         assertEq(pair.getFirstSellOrders(), 0, "Sell order should be fully matched");
         assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be fully executed");
-        assertEq(tokenB.balanceOf(trader1), 5, "Trader1 should receive 5 tokenB");
+        assertEq(tokenB.balanceOf(trader1), 4, "Trader1 should receive 5 tokenB");
         assertEq(tokenA.balanceOf(trader2), 50, "Trader2 should receive 50 tokenA");
     }
 
@@ -841,6 +861,61 @@ contract PairLibTest is Test {
         assertEq(traderBalance.baseTokenBalance, 0, "Trader1 should get 0 tokenA");
     }
 
+    function testWithDrawFeeBalance_WithMatchingSellOrder() public {
+        vm.prank(trader1);
+        pair.addSellBaseToken(price, 10 * 1e8, trader1, nonce);
+
+        vm.prank(trader2);
+        pair.addBuyBaseToken(price, 10 * 1e8, trader2, nonce);
+
+        vm.prank(address(this));
+        (uint256 feeBase, uint256 feeQuote)= pair.getFeeBalances();
+//        vm.prank(address(this));
+        vm.expectRevert(PairLib.PL__BalanceFeeNotEnoughForWithdraw.selector);
+        pair.withdrawFeeBalance(false);
+
+        pair.withdrawFeeBalance(true);
+
+        pair.withdrawBalance(trader1,false);
+
+        PairLib.TraderBalance memory traderBalance = pair.getTraderBalances(trader1);
+//
+        assertEq(pair.getFirstSellOrders(), 0, "Sell order should be completely matched");
+        assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be completely executed");
+        assertEq(tokenB.balanceOf(trader1), 10 * 1e8 * price / 1e18, "Trader1 should receive 1000 tokenB");
+        assertEq(tokenA.balanceOf(trader2), 990000000, "Trader2 should receive 10 tokenA");
+        assertEq(traderBalance.quoteTokenBalance, 0, "Trader1 should get 0 tokenB");
+        assertEq(traderBalance.baseTokenBalance, 0, "Trader1 should get 0 tokenA");
+    }
+
+    function testWithDrawFeeBalance_WithMatchingBuyOrder() public {
+        vm.prank(trader2);
+        pair.addBuyBaseToken(price, 10 * 1e8, trader2, nonce);
+
+        vm.prank(trader1);
+        pair.addSellBaseToken(price, 10 * 1e8, trader1, nonce);
+
+        vm.prank(address(this));
+        (uint256 feeBase, uint256 feeQuote)= pair.getFeeBalances();
+
+        vm.expectRevert(PairLib.PL__BalanceFeeNotEnoughForWithdraw.selector);
+        pair.withdrawFeeBalance(true);
+
+        pair.withdrawFeeBalance(false);
+
+        vm.prank(trader2);
+        pair.withdrawBalance(trader2,true);
+
+        PairLib.TraderBalance memory traderBalance = pair.getTraderBalances(trader1);
+//
+        assertEq(pair.getFirstSellOrders(), 0, "Sell order should be completely matched");
+        assertEq(pair.getFirstBuyOrders(), 0, "Buy order should be completely executed");
+        assertEq(tokenB.balanceOf(trader1), 99000000000, "Trader1 should receive 1000 tokenB");
+        assertEq(tokenA.balanceOf(trader2), 10 * 1e8, "Trader2 should receive 10 tokenA");
+        assertEq(traderBalance.quoteTokenBalance, 0, "Trader1 should get 0 tokenB");
+        assertEq(traderBalance.baseTokenBalance, 0, "Trader1 should get 0 tokenA");
+    }
+
     //------------------------- Test partial fill rounding error -----
     function testTakerSendAmountIsZero() public {
         vm.startPrank(trader2);
@@ -858,4 +933,22 @@ contract PairLibTest is Test {
         assertEq(sentAmount, 94, "Should have only sent 90 tokenA");
         assertEq(tokenB.balanceOf(trader1), 18, "Should have received 18 tokenB");
     }
+
+    function testFillSmallBuyOrder() public {
+        uint256 _price = 22983;
+
+        vm.prank(trader2);
+        pair.addBuyBaseToken(_price, 10_000e18, trader2, nonce);
+
+        vm.prank(trader1);
+        pair.addSellBaseToken(_price, 9999_99999915e10, trader1, nonce);
+
+        vm.prank(trader1);
+        pair.addSellBaseToken(_price, 9999_99999915e10, trader1, nonce);
+
+        vm.prank(trader1);
+        pair.getTraderBalances(trader1);
+        assertEq(pair.getFirstBuyOrders(), 0, "Buy order should have been removed");
+    }
+
 }

@@ -1516,4 +1516,130 @@ contract OrderBookFactoryTest is Test {
         vm.expectRevert(OrderBookFactory.OBF__PairDoesNotExist.selector);
         factory.withdrawBalanceTrader("0x1", false);
     }
+
+    //---------------
+
+//    function testPauseUnpause() public {
+//        vm.prank(owner);
+//        factory.pause();
+//
+//        // Verificar que las operaciones están pausadas
+//        vm.expectRevert();
+//        factory.addNewOrder(pair, 100, 1e18, true, block.timestamp);
+//
+//        vm.prank(owner);
+//        factory.unpause();
+//
+//        // Verificar que las operaciones funcionan nuevamente
+//        factory.addNewOrder(pairId, 100, 1e18, true, block.timestamp);
+//    }
+
+    function testWithdrawFeeBalanceOwner() public {
+        // Configurar fees acumulados
+        // Testear retiro exitoso
+        // Testear retiro cuando balance es 0
+    }
+
+    function testAddMatchingOrdersCheckAndWithdrawFee() public {
+        vm.startPrank(owner);
+        factory.addPair(address(tokenA), address(tokenB), 10, feeAddress);
+        vm.stopPrank();
+
+        // Obtener las claves de los libros de órdenes
+        bytes32[] memory keys = factory.getPairIds();
+
+        // Verificar que hay exactamente una clave
+        assertEq(keys.length, 1, unicode"Debería haber dos claves en el array");
+
+        // Agregar una nueva orden de compra
+        uint256 quantity = 10;
+        uint256 price = 100 * 1e18;
+        bool isBuy = true;
+
+        vm.prank(trader1);
+        factory.addNewOrder(keys[0], quantity, price, isBuy, 1);
+
+        // Add matching sell order
+        vm.prank(trader2);
+        factory.addNewOrder(keys[0], quantity, price, !isBuy, 2);
+
+        PairLib.TraderBalance memory tb1 = factory.checkBalanceTrader(keys[0], trader1);
+
+        assertEqUint(10, tb1.baseTokenBalance);
+
+        vm.prank(trader1);
+        factory.withdrawBalanceTrader(keys[0], true);
+
+        assertEqUint(10, tokenB.balanceOf(trader1));
+
+        // Now sell 5 of the 10 bought
+
+        vm.prank(trader1);
+        factory.addNewOrder(keys[0], 5, price, !isBuy, 3);
+
+        // Add matching sell order
+        vm.prank(trader2);
+        factory.addNewOrder(keys[0], 5, price, isBuy, 4);
+
+        tb1 = factory.checkBalanceTrader(keys[0], trader1);
+
+        assertEqUint(500, tb1.quoteTokenBalance);
+        uint256 prevBalanceT1 = tokenA.balanceOf(trader1);
+
+        vm.prank(trader1);
+        factory.withdrawBalanceTrader(keys[0], false);
+
+        uint256 finalBalanceT1 = tokenA.balanceOf(trader1);
+
+        assertEqUint(500, finalBalanceT1 - prevBalanceT1);
+
+        vm.expectRevert(OrderBookFactory.OBF__PairDoesNotExist.selector);
+        tb1 = factory.checkBalanceTrader("0x1", trader1);
+
+        vm.prank(trader1);
+        vm.expectRevert(OrderBookFactory.OBF__PairDoesNotExist.selector);
+        factory.withdrawBalanceTrader("0x1", false);
+
+        uint256 balanceFeeAddressTokenA = tokenA.balanceOf(feeAddress);
+        uint256 balanceFeeAddressTokenB = tokenB.balanceOf(feeAddress);
+
+        uint256 tbFeeBase;
+        uint256 tbFeeQuote;
+
+        vm.prank(trader2);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, trader2));
+        (tbFeeBase, tbFeeQuote )= factory.checkBalanceFeeTrader("0x1");
+
+        vm.prank(owner);
+        vm.expectRevert(OrderBookFactory.OBF__PairDoesNotExist.selector);
+        (tbFeeBase, tbFeeQuote )= factory.checkBalanceFeeTrader("0x1");
+
+        vm.prank(owner);
+        (tbFeeBase, tbFeeQuote )= factory.checkBalanceFeeTrader(keys[0]);
+
+        vm.prank(owner);
+        vm.expectRevert(OrderBookFactory.OBF__PairDoesNotExist.selector);
+        factory.withdrawFeeBalanceOwner("0x1", false);
+
+        vm.prank(trader2);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, trader2));
+        factory.withdrawFeeBalanceOwner(keys[0], false);
+
+        vm.prank(owner);
+        factory.withdrawFeeBalanceOwner(keys[0], false);
+
+        uint256 balanceFeeAddressAfterWithdrawTokenA = tokenA.balanceOf(feeAddress);
+        uint256 balanceFeeAddressAfterWithdrawTokenB = tokenB.balanceOf(feeAddress);
+
+        assert(balanceFeeAddressAfterWithdrawTokenA > balanceFeeAddressTokenA);
+    }
+
+//    function testGetPairFee() public {
+//        vm.prank(owner);
+//        factory.addPair(address(tokenA), address(tokenB), 150, feeAddress);
+//
+//        bytes32[] memory keys = factory.getPairIds();
+//        uint256 fee = factory.getPairFee(keys[0]);
+//        assertEq(fee, 150);
+//    }
 }

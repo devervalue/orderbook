@@ -19,7 +19,7 @@ contract PairLibImpl {
         pair.quoteToken = tokenB;
         pair.lastTradePrice = 0;
         pair.enabled = true;
-        pair.fee = 0x0;
+        pair.fee = 100;
         pair.feeAddress = address(0x7);
     }
 
@@ -43,12 +43,20 @@ contract PairLibImpl {
         pair.withdrawBalance(trader, baseTokenWithdrawal);
     }
 
+    function withdrawFeeBalance(bool baseTokenWithdrawal) public {
+        pair.withdrawFeeBalance(baseTokenWithdrawal);
+    }
+
     function getTraderBalances(address _trader) public returns (PairLib.TraderBalance memory _traderBalance) {
         PairLib.TraderBalance memory traderBalance = pair.getTraderBalances(_trader);
         _traderBalance = PairLib.TraderBalance({
             baseTokenBalance: traderBalance.baseTokenBalance,
             quoteTokenBalance: traderBalance.quoteTokenBalance
         });
+    }
+
+    function getFeeBalances() public returns (uint256,uint256) {
+        return pair.getFeeBalances();
     }
 
     function addBuyBaseToken(uint256 _price, uint256 _quantity, address _trader, uint256 nonce) public {
