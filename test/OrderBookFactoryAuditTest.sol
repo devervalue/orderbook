@@ -119,4 +119,57 @@ contract OrderBookFactoryTest is Test {
         assertEq(tokenBtrader2afterExp, 240_000e18, "Token B balance is different than expected");
     }
 
+    function testQuoteTokenStuck_PoC() public {
+        // create pair
+        vm.startPrank(owner);
+        factory.addPair(address(tokenA), address(tokenB), 10, feeAddress);
+        vm.stopPrank();
+        bytes32[] memory keys = factory.getPairIds();
+        assertEq(keys.length, 1);
+        bytes32 pairId = keys[0];
+        // prices (scaled)
+        uint256 sellPrice = 50 * 1e18;
+        uint256 buyPrice = 100 * 1e18;
+        //Get balance Trader 1
+        uint256 initialBalanceT1 = tokenA.balanceOf(address(trader1));
+        // trader2 adds sell order
+        vm.prank(trader2);
+        factory.addNewOrder(pairId, 5 ether, sellPrice, false, 1);
+        // trader1 adds a large buy order -> match with seller
+        vm.prank(trader1);
+        factory.addNewOrder(pairId, 5 ether, buyPrice, true, 1);
+        // check balances after matching
+        uint256 initialBalanceT2 = tokenA.balanceOf(address(trader2));
+        // after matching: seller should have quote balance = 5 * 50 = 250 (internal)
+        PairLib.TraderBalance memory tbSeller = factory.checkBalanceTrader(pairId, trader2);
+        assertEqUint(250 ether, tbSeller.quoteTokenBalance);
+        assertEqUint(0, tbSeller.baseTokenBalance);
+        // seller withdraws quote token balances
+        vm.prank(trader2);
+        factory.withdrawBalanceTrader(pairId, false);
+        assertEq(tokenA.balanceOf(address(trader2)), initialBalanceT2 + 250 ether); // 5 tokens sold at price 50 = 250 tokenA received
+        // 5 tokens were bought at price 50 -> 250 paid to the seller.
+        // Buyer initially deposited 500 tokens (5 * 100), expecting to buy at price 100.
+        // The contract assumes the full 500 were used, but only 250 were needed.
+        // The remaining 250 tokenA stay locked in the factory contract.
+        // Check the internal buyer balance is zero - no refund or internal balance adjustment was made
+        PairLib.TraderBalance memory tbBuyer = factory.checkBalanceTrader(pairId, trader1);
+        assertEqUint(0, tbBuyer.baseTokenBalance);
+        assertEqUint(0, tbBuyer.quoteTokenBalance);
+
+        uint256 finalBalanceT1 = tokenA.balanceOf(address(trader1));
+        assertEqUint(finalBalanceT1, initialBalanceT1 - 250 * 1e18);
+
+        // Verify that excess tokens remain stuck in the contract due to the price mismatch
+        // The seller received 250 quote tokens correctly, while the buyer’s unused 250 remain locked.
+        // The factory contract should now hold 250 * 1e18 tokenA as stuck funds.
+        assertEq(tokenA.balanceOf(address(factory)), 0);
+
+        //Get balance Fee
+        vm.prank(owner);
+        (uint256 baseFeeBalance, uint256 quoteFeeBalance) = factory.checkBalanceFeeTrader(pairId);
+        assertEq(tokenB.balanceOf(address(factory)), baseFeeBalance);
+        assertEq(quoteFeeBalance, 0);
+
+    }
 }

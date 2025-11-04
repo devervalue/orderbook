@@ -52,9 +52,6 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable2Step {
     /// @notice Thrown when trying to perform an operation on a non-existent pair
     error OBF__PairDoesNotExist();
 
-    /// @notice Thrown when attempting to place an order with zero quantity
-    error OBF__InvalidQuantityValueZero();
-
     /// @notice Thrown when trying to interact with a pair that is not enabled
     error OBF__PairNotEnabled();
 
@@ -87,10 +84,6 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable2Step {
     /// @param id The unique identifier of the affected order book
     /// @param newFeeAddress The new address that will receive the fees for this order book
     event PairFeeAddressChanged(bytes32 indexed id, address newFeeAddress);
-
-    /// @notice Emitted when the pause status of the entire contract is changed
-    /// @param isPaused The new pause status of the contract (true if paused, false if unpaused)
-    event ContractPauseStatusChanged(bool isPaused);
 
     /// @notice Modifier to restrict operations to enabled pairs only
     /// @dev This modifier checks if the specified pair is enabled before executing the function
@@ -254,14 +247,12 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable2Step {
     /// @dev Only the owner can call this function. It uses OpenZeppelin's Pausable functionality.
     function pause() external onlyOwner {
         _pause();
-        emit ContractPauseStatusChanged(true);
     }
 
     /// @notice Resumes all operations in the contract
     /// @dev Only the owner can call this function. It uses OpenZeppelin's Pausable functionality.
     function unpause() external onlyOwner {
         _unpause();
-        emit ContractPauseStatusChanged(false);
     }
 
     /// @notice Retrieves the fee percentage for a specific trading pair
