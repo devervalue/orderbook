@@ -38,7 +38,7 @@ library PairLib {
     error PL__BalanceFeeNotEnoughForWithdraw();
 
     /// @dev Precision factor for price calculations
-    uint256 private constant PRECISION = 1e18;
+    uint256 internal constant PRECISION = 1e18;
     /// @dev Maximum number of orders that can be filled in a single transaction
     uint256 private constant MAX_NUMBER_ORDERS_FILLED = 1500; // A new order can take this orders at max
     /// @dev Constant representing the status of a newly created order
@@ -134,6 +134,14 @@ library PairLib {
     /// @param newFee The new fee value for the trading pair
     event PairFeeChanged(address indexed baseToken, address indexed quoteToken, uint256 newFee);
 
+    /// @notice Emitted when an order is partially filled (partially executed)
+    /// @param id The unique identifier of the refund order
+    /// @param token The address of the token in the trading pair
+    /// @param quantityRefund Quantity of token refund
+    /// @param trader The address of the trader whose order was refund
+    event OrderRefund(
+        bytes32 indexed id, address indexed token, uint256 quantityRefund, address trader
+    );
 
     /// @notice Changes the fee for a trading pair
     /// @dev This function can only be called internally, typically by the contract owner
@@ -357,7 +365,7 @@ library PairLib {
         /// @dev For buy orders, update quote token balance; for sell orders, update base token balance
         if (takerOrder.isBuy) {
             // If it's a buy order, update the quote token balance of the maker (seller)
-            pair.traderBalances[matchedOrder.traderAddress].quoteTokenBalance += takerSendAmount;
+            pair.traderBalances[matchedOrder.traderAddress].quoteTokenBalance += (takerSendAmount / PRECISION) * PRECISION;
         } else {
             // If it's a sell order, update the base token balance of the maker (buyer)
             pair.traderBalances[matchedOrder.traderAddress].baseTokenBalance += takerSendAmount;
@@ -366,6 +374,19 @@ library PairLib {
         // Update the taker's order quantity
         takerOrder.quantity -= matchedOrder.availableQuantity;
         takerOrder.availableQuantity -= matchedOrder.availableQuantity;
+
+        if(takerOrder.availableQuantity > 0 && takerOrder.availableQuantity * takerOrder.price < PRECISION){
+            if (takerOrder.isBuy) {
+                // If it's a buy order, update the quote token balance of the maker (seller)
+                pair.traderBalances[takerOrder.traderAddress].quoteTokenBalance += takerOrder.availableQuantity * takerOrder.price;
+            } else {
+                // If it's a sell order, update the base token balance of the maker (buyer)
+                pair.traderBalances[takerOrder.traderAddress].baseTokenBalance += takerOrder.availableQuantity;
+            }
+
+            takerOrder.quantity = 0;
+            takerOrder.availableQuantity = 0;
+        }
 
         // Emit events for the filled orders
         emit OrderFilled(matchedOrder.id, pair.baseToken, pair.quoteToken, matchedOrder.traderAddress);
@@ -416,18 +437,43 @@ library PairLib {
         /// @dev For buy orders, update quote token balance; for sell orders, update base token balance
         if (takerOrder.isBuy) {
             // If it's a buy order, update the quote token balance of the maker (seller)
-            pair.traderBalances[matchedTraderAddress].quoteTokenBalance += takerSendAmount;
+            pair.traderBalances[matchedTraderAddress].quoteTokenBalance += (takerSendAmount / PRECISION) * PRECISION;
         } else {
             // If it's a sell order, update the base token balance of the maker (buyer)
             pair.traderBalances[matchedTraderAddress].baseTokenBalance += takerSendAmount;
         }
 
-        matchedOrder.availableQuantity = matchedOrder.availableQuantity - takerOrder.quantity;
-        matchedOrder.status = ORDER_PARTIALLY_FILLED;
+        // Update the matched order by reducing its available quantity
+        uint256 remainingAmount = matchedOrder.availableQuantity - takerOrder.quantity;
+        if(remainingAmount * matchedPrice <= PRECISION){
+            if (matchedOrder.isBuy) {
+                // If it's a buy order, update the quote token balance of the maker (seller)
+                pair.traderBalances[matchedTraderAddress].quoteTokenBalance += remainingAmount * matchedPrice;
+                emit OrderRefund(matchedOrder.id, pair.quoteToken, remainingAmount * matchedPrice, matchedOrder.traderAddress);
+            } else {
+                // If it's a sell order, update the base token balance of the maker (buyer)
+                pair.traderBalances[matchedTraderAddress].baseTokenBalance += remainingAmount;
+                emit OrderRefund(matchedOrder.id, pair.baseToken, remainingAmount, matchedOrder.traderAddress);
+            }
 
-        // Update the order book to reflect the partial fill
-        /// @dev This updates the volume at the price point in the order book
-        (matchedOrder.isBuy ? pair.buyOrders : pair.sellOrders).update(matchedPrice, takerOrder.quantity);
+            // Emit events for the filled orders
+            emit OrderFilled(matchedOrder.id, pair.baseToken, pair.quoteToken, matchedOrder.traderAddress);
+
+
+            // Remove the fully matched order from the order book
+            removeOrder(pair, matchedOrder);
+        }else{
+            matchedOrder.availableQuantity = remainingAmount;
+            matchedOrder.status = ORDER_PARTIALLY_FILLED;
+
+            // Update the order book to reflect the partial fill
+            /// @dev This updates the volume at the price point in the order book
+            (matchedOrder.isBuy ? pair.buyOrders : pair.sellOrders).update(matchedPrice, takerOrder.quantity);
+
+            // Emit an event for the partially filled matched order
+            emit OrderPartiallyFilled(matchedOrderId, pair.baseToken, pair.quoteToken, matchedTraderAddress);
+        }
+
 
         // Set the taker order quantity to 0 as it has been fully filled
         takerOrder.quantity = 0;
@@ -435,9 +481,6 @@ library PairLib {
 
         // Emit an event for the filled taker order
         emit OrderFilled(takerOrder.id, pair.baseToken, pair.quoteToken, msg.sender);
-
-        // Emit an event for the partially filled matched order
-        emit OrderPartiallyFilled(matchedOrderId, pair.baseToken, pair.quoteToken, matchedTraderAddress);
 
         return (takerReceiveAmount,takerSendAmount);
     }
@@ -589,7 +632,7 @@ library PairLib {
                 uint256 fee = (takerAmountReceive * pair.fee) / 10000;
                 pair.quoteFeeBalance += fee;
                 uint256 takerReceiveAmountAfterFee = takerAmountReceive - fee;
-            if(takerReceiveAmountAfterFee / PRECISION == 0){
+                if(takerReceiveAmountAfterFee / PRECISION == 0){
                     //Acumulation quote token
                     pair.traderBalances[msg.sender].quoteTokenBalance += takerReceiveAmountAfterFee;
                 }else{
@@ -605,9 +648,8 @@ library PairLib {
     /// @param pair The storage reference to the Pair struct containing trader balances
     /// @param _trader The address of the trader whose balance is being queried
     /// @return tb TraderBalance A struct containing the trader's base and quote token balances
-    function getTraderBalances(Pair storage pair, address _trader) internal view returns (TraderBalance memory tb) {
-        tb = pair.traderBalances[_trader];
-        tb.quoteTokenBalance = tb.quoteTokenBalance / PRECISION;
+    function getTraderBalances(Pair storage pair, address _trader) internal view returns (TraderBalance memory) {
+        return pair.traderBalances[_trader];
     }
 
     /// @notice Retrieves the balance of fee a owner for a specific trading pair

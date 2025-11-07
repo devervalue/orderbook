@@ -25,7 +25,7 @@ contract OrderBookFactoryBlockContract is Test {
     using PairLib for PairLib.TraderBalance;
 
     OrderBookFactory factory;
-    
+
     // Addresses
     address owner = makeAddr("owner");
     address feeAddress = makeAddr("feeAddress");
@@ -188,10 +188,10 @@ contract OrderBookFactoryBlockContract is Test {
         factory.checkBalanceTrader(keys[0], trader2);
         // Verificar que la nueva orden se creó correctamente
         uint256[50] memory sellOrders = factory.getTop50SellPricesForPair(keys[0]);
-        assertEq(sellOrders[0], price);
+        assertEq(sellOrders[0], 0);
 
         (uint256 orderCount, uint256 orderValue) = factory.getPricePointDataForPair(keys[0], price, false);
-        assertEq(orderValue, 10_000e18 - 9999_99999915e10);
+        assertEq(orderValue, 0);
     }
 
     /**
@@ -202,6 +202,7 @@ contract OrderBookFactoryBlockContract is Test {
         bytes32[] memory keys = factory.getPairIds();
         uint256 balanceTrader2TokenA = tokenA.balanceOf(trader2);
 
+        uint256 initBalanceTokenBTrader1 = tokenB.balanceOf(trader2);
         // 1. Trader1 coloca orden de compra grande
         vm.prank(trader1);
         factory.addNewOrder(keys[0], 10_000e18, price, true, 1);
@@ -213,7 +214,8 @@ contract OrderBookFactoryBlockContract is Test {
         // 3. Verificar balances del trader1
         vm.prank(trader1);
         PairLib.TraderBalance memory tb1 = factory.checkBalanceTrader(keys[0], trader1);
-        factory.checkBalanceTrader(keys[0], trader2);
+        vm.prank(trader2);
+        PairLib.TraderBalance memory tb2 = factory.checkBalanceTrader(keys[0], trader2);
         // Base token balance = lo que compró
         assertEq(tb1.baseTokenBalance, 9999_99999915e10);
         // Quote token balance = residuo de lo que no se pudo usar para comprar
@@ -224,12 +226,14 @@ contract OrderBookFactoryBlockContract is Test {
         vm.prank(trader1);
         factory.withdrawBalanceTrader(keys[0], true);
 
-        // Verificar que la nueva orden se creó correctamente
+        assertEq(tokenB.balanceOf(trader1),initBalanceTokenBTrader1 + 9999_99999915e10 );
+
+        // Verificar que la nueva orden no se creó
         uint256[50] memory buyOrders = factory.getTop50BuyPricesForPair(keys[0]);
-        assertEq(buyOrders[0], price);
+        assertEq(buyOrders[0], 0);
 
         (uint256 orderCount, uint256 orderValue) = factory.getPricePointDataForPair(keys[0], price, true);
-        assertEq(orderValue, 10_000e18 - 9999_99999915e10);
+        assertEq(orderValue, 0);
     }
 
     // ======================================

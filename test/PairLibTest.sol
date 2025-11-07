@@ -408,12 +408,15 @@ contract PairLibTest is Test {
         vm.prank(trader1);
         pair.addSellBaseToken(_price, 9999_99999915e10, trader1, nonce);
 
-        bytes32 _orderId = keccak256(abi.encodePacked(trader2, "buy", _price, nonce));
+        //bytes32 _orderId = keccak256(abi.encodePacked(trader2, "buy", _price, nonce));
 
-        pair.getOrderById(_orderId);
+        //pair.getOrderById(_orderId);
 
-        vm.prank(trader2);
-        pair.getCancelOrder(_orderId);
+        PairLib.TraderBalance memory traderBalance = pair.getTraderBalances(trader2);
+        assertEq(traderBalance.quoteTokenBalance,(10_000e18 - 9999_99999915e10) * _price);
+
+        //vm.prank(trader2);
+        //pair.getCancelOrder(_orderId);
 
         assertEq(pair.getFirstBuyOrders(), 0, "Buy order should have been removed");
     }
@@ -919,10 +922,11 @@ contract PairLibTest is Test {
         vm.prank(trader1);
         pair.addSellBaseToken(0.2 * 10 ** 18, 94, trader1, nonce + 3);
 
+        pair.getTraderBalances(trader1);
         uint256 sentAmount =  trader1BaseInitialBalance - tokenA.balanceOf(trader1);
 
-        assertEq(sentAmount, 94, "Should have only sent 90 tokenA");
-        assertEq(tokenB.balanceOf(trader1), 18, "Should have received 18 tokenB");
+        assertEq(sentAmount, 90, "Should have only sent 90 tokenA");
+        assertEq(tokenB.balanceOf(trader1), 17, "Should have received 17 tokenB because trunk value");
     }
 
     function testFillSmallBuyOrder() public {

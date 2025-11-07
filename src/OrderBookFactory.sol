@@ -2,7 +2,6 @@
 pragma solidity 0.8.26;
 
 import "./OrderBookLib.sol";
-import "./RedBlackTreeLib.sol";
 import {PairLib} from "./PairLib.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
@@ -326,15 +325,17 @@ contract OrderBookFactory is ReentrancyGuard, Pausable, Ownable2Step {
     /// @dev This function allows querying the current balance of a trader in both base and quote tokens
     /// @param _pairId The unique identifier of the trading pair
     /// @param _trader The address of the trader whose balance is being queried
-    /// @return PairLib.TraderBalance A struct containing the trader's balance information
+    /// @return tb PairLib.TraderBalance A struct containing the trader's balance information
     /// @custom:security This function is view-only and does not modify state
     function checkBalanceTrader(bytes32 _pairId, address _trader)
         external
         view
-        returns (PairLib.TraderBalance memory)
+        returns (PairLib.TraderBalance memory tb)
     {
         if (!pairExists(_pairId)) revert OBF__PairDoesNotExist();
-        return pairs[_pairId].getTraderBalances(_trader);
+        tb = pairs[_pairId].getTraderBalances(_trader);
+        tb.quoteTokenBalance = tb.quoteTokenBalance / PairLib.PRECISION;
+        return tb;
     }
 
     /// @notice Retrieves the balance fee of a owner for a specific trading pair
