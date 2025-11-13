@@ -376,14 +376,6 @@ library PairLib {
         takerOrder.availableQuantity -= matchedOrder.availableQuantity;
 
         if(takerOrder.availableQuantity > 0 && takerOrder.availableQuantity * takerOrder.price < PRECISION){
-            if (takerOrder.isBuy) {
-                // If it's a buy order, update the quote token balance of the maker (seller)
-                pair.traderBalances[takerOrder.traderAddress].quoteTokenBalance += takerOrder.availableQuantity * takerOrder.price;
-            } else {
-                // If it's a sell order, update the base token balance of the maker (buyer)
-                pair.traderBalances[takerOrder.traderAddress].baseTokenBalance += takerOrder.availableQuantity;
-            }
-
             takerOrder.quantity = 0;
             takerOrder.availableQuantity = 0;
         }
